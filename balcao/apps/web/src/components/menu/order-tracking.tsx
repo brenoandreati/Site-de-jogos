@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Check, Copy, MessageCircle } from 'lucide-react';
+import { Check, Copy, ExternalLink, MessageCircle } from 'lucide-react';
 import {
   FULFILLMENT_LABELS,
   ORDER_STATUS_CUSTOMER_LABELS,
@@ -27,8 +27,10 @@ export function OrderTracking(props: { slug: string; token: string }) {
 }
 
 function stepsFor(t: Tracking): { status: OrderStatus; label: string }[] {
+  const online = t.paymentMethod === 'online';
   const steps: { status: OrderStatus; label: string }[] = [
-    { status: 'new', label: 'Pedido enviado' },
+    ...(online ? [{ status: 'awaiting_confirmation' as OrderStatus, label: 'Pedido feito' }] : []),
+    { status: 'new', label: online ? 'Pagamento confirmado' : 'Pedido enviado' },
     { status: 'confirmed', label: 'Confirmado pela loja' },
     { status: 'preparing', label: 'Em preparo' },
     { status: 'ready', label: t.fulfillment === 'pickup' ? 'Pronto para retirar' : t.fulfillment === 'dine_in' ? 'Pronto' : 'Pronto, aguardando entregador' },
@@ -38,7 +40,7 @@ function stepsFor(t: Tracking): { status: OrderStatus; label: string }[] {
   return steps;
 }
 
-const ORDER: OrderStatus[] = ['new', 'awaiting_confirmation', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'completed'];
+const ORDER: OrderStatus[] = ['awaiting_confirmation', 'new', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'completed'];
 
 function Inner({ slug, token }: { slug: string; token: string }) {
   const isNew = useSearchParams().has('novo');
@@ -48,7 +50,9 @@ function Inner({ slug, token }: { slug: string; token: string }) {
     queryFn: ({ signal }) => get<Tracking>(`/public/orders/${encodeURIComponent(token)}`, signal),
     refetchInterval: (query) => {
       const s = query.state.data?.status;
-      return s === 'completed' || s === 'canceled' ? false : 15_000;
+      if (s === 'completed' || s === 'canceled') return false;
+      // Esperando o PIX: confere com mais frequência para o cliente ver a confirmação logo.
+      return s === 'awaiting_confirmation' ? 5_000 : 15_000;
     },
     retry: (count, err) => !(err instanceof ApiError && err.status === 404) && count < 3,
   });
@@ -76,17 +80,19 @@ function Inner({ slug, token }: { slug: string; token: string }) {
   const canceled = t.status === 'canceled';
   const steps = stepsFor(t);
   const reachedAt = (s: OrderStatus) => t.timeline.find((e) => e.status === s)?.at ?? null;
-  const currentIdx = ORDER.indexOf(t.status === 'awaiting_confirmation' ? 'new' : t.status);
+  const currentIdx = ORDER.indexOf(t.status);
+  const awaitingPix = t.status === 'awaiting_confirmation' && t.paymentMethod === 'online';
   const eta = new Date(new Date(t.createdAt).getTime() + (t.prepTimeMinutes + t.deliveryTimeMinutes) * 60_000);
   const waText = `Olá! Sobre o meu pedido #${t.number} (${t.customerName}).`;
 
   return (
     <div className="mx-auto max-w-md px-4 pb-16 pt-6">
-      {isNew && !canceled && (
+      {isNew && !canceled && !awaitingPix && (
         <p className="mb-4 rounded-lg bg-[var(--accent-soft)] px-4 py-3 text-sm text-ink" role="status">
           Pedido enviado para a loja. Esta página atualiza sozinha a cada etapa.
         </p>
       )}
+      {awaitingPix && t.payment && <PixPayment payment={t.payment} />}
 
       {/* A comanda */}
       <article className="ticket-edge rounded-b-xl bg-surface px-6 pb-6 pt-8 shadow-soft" aria-labelledby="ticket-number">
@@ -181,8 +187,9 @@ function Inner({ slug, token }: { slug: string; token: string }) {
         </dl>
         <div className="mt-4 space-y-1 border-t border-line pt-4 text-sm">
           <p>
-            <span className="text-muted">Pagamento:</span> {PAYMENT_METHOD_LABELS[t.paymentMethod]}
-            {t.paymentStatus === 'paid' && <span className="ml-1 text-[var(--accent)]">· recebido</span>}
+            <span className="text-muted">Pagamento:</span> {t.paymentMethod === 'online' ? 'PIX online' : PAYMENT_METHOD_LABELS[t.paymentMethod]}
+            {t.paymentStatus === 'paid' && <span className="ml-1 text-[var(--accent)]">· {t.paymentMethod === 'online' ? 'confirmado pelo Mercado Pago' : 'recebido'}</span>}
+            {t.paymentStatus === 'refunded' && <span className="ml-1 text-muted">· estornado</span>}
           </p>
           {t.paymentMethod === 'cash' && t.changeForCents !== null && (
             <p className="text-muted">
@@ -228,6 +235,74 @@ function Inner({ slug, token }: { slug: string; token: string }) {
         </Link>
       </p>
     </div>
+  );
+}
+
+/** Cobrança PIX do Mercado Pago. Quem confirma o pagamento é o provedor, nunca esta página. */
+function PixPayment({ payment }: { payment: NonNullable<Tracking['payment']> }) {
+  const [copied, setCopied] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  if (payment.status !== 'pending') {
+    return (
+      <p className="mb-4 rounded-lg bg-[var(--accent-soft)] px-4 py-3 text-sm text-ink" role="status">
+        {payment.status === 'approved' ? 'Pagamento confirmado pelo Mercado Pago. Enviando o pedido para a loja…' : 'Conferindo o pagamento com o Mercado Pago…'}
+      </p>
+    );
+  }
+
+  const remaining = payment.expiresAt ? Math.max(0, new Date(payment.expiresAt).getTime() - now) : null;
+  const expired = remaining === 0;
+  const mmss = remaining !== null ? `${String(Math.floor(remaining / 60_000)).padStart(2, '0')}:${String(Math.floor((remaining % 60_000) / 1000)).padStart(2, '0')}` : null;
+
+  return (
+    <section className="mb-4 rounded-xl bg-surface p-6 shadow-soft" aria-labelledby="pix-title">
+      <h2 id="pix-title" className="font-semibold">
+        Pague com PIX para enviar o pedido
+      </h2>
+      <p className="mt-1 text-sm text-muted">
+        Abra o app do seu banco, escolha pagar com PIX e leia o QR Code ou cole o código. Valor: <span className="num text-ink">{formatBRL(payment.amountCents)}</span>
+      </p>
+      {payment.qrCodeBase64 && (
+        <img src={`data:image/png;base64,${payment.qrCodeBase64}`} alt="QR Code do PIX" width={208} height={208} className="mx-auto mt-5 size-52 rounded-md border border-line bg-white p-2" />
+      )}
+      {payment.qrCode && (
+        <div className="mt-4">
+          <p className="text-xs text-muted">PIX copia e cola</p>
+          <div className="mt-1 flex items-stretch gap-2">
+            <code className="num min-w-0 flex-1 truncate rounded-md bg-canvas px-3 py-2.5 text-xs">{payment.qrCode}</code>
+            <button
+              type="button"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-[var(--accent)] px-3 text-sm font-semibold text-[color:var(--accent-ink,#fff)]"
+              onClick={async () => {
+                await navigator.clipboard.writeText(payment.qrCode!).catch(() => undefined);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2500);
+              }}
+            >
+              {copied ? <Check className="size-4" /> : <Copy className="size-4" />} {copied ? 'Copiado' : 'Copiar'}
+            </button>
+          </div>
+        </div>
+      )}
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-4 text-sm">
+        {mmss && (
+          <p className={cx(expired ? 'text-danger' : 'text-ink-2')} aria-live="polite">
+            {expired ? 'Prazo encerrado. Conferindo com o Mercado Pago…' : <>Vence em <span className="num font-medium">{mmss}</span></>}
+          </p>
+        )}
+        {payment.ticketUrl && (
+          <a href={payment.ticketUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[0.8125rem] font-medium text-[var(--accent)] hover:underline">
+            Abrir no Mercado Pago <ExternalLink className="size-3.5" />
+          </a>
+        )}
+      </div>
+      <p className="mt-3 text-xs text-muted">Assim que o Mercado Pago confirmar, o pedido vai para a loja e esta página atualiza sozinha. Não é preciso enviar comprovante.</p>
+    </section>
   );
 }
 

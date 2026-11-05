@@ -8,6 +8,7 @@ import {
   Bell,
   BellOff,
   Bike,
+  Bot,
   BookOpen,
   Boxes,
   Calculator,
@@ -42,7 +43,7 @@ import { Menu, MenuItem, MenuLabel, MenuSeparator } from '@/components/ui/menu';
 import { Badge } from '@/components/ui/misc';
 import { useFeedback } from '@/components/ui/feedback';
 import { errorMessage, post } from '@/lib/api';
-import { useBoard, useSettings, keys } from '@/lib/queries';
+import { useBoard, useInboxCounts, useSettings, keys } from '@/lib/queries';
 import { cx, timeAgo } from '@/lib/format';
 import type { Me } from '@/lib/types';
 import { useAdmin } from './admin-context';
@@ -52,14 +53,15 @@ import { PasswordModal } from './password-modal';
 const NAV: { module: ModuleKey; href?: string; label: string; icon: ReactNode }[] = [
   { module: 'dashboard', href: '/painel', label: 'Visão geral', icon: <LayoutDashboard /> },
   { module: 'orders', href: '/painel/pedidos', label: 'Pedidos', icon: <Receipt /> },
-  { module: 'inbox', label: 'Atendimento', icon: <MessagesSquare /> },
+  { module: 'inbox', href: '/painel/atendimento', label: 'Atendimento', icon: <MessagesSquare /> },
+  { module: 'ai_assistant', href: '/painel/assistente', label: 'Assistente de IA', icon: <Bot /> },
   { module: 'catalog', href: '/painel/cardapio', label: 'Cardápio', icon: <BookOpen /> },
   { module: 'customers', label: 'Clientes', icon: <ContactRound /> },
   { module: 'marketing', label: 'Marketing', icon: <Megaphone /> },
   { module: 'loyalty', label: 'Fidelidade', icon: <Gift /> },
   { module: 'inventory', label: 'Estoque', icon: <Boxes /> },
-  { module: 'delivery', label: 'Entregas', icon: <Bike /> },
-  { module: 'kitchen', label: 'Cozinha', icon: <ChefHat /> },
+  { module: 'delivery', href: '/painel/entregas', label: 'Entregas', icon: <Bike /> },
+  { module: 'kitchen', href: '/painel/cozinha', label: 'Cozinha', icon: <ChefHat /> },
   { module: 'financial', label: 'Financeiro', icon: <Wallet /> },
   { module: 'cash_register', label: 'Caixa', icon: <Calculator /> },
   { module: 'reports', label: 'Relatórios', icon: <ChartColumn /> },
@@ -130,7 +132,9 @@ function Sidebar({ me, collapsed, onToggle, onClose }: { me: Me; collapsed: bool
   const pathname = usePathname();
   const perms = me.active!.permissions;
   const board = useBoard({ enabled: hasAccess(perms, 'orders', 'view') });
-  const pending = board.data?.orders.filter((o) => o.status === 'new' || o.status === 'awaiting_confirmation').length ?? 0;
+  const pending = board.data?.orders.filter((o) => o.status === 'new').length ?? 0;
+  const inbox = useInboxCounts(hasAccess(perms, 'inbox', 'view'));
+  const waiting = inbox.data?.counts.waiting ?? 0;
 
   const available = NAV.filter((n) => PHASE[n.module] <= CURRENT_PHASE && hasAccess(perms, n.module, 'view'));
   const upcoming = NAV.filter((n) => PHASE[n.module] > CURRENT_PHASE);
@@ -168,6 +172,17 @@ function Sidebar({ me, collapsed, onToggle, onClose }: { me: Me; collapsed: bool
                 >
                   {item.icon}
                   {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
+                  {item.module === 'inbox' && waiting > 0 && (
+                    <span
+                      className={cx(
+                        'num grid h-5 min-w-5 place-items-center rounded-full bg-warn px-1.5 text-[0.625rem] font-semibold text-white',
+                        collapsed && 'absolute right-1 top-0.5 h-4 min-w-4 px-1',
+                      )}
+                      aria-label={`${waiting} conversas aguardando atendimento`}
+                    >
+                      {waiting}
+                    </span>
+                  )}
                   {item.module === 'orders' && pending > 0 && (
                     <span
                       className={cx(

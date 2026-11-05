@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Banknote, Check, Copy, CreditCard, QrCode, Ticket } from 'lucide-react';
+import { ArrowLeft, Banknote, Check, Copy, CreditCard, QrCode, Ticket, Zap } from 'lucide-react';
 import {
   BRAZIL_STATES,
   FULFILLMENT_LABELS,
@@ -17,13 +17,14 @@ import {
 import { Checkbox, Field, Input, MoneyInput, PhoneInput, Select, Textarea } from '@/components/ui/field';
 import { ErrorNotice } from '@/components/ui/misc';
 import { ApiError, get, post } from '@/lib/api';
-import { deliveryFeeFor, readCustomer, rememberOrder, saveCustomer, useCart } from '@/lib/cart';
+import { deliveryFeeFor, deliveryFeeHint, readCustomer, rememberOrder, saveCustomer, useCart } from '@/lib/cart';
 import { cx, formatAddress } from '@/lib/format';
 import { serverFieldErrors, validate, type FieldErrors } from '@/lib/forms';
 import type { PublicStore } from '@/lib/types';
 import { AccentButton } from './accent-button';
 
 const PAYMENT_ICON: Partial<Record<PaymentMethod, typeof Banknote>> = {
+  online: Zap,
   pix: QrCode,
   cash: Banknote,
   credit_card: CreditCard,
@@ -47,6 +48,7 @@ export function CheckoutForm({ initial, slug }: { initial: PublicStore; slug: st
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState(emptyAddress);
   const [tableNumber, setTableNumber] = useState('');
+  const [zoneId, setZoneId] = useState('');
   const [payment, setPayment] = useState<PaymentMethod | ''>('');
   const [needsChange, setNeedsChange] = useState(false);
   const [changeFor, setChangeFor] = useState<number | null>(null);
@@ -64,6 +66,7 @@ export function CheckoutForm({ initial, slug }: { initial: PublicStore; slug: st
       setName(saved.name);
       setPhone(saved.phone);
       if (saved.address) setAddress(saved.address);
+      if (saved.zoneId) setZoneId(saved.zoneId);
     }
     try {
       idempotencyKey.current = sessionStorage.getItem(`balcao:checkout:${slug}`) ?? crypto.randomUUID();
@@ -73,14 +76,20 @@ export function CheckoutForm({ initial, slug }: { initial: PublicStore; slug: st
     }
   }, [slug]);
 
-  const fee = fulfillment === 'delivery' ? deliveryFeeFor(store, cart.subtotalCents) : 0;
+  const zones = store.deliveryZones;
+  const zone = zones.find((z) => z.id === zoneId) ?? null;
+  const fee = fulfillment === 'delivery' ? deliveryFeeFor(store, cart.subtotalCents, zone) : 0;
   const total = cart.subtotalCents + fee;
-  const belowMin = fulfillment === 'delivery' && cart.subtotalCents < store.minOrderCents;
+  const minOrder = zone?.minOrderCents ?? store.minOrderCents;
+  const belowMin = fulfillment === 'delivery' && cart.subtotalCents < minOrder;
+  const deliveryEta = store.prepTimeMinutes + (zone?.etaMinutes ?? store.deliveryTimeMinutes);
+  // "PIX online" primeiro: é cobrado agora e confirmado pelo Mercado Pago.
+  const paymentMethods: PaymentMethod[] = store.onlinePayment ? ['online', ...store.paymentMethods] : store.paymentMethods;
 
   const submit = useMutation({
     mutationFn: (body: unknown) => post<{ token: string; number: number }>(`/public/stores/${slug}/orders`, body),
     onSuccess: (r) => {
-      if (remember) saveCustomer({ name, phone, address: fulfillment === 'delivery' ? address : readCustomer()?.address });
+      if (remember) saveCustomer({ name, phone, address: fulfillment === 'delivery' ? address : readCustomer()?.address, zoneId: fulfillment === 'delivery' ? zoneId || undefined : readCustomer()?.zoneId });
       rememberOrder(slug, r.token);
       cart.clear();
       try {
@@ -125,8 +134,9 @@ export function CheckoutForm({ initial, slug }: { initial: PublicStore; slug: st
       fulfillment,
       address:
         fulfillment === 'delivery'
-          ? { ...address, zipCode: address.zipCode || null, complement: address.complement || null, reference: address.reference || null }
+          ? { ...address, neighborhood: zone ? zone.name : address.neighborhood, zipCode: address.zipCode || null, complement: address.complement || null, reference: address.reference || null }
           : null,
+      deliveryZoneId: fulfillment === 'delivery' && zone ? zone.id : null,
       tableNumber: fulfillment === 'dine_in' ? tableNumber || null : null,
       paymentMethod: payment || undefined,
       changeForCents: payment === 'cash' && needsChange ? changeFor : null,
@@ -137,6 +147,7 @@ export function CheckoutForm({ initial, slug }: { initial: PublicStore; slug: st
     const v = validate(publicCheckoutSchema, body);
     const next = v.ok ? {} : { ...v.errors };
     if (payment === 'cash' && needsChange && (changeFor === null || changeFor < total)) next.changeForCents = 'Informe um valor maior que o total';
+    if (fulfillment === 'delivery' && zones.length > 0 && !zone) next.deliveryZoneId = 'Escolha o bairro';
     setErrors(next);
     if (Object.keys(next).length) {
       document.querySelector('[aria-invalid="true"]')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -187,7 +198,7 @@ export function CheckoutForm({ initial, slug }: { initial: PublicStore; slug: st
                   <span className="font-medium">{FULFILLMENT_LABELS[f]}</span>
                   <span className="tabular block text-xs text-muted">
                     {f === 'delivery'
-                      ? `${store.prepTimeMinutes + store.deliveryTimeMinutes}–${store.prepTimeMinutes + store.deliveryTimeMinutes + 10} min · ${fee || deliveryFeeFor(store, cart.subtotalCents) ? formatBRL(deliveryFeeFor(store, cart.subtotalCents)) : 'grátis'}`
+                      ? `${deliveryEta}–${deliveryEta + 10} min · ${zone || zones.length === 0 ? (deliveryFeeFor(store, cart.subtotalCents, zone) ? formatBRL(deliveryFeeFor(store, cart.subtotalCents, zone)) : 'grátis') : deliveryFeeHint(store, cart.subtotalCents)}`
                       : f === 'pickup'
                         ? `${store.prepTimeMinutes} min · sem taxa`
                         : 'Na loja'}
@@ -206,9 +217,30 @@ export function CheckoutForm({ initial, slug }: { initial: PublicStore; slug: st
                 <Field label="Complemento" htmlFor="complement" optional className="sm:col-span-3">
                   <Input id="complement" autoComplete="address-line2" placeholder="Apto, bloco, casa" value={address.complement} onChange={(ev) => setAddress({ ...address, complement: ev.target.value })} />
                 </Field>
-                <Field label="Bairro" htmlFor="neighborhood" className="sm:col-span-3" error={e('address.neighborhood')}>
-                  <Input id="neighborhood" value={address.neighborhood} onChange={(ev) => setAddress({ ...address, neighborhood: ev.target.value })} invalid={!!e('address.neighborhood')} />
-                </Field>
+                {zones.length > 0 ? (
+                  <Field label="Bairro" htmlFor="zone" className="sm:col-span-3" error={e('deliveryZoneId')} hint={zone ? undefined : 'Não achou o seu? A loja ainda não entrega aí.'}>
+                    <Select
+                      id="zone"
+                      value={zoneId}
+                      onChange={(ev) => {
+                        setZoneId(ev.target.value);
+                        if (ev.target.value) setErrors(({ deliveryZoneId: _z, ...rest }) => rest);
+                      }}
+                      invalid={!!e('deliveryZoneId')}
+                    >
+                      <option value="">Escolha o bairro</option>
+                      {zones.map((z) => (
+                        <option key={z.id} value={z.id}>
+                          {z.name} · {deliveryFeeFor(store, cart.subtotalCents, z) ? formatBRL(deliveryFeeFor(store, cart.subtotalCents, z)) : 'grátis'}
+                        </option>
+                      ))}
+                    </Select>
+                  </Field>
+                ) : (
+                  <Field label="Bairro" htmlFor="neighborhood" className="sm:col-span-3" error={e('address.neighborhood')}>
+                    <Input id="neighborhood" value={address.neighborhood} onChange={(ev) => setAddress({ ...address, neighborhood: ev.target.value })} invalid={!!e('address.neighborhood')} />
+                  </Field>
+                )}
                 <Field label="Cidade" htmlFor="city" className="sm:col-span-3" error={e('address.city')}>
                   <Input id="city" autoComplete="address-level2" value={address.city} onChange={(ev) => setAddress({ ...address, city: ev.target.value })} invalid={!!e('address.city')} />
                 </Field>
@@ -248,20 +280,27 @@ export function CheckoutForm({ initial, slug }: { initial: PublicStore; slug: st
             </div>
           </Section>
 
-          <Section title="Pagamento" description="Na entrega ou na retirada.">
+          <Section title="Pagamento" description={store.onlinePayment ? 'Pague agora com PIX ou na entrega/retirada.' : 'Na entrega ou na retirada.'}>
             <div role="radiogroup" aria-label="Forma de pagamento" className="grid gap-2 sm:grid-cols-2">
-              {store.paymentMethods.map((m) => {
+              {paymentMethods.map((m) => {
                 const Icon = PAYMENT_ICON[m] ?? CreditCard;
                 return (
                   <Choice key={m} checked={payment === m} onClick={() => setPayment(m)} invalid={!!e('paymentMethod')}>
                     <span className="flex items-center gap-2 font-medium">
                       <Icon className="size-4 text-muted" />
-                      {PAYMENT_METHOD_LABELS[m]}
+                      {m === 'online' ? 'PIX agora' : PAYMENT_METHOD_LABELS[m]}
                     </span>
+                    {m === 'online' && <span className="mt-0.5 block pl-6 text-xs text-muted">QR Code na próxima tela</span>}
+                    {m === 'pix' && store.onlinePayment && <span className="mt-0.5 block pl-6 text-xs text-muted">Na entrega ou retirada</span>}
                   </Choice>
                 );
               })}
             </div>
+            {payment === 'online' && (
+              <p className="mt-4 rounded-md bg-canvas px-4 py-3 text-sm text-ink-2">
+                Depois de fazer o pedido, você recebe o QR Code e o código copia e cola. O pedido vai para a loja assim que o Mercado Pago confirmar o pagamento.
+              </p>
+            )}
             {e('paymentMethod') && <p className="mt-2 text-[0.8125rem] text-danger" aria-invalid="true">{e('paymentMethod')}</p>}
             {payment === 'cash' && (
               <div className="mt-4 space-y-3">
@@ -324,8 +363,8 @@ export function CheckoutForm({ initial, slug }: { initial: PublicStore; slug: st
               </div>
               {fulfillment === 'delivery' && (
                 <div className="flex justify-between">
-                  <dt className="text-muted">Entrega</dt>
-                  <dd className="num">{fee ? formatBRL(fee) : 'Grátis'}</dd>
+                  <dt className="text-muted">Entrega{zone ? ` · ${zone.name}` : ''}</dt>
+                  <dd className="num">{zones.length > 0 && !zone ? 'escolha o bairro' : fee ? formatBRL(fee) : 'Grátis'}</dd>
                 </div>
               )}
               <div className="flex items-baseline justify-between pt-1">
@@ -333,7 +372,7 @@ export function CheckoutForm({ initial, slug }: { initial: PublicStore; slug: st
                 <dd className="num text-lg font-semibold">{formatBRL(total)}</dd>
               </div>
             </dl>
-            {belowMin && <p className="mt-3 text-[0.8125rem] text-warn">O pedido mínimo para entrega é {formatBRL(store.minOrderCents)}.</p>}
+            {belowMin && <p className="mt-3 text-[0.8125rem] text-warn">O pedido mínimo para entrega{zone ? ` em ${zone.name}` : ''} é {formatBRL(minOrder)}.</p>}
             {cart.hasProblems && (
               <p className="mt-3 text-[0.8125rem] text-warn">
                 Há itens indisponíveis.{' '}
@@ -347,7 +386,7 @@ export function CheckoutForm({ initial, slug }: { initial: PublicStore; slug: st
               <Checkbox checked={remember} onChange={setRemember} label="Lembrar meus dados neste aparelho" />
             </div>
             <AccentButton type="submit" className="mt-5 w-full justify-between" loading={submit.isPending} disabled={!store.availability.isOpen || belowMin || cart.hasProblems || !cart.ready}>
-              <span>Fazer pedido</span>
+              <span>{payment === 'online' ? 'Fazer pedido e pagar' : 'Fazer pedido'}</span>
               <span className="num">{formatBRL(total)}</span>
             </AccentButton>
             <p className="mt-3 text-center text-xs text-muted">

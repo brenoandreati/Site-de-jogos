@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
 import {
   BRAZIL_STATES,
@@ -27,7 +27,7 @@ import { ErrorNotice, Panel, Skeleton } from '@/components/ui/misc';
 import { useFeedback } from '@/components/ui/feedback';
 import { ApiError, get, post } from '@/lib/api';
 import { serverFieldErrors, type FieldErrors } from '@/lib/forms';
-import { useCatalog, useSettings } from '@/lib/queries';
+import { keys, useCatalog, useSettings } from '@/lib/queries';
 import type { Address, OrderDetail } from '@/lib/types';
 
 const emptyAddress = { zipCode: '', street: '', number: '', complement: '', neighborhood: '', city: '', state: 'SP', reference: '' };
@@ -54,6 +54,13 @@ export default function NewOrderPage() {
   const [discount, setDiscount] = useState<number | null>(0);
   const [discountReason, setDiscountReason] = useState('');
   const [feeOverride, setFeeOverride] = useState<number | null>(null);
+  const [zoneId, setZoneId] = useState('');
+  const zonesQuery = useQuery({
+    queryKey: keys.zones,
+    queryFn: ({ signal }) => get<{ id: string; name: string; feeCents: number; isActive: boolean }[]>('/delivery/zones', signal),
+  });
+  const zones = (zonesQuery.data ?? []).filter((z) => z.isActive);
+  const zone = zones.find((z) => z.id === zoneId) ?? null;
   const [errors, setErrors] = useState<FieldErrors>({});
   const [lookupInfo, setLookupInfo] = useState<string | null>(null);
 
@@ -61,7 +68,7 @@ export default function NewOrderPage() {
   const subtotal = lines.reduce((s, l) => s + l.priced.totalCents, 0);
   const freeAbove = settings.data?.orders.freeDeliveryAboveCents ?? null;
   const fee =
-    fulfillment !== 'delivery' ? 0 : feeOverride !== null ? feeOverride : freeAbove !== null && subtotal >= freeAbove ? 0 : defaultFee;
+    fulfillment !== 'delivery' ? 0 : feeOverride !== null ? feeOverride : freeAbove !== null && subtotal >= freeAbove ? 0 : (zone?.feeCents ?? defaultFee);
   const totals = computeOrderTotals({ items: lines.map((l) => l.priced), discountCents: discount ?? 0, deliveryFeeCents: fee });
 
   const lookup = async () => {
@@ -98,7 +105,11 @@ export default function NewOrderPage() {
         channel,
         fulfillment,
         customer: { name: customer.name, phone: customer.phone || null },
-        address: fulfillment === 'delivery' ? { ...address, zipCode: address.zipCode || null, complement: address.complement || null, reference: address.reference || null } : null,
+        address:
+          fulfillment === 'delivery'
+            ? { ...address, neighborhood: zone?.name ?? address.neighborhood, zipCode: address.zipCode || null, complement: address.complement || null, reference: address.reference || null }
+            : null,
+        deliveryZoneId: fulfillment === 'delivery' && zone ? zone.id : null,
         tableNumber: fulfillment === 'dine_in' ? tableNumber || null : null,
         paymentMethod,
         changeForCents: paymentMethod === 'cash' ? changeFor : null,
@@ -186,8 +197,36 @@ export default function NewOrderPage() {
                   <Field label="Complemento" htmlFor="complement" optional className="sm:col-span-3">
                     <Input id="complement" value={address.complement} onChange={(e) => setAddress({ ...address, complement: e.target.value })} />
                   </Field>
-                  <Field label="Bairro" htmlFor="neighborhood" className="sm:col-span-3" error={err('address.neighborhood')}>
-                    <Input id="neighborhood" value={address.neighborhood} onChange={(e) => setAddress({ ...address, neighborhood: e.target.value })} invalid={!!err('address.neighborhood')} />
+                  <Field label="Bairro" htmlFor={zones.length ? 'zone' : 'neighborhood'} className="sm:col-span-3" error={err('address.neighborhood') ?? err('deliveryZoneId')}>
+                    {zones.length > 0 && (
+                      <Select
+                        id="zone"
+                        value={zoneId}
+                        onChange={(e) => {
+                          const z = zones.find((x) => x.id === e.target.value);
+                          setZoneId(e.target.value);
+                          if (z) setAddress({ ...address, neighborhood: z.name });
+                        }}
+                      >
+                        <option value="">Outro bairro (taxa padrão)</option>
+                        {zones.map((z) => (
+                          <option key={z.id} value={z.id}>
+                            {z.name} · {z.feeCents ? formatBRL(z.feeCents) : 'grátis'}
+                          </option>
+                        ))}
+                      </Select>
+                    )}
+                    {!zone && (
+                      <Input
+                        id="neighborhood"
+                        className={zones.length ? 'mt-2' : undefined}
+                        aria-label={zones.length ? 'Nome do bairro' : undefined}
+                        placeholder={zones.length ? 'Nome do bairro' : undefined}
+                        value={address.neighborhood}
+                        onChange={(e) => setAddress({ ...address, neighborhood: e.target.value })}
+                        invalid={!!err('address.neighborhood')}
+                      />
+                    )}
                   </Field>
                   <Field label="Cidade" htmlFor="city" className="sm:col-span-4" error={err('address.city')}>
                     <Input id="city" value={address.city} onChange={(e) => setAddress({ ...address, city: e.target.value })} invalid={!!err('address.city')} />

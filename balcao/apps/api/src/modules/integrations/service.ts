@@ -22,7 +22,8 @@ export interface WhatsappConfig extends WhatsappSettings {
 
 export interface MercadoPagoSecrets {
   accessToken: string;
-  webhookSecret: string;
+  /** Sem ela os webhooks são recusados; os pagamentos seguem sendo conferidos por consulta ao provedor. */
+  webhookSecret: string | null;
 }
 export interface MercadoPagoConfig {
   userId: string;

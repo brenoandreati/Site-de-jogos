@@ -22,7 +22,7 @@ import { customerAddresses, customers, orders } from '../../db/schema';
 import { audit } from '../../lib/audit';
 import { forbidden, parse, unprocessable } from '../../lib/errors';
 import { requireTenant, tenantCtx, type TenantContext } from '../../plugins/context';
-import { refundOrderPayment } from '../payments/service';
+import { cancelPendingPayment, refundOrderPayment } from '../payments/service';
 import { refundSchema } from '@balcao/shared';
 import {
   changeOrderStatus,
@@ -204,6 +204,7 @@ export async function orderRoutes(app: FastifyInstance) {
     }, app.jobs);
     if (input.status === 'canceled') {
       await audit(db, request, { action: 'order.canceled', entityType: 'order', entityId: id, summary: `Pedido cancelado: ${input.reason}` });
+      await cancelPendingPayment(app, ctx.tenantId, id);
     }
     return getOrderDetail(db, ctx.tenantId, id);
   });

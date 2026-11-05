@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { priceItem, selectionKey, type ItemSelection, type PricedItem } from '@balcao/shared';
+import { formatBRL, priceItem, selectionKey, type ItemSelection, type PricedItem } from '@balcao/shared';
 import { toPricing } from '@/components/catalog/product-configurator';
 import type { PublicProduct, PublicStore } from './types';
 
@@ -119,9 +119,24 @@ export function useCart(slug: string, store: PublicStore | null) {
   return { ready, lines: view, add, update, setQuantity, remove, clear, removeInvalid, subtotalCents, count, hasProblems: view.some((v) => v.problem) };
 }
 
-export function deliveryFeeFor(store: PublicStore['store'], subtotalCents: number) {
+export type DeliveryZone = PublicStore['store']['deliveryZones'][number];
+
+/** Mesma regra da API: taxa do bairro (ou a única da loja) e entrega grátis acima do valor configurado. */
+export function deliveryFeeFor(store: PublicStore['store'], subtotalCents: number, zone?: DeliveryZone | null) {
   if (store.freeDeliveryAboveCents !== null && subtotalCents >= store.freeDeliveryAboveCents) return 0;
-  return store.deliveryFeeCents;
+  return zone ? zone.feeCents : store.deliveryFeeCents;
+}
+
+/** Texto curto da taxa de entrega para quem ainda não escolheu o bairro. */
+export function deliveryFeeHint(store: PublicStore['store'], subtotalCents = 0): string {
+  if (store.freeDeliveryAboveCents !== null && subtotalCents >= store.freeDeliveryAboveCents) return 'grátis';
+  const zones = store.deliveryZones;
+  if (zones.length === 0) return store.deliveryFeeCents ? formatBRL(store.deliveryFeeCents) : 'grátis';
+  const fees = zones.map((z) => z.feeCents);
+  const min = Math.min(...fees);
+  const max = Math.max(...fees);
+  if (min === max) return min ? formatBRL(min) : 'grátis';
+  return 'taxa por bairro';
 }
 
 /** Dados do cliente lembrados neste aparelho para o próximo pedido. */
@@ -129,6 +144,8 @@ export interface RememberedCustomer {
   name: string;
   phone: string;
   address?: { zipCode: string; street: string; number: string; complement: string; neighborhood: string; city: string; state: string; reference: string };
+  /** Bairro escolhido na última entrega (só vale na loja que tem esse bairro cadastrado). */
+  zoneId?: string;
 }
 const CUSTOMER_KEY = 'balcao:customer';
 export function readCustomer(): RememberedCustomer | null {

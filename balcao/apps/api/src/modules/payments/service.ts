@@ -168,6 +168,29 @@ export async function expirePayment(app: FastifyInstance, tenantId: string, paym
   }
 }
 
+/**
+ * A loja cancelou um pedido que ainda espera o PIX: cancela a cobrança no Mercado Pago para o
+ * cliente não pagar um pedido que não existe mais. Se o cliente já tinha pago, o retorno do
+ * provedor registra o pagamento aprovado e a equipe vê o aviso para estornar.
+ */
+export async function cancelPendingPayment(app: FastifyInstance, tenantId: string, orderId: string) {
+  const [payment] = await app.db
+    .select()
+    .from(payments)
+    .where(and(eq(payments.tenantId, tenantId), eq(payments.orderId, orderId), eq(payments.status, 'pending')))
+    .limit(1);
+  if (!payment) return;
+  const integration = await findIntegration(app.db, tenantId, 'mercadopago');
+  if (!integration) return;
+  try {
+    const mp = await mercadoPagoClient(app, integration).client.cancelPayment(payment.providerPaymentId);
+    await applyPaymentStatus(app, payment, mp);
+  } catch (err) {
+    // A tarefa de vencimento do PIX tenta de novo e cancela a cobrança no prazo.
+    app.log.warn({ err, orderId, paymentId: payment.id }, 'não foi possível cancelar a cobrança PIX agora');
+  }
+}
+
 export async function refundOrderPayment(app: FastifyInstance, tenantId: string, orderId: string) {
   const [payment] = await app.db
     .select()

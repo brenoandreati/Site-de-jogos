@@ -146,6 +146,44 @@ describe('PIX online (Mercado Pago)', () => {
     expect(refund.json().payment.refundedCents).toBe(1500);
   });
 
+  it('ao cancelar o pedido, a loja também cancela a cobrança PIX pendente', async () => {
+    const s = await onlineStore();
+    const res = await new Client(app).post(`/api/public/stores/${s.slug}/orders`, checkout({ paymentMethod: 'online', items: item(s.menu) }));
+    const paymentId = String(mpSeq);
+    const orderId = (await s.client.get('/api/orders/board')).json().orders[0].id as string;
+    const cancel = await s.client.patch(`/api/orders/${orderId}/status`, { status: 'canceled', reason: 'Cliente desistiu', expectedFrom: 'awaiting_confirmation' });
+    expect(cancel.statusCode, cancel.body).toBe(200);
+    expect(mpState.get(paymentId)!.status).toBe('cancelled');
+    expect(cancel.json().payment.status).toBe('cancelled');
+    const t = (await new Client(app).get(`/api/public/orders/${res.json().token}`)).json();
+    expect(t.status).toBe('canceled');
+    expect(t.payment.status).toBe('cancelled');
+  });
+
+  it('sem a assinatura do webhook, confirma consultando o Mercado Pago enquanto o cliente acompanha', async () => {
+    const owner = await signupOwner(app);
+    await owner.client.put('/api/settings/hours', ALWAYS_OPEN);
+    const menu = await seedMenu(owner.client);
+    expect((await owner.client.post('/api/integrations/mercadopago', { accessToken: 'TEST-1234567890123456-abcdefghijklmnop' })).statusCode).toBe(200);
+    const info = (await owner.client.get('/api/integrations')).json();
+    expect(info.mercadopago.webhookConfigured).toBe(false);
+    const res = await new Client(app).post(`/api/public/stores/${owner.slug}/orders`, checkout({ paymentMethod: 'online', items: item(menu) }));
+    const paymentId = String(mpSeq);
+    // Sem assinatura cadastrada, nenhuma notificação é aceita.
+    expect((await signed(info.mercadopago.id, paymentId)).statusCode).toBe(401);
+    mpState.get(paymentId)!.status = 'approved';
+    // O cliente está na tela do PIX: a consulta ao provedor confirma o pagamento.
+    await new Client(app).get(`/api/public/orders/${res.json().token}`);
+    await app.jobs.drain();
+    const t = (await new Client(app).get(`/api/public/orders/${res.json().token}`)).json();
+    expect(t.status).toBe('new');
+    expect(t.paymentStatus).toBe('paid');
+    // Depois de cadastrar a assinatura, os webhooks passam a valer.
+    expect((await owner.client.put('/api/integrations/mercadopago/webhook-secret', { webhookSecret: WEBHOOK_SECRET })).statusCode).toBe(200);
+    expect((await signed(info.mercadopago.id, paymentId)).statusCode).toBe(200);
+    expect((await owner.client.get('/api/integrations')).json().mercadopago.webhookConfigured).toBe(true);
+  });
+
   it('cancela o pedido quando o PIX vence sem pagamento', async () => {
     const s = await onlineStore();
     const res = await new Client(app).post(`/api/public/stores/${s.slug}/orders`, checkout({ paymentMethod: 'online', items: item(s.menu) }));

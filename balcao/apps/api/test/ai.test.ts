@@ -2,7 +2,7 @@ import { createHmac } from 'node:crypto';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { sql } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
-import type Anthropic from '@anthropic-ai/sdk';
+import Anthropic from '@anthropic-ai/sdk';
 import { ALWAYS_OPEN, FakeHttp, createTestApp, seedMenu, signupOwner } from './helpers';
 import type { AiProvider, AiRequest } from '../src/services/ai-provider';
 
@@ -201,6 +201,24 @@ describe('assistente de IA no WhatsApp', () => {
     await inbound(s.phoneNumberId, '5513955554444', 'oi?');
     await drain();
     expect(ai.requests.length).toBe(count);
+  });
+
+  it('se a IA continuar fora do ar depois das novas tentativas, a conversa vai para a equipe', async () => {
+    const s = await aiStore();
+    const overloaded = () => {
+      throw new Anthropic.APIError(529, { type: 'error', error: { type: 'overloaded_error', message: 'Overloaded' } }, 'Overloaded', new Headers());
+    };
+    ai.script(overloaded, overloaded, overloaded);
+    await inbound(s.phoneNumberId, '5513944443333', 'Boa noite, tem açaí de 700 ml?');
+    await drain(); // 1ª tentativa
+    let conv = (await s.client.get('/api/inbox/conversations?filter=ai')).json().conversations.find((c: { contactId: string }) => c.contactId === '5513944443333');
+    expect(conv.mode).toBe('ai'); // ainda vai tentar de novo
+    await drain(); // 2ª
+    await drain(); // 3ª e última
+    expect(ai.pending).toBe(0);
+    conv = (await s.client.get('/api/inbox/conversations?filter=waiting')).json().conversations.find((c: { contactId: string }) => c.contactId === '5513944443333');
+    expect(conv.mode).toBe('human');
+    expect(conv.handoffReason).toContain('indisponível');
   });
 
   it('o chat de teste usa a IA com o cardápio atual mas nunca registra pedido', async () => {

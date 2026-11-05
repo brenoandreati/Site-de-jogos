@@ -6,9 +6,12 @@ import { post } from './api';
 export type RealtimeMessage =
   | { type: 'ready' | 'ping' }
   | { type: 'order.created'; orderId: string; branchId: string; number: number; status: string; channel: string }
-  | { type: 'order.updated'; orderId: string; branchId: string; number: number; status: string; change: string }
+  | { type: 'order.updated'; orderId: string; branchId: string; number: number; status: string; change: string; fromStatus?: string }
   | { type: 'catalog.updated' }
-  | { type: 'store.updated' };
+  | { type: 'store.updated' }
+  | { type: 'delivery.updated'; orderId: string; branchId: string }
+  | { type: 'conversation.updated'; conversationId: string; reason: 'message' | 'status' | 'handoff' | 'read' }
+  | { type: 'payment.updated'; orderId: string; status: string };
 
 export type RealtimeStatus = 'connecting' | 'online' | 'offline';
 

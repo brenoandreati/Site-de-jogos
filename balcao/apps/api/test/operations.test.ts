@@ -113,6 +113,8 @@ describe('entregas', () => {
 
     // O entregador só enxerga a própria entrega.
     const mine = (await courierUser.client.get('/api/delivery/board')).json();
+    // ...e não recebe os contatos dos outros entregadores.
+    expect(mine.couriers.map((c: { name: string }) => c.name)).toEqual(['Marcos']);
     expect(mine.deliveries.map((d: { orderId: string }) => d.orderId)).toEqual([a]);
     expect((await courierUser.client.post(`/api/delivery/orders/${b}/problem`, { reason: 'x y' })).statusCode).toBe(403);
     expect((await courierUser.client.post(`/api/delivery/orders/${a}/assign`, { courierId: null })).statusCode).toBe(403);

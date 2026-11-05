@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  AlertTriangle,
   Ban,
   Bike,
   Copy,
@@ -12,11 +13,14 @@ import {
   Pencil,
   Phone,
   Printer,
+  RotateCcw,
   Tag,
   Wallet,
 } from 'lucide-react';
+import Link from 'next/link';
 import {
   CANCEL_REASONS,
+  DELIVERY_STATUS_LABELS,
   FULFILLMENT_LABELS,
   NEXT_STATUS_ACTION_LABELS,
   OFFLINE_PAYMENT_METHODS,
@@ -24,6 +28,7 @@ import {
   ORDER_STATUS_LABELS,
   PAYMENT_METHOD_LABELS,
   PAYMENT_STATUS_LABELS,
+  PAYMENT_TRANSACTION_STATUS_LABELS,
   formatBRL,
   formatPhone,
   hasAccess,
@@ -107,6 +112,14 @@ function OrderDetailView({ id, onClose }: { id: string; onClose: () => void }) {
     },
     onError: (e) => toast(errorMessage(e), 'error'),
   });
+  const refund = useMutation({
+    mutationFn: (reason: string) => post<OrderDetail>(`/orders/${id}/refund`, { reason }),
+    onSuccess: (d) => {
+      refresh(d);
+      toast(d.payment?.status === 'refunded' ? 'Estorno feito pelo Mercado Pago.' : 'Estorno solicitado ao Mercado Pago.');
+    },
+    onError: (e) => toast(errorMessage(e), 'error'),
+  });
   const duplicate = useMutation({
     mutationFn: () => post<OrderDetail>(`/orders/${id}/duplicate`, { idempotencyKey: crypto.randomUUID() }),
     onSuccess: (d) => {
@@ -150,6 +163,19 @@ function OrderDetailView({ id, onClose }: { id: string; onClose: () => void }) {
     });
     if (r.confirmed) status.mutate({ id, status: 'canceled', reason: r.reason, expectedFrom: o.status });
   };
+
+  const askRefund = async () => {
+    const r = await confirm({
+      title: `Estornar ${formatBRL(o.payment!.amountCents)} do pedido #${o.number}?`,
+      description: 'O Mercado Pago devolve o valor ao cliente. Essa ação não pode ser desfeita.',
+      confirmLabel: 'Estornar',
+      tone: 'danger',
+      reason: { label: 'Motivo', required: true, suggestions: ['Pedido cancelado', 'Produto em falta', 'Pedido não entregue', 'Cobrança em duplicidade'] },
+    });
+    if (r.confirmed) refund.mutate(r.reason ?? '');
+  };
+  const awaitingPix = o.status === 'awaiting_confirmation' && o.paymentMethod === 'online';
+  const paidButCanceled = o.status === 'canceled' && o.payment?.status === 'approved';
 
   const notify = () => {
     if (!waUpdate) return;
@@ -198,7 +224,7 @@ function OrderDetailView({ id, onClose }: { id: string; onClose: () => void }) {
                       <MenuItem icon={<Pencil />} disabled={final || o.status === 'out_for_delivery'} onClick={() => { close(); setModal('items'); }}>
                         Editar itens
                       </MenuItem>
-                      <MenuItem icon={<CreditCard />} disabled={final || o.paymentStatus === 'paid'} onClick={() => { close(); setModal('payment'); }}>
+                      <MenuItem icon={<CreditCard />} disabled={final || o.paymentStatus === 'paid' || o.paymentMethod === 'online'} onClick={() => { close(); setModal('payment'); }}>
                         Alterar pagamento
                       </MenuItem>
                     </>
@@ -242,8 +268,8 @@ function OrderDetailView({ id, onClose }: { id: string; onClose: () => void }) {
               </Button>
             )}
             {isNew && canManage && (
-              <Button variant="secondary" onClick={() => void cancel(`Recusar pedido #${o.number}?`, 'Recusar pedido')}>
-                Recusar
+              <Button variant="secondary" onClick={() => void cancel(awaitingPix ? `Cancelar pedido #${o.number}?` : `Recusar pedido #${o.number}?`, awaitingPix ? 'Cancelar pedido e cobrança' : 'Recusar pedido')}>
+                {awaitingPix ? 'Cancelar' : 'Recusar'}
               </Button>
             )}
             {o.status === 'confirmed' && o.fulfillment !== 'delivery' && (
@@ -254,6 +280,23 @@ function OrderDetailView({ id, onClose }: { id: string; onClose: () => void }) {
             {waUpdate && (
               <Button variant="secondary" icon={<MessageCircle className="size-4" />} onClick={notify}>
                 Avisar no WhatsApp
+              </Button>
+            )}
+          </div>
+        )}
+        {awaitingPix && (
+          <p className="mt-3 rounded-md bg-info-soft px-3 py-2 text-[0.8125rem] text-info">
+            Aguardando o PIX do cliente{o.payment?.expiresAt ? ` até ${formatTime(o.payment.expiresAt)}` : ''}. O pedido entra na fila sozinho quando o Mercado Pago confirmar o pagamento.
+          </p>
+        )}
+        {paidButCanceled && (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-md bg-danger-soft px-3 py-2 text-[0.8125rem] text-danger">
+            <span className="flex items-center gap-1.5">
+              <AlertTriangle className="size-4" /> O cliente pagou pelo Mercado Pago, mas o pedido está cancelado.
+            </span>
+            {canManage && (
+              <Button size="sm" variant="secondary" loading={refund.isPending} onClick={() => void askRefund()}>
+                Estornar
               </Button>
             )}
           </div>
@@ -293,6 +336,19 @@ function OrderDetailView({ id, onClose }: { id: string; onClose: () => void }) {
                   Abrir no mapa
                 </a>
               </div>
+            </div>
+          )}
+          {o.delivery && (
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.8125rem]">
+              <Badge tone={o.delivery.status === 'problem' ? 'danger' : o.delivery.status === 'delivered' ? 'brand' : 'neutral'}>{DELIVERY_STATUS_LABELS[o.delivery.status]}</Badge>
+              <span className="text-ink-2">{o.delivery.courierName ? `Entregador: ${o.delivery.courierName}` : 'Sem entregador'}</span>
+              {o.delivery.zoneName && <span className="text-muted">Bairro: {o.delivery.zoneName}</span>}
+              {hasAccess(perms, 'delivery', 'view') && (
+                <Link href="/painel/entregas" className="text-brand hover:underline" onClick={onClose}>
+                  Ver entregas
+                </Link>
+              )}
+              {o.delivery.problemReason && <p className="w-full rounded bg-danger-soft px-2 py-1 text-xs text-danger">Problema: {o.delivery.problemReason}</p>}
             </div>
           )}
           {o.fulfillment === 'dine_in' && o.tableNumber && <p className="mt-2 text-sm">Mesa {o.tableNumber}</p>}
@@ -363,11 +419,24 @@ function OrderDetailView({ id, onClose }: { id: string; onClose: () => void }) {
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-md bg-canvas px-3 py-2.5">
             <div className="text-sm">
               <p className="flex items-center gap-1.5 text-ink">
-                <Wallet className="size-4 text-muted" /> {PAYMENT_METHOD_LABELS[o.paymentMethod]}
-                <Badge tone={o.paymentStatus === 'paid' ? 'brand' : o.paymentStatus === 'refunded' ? 'danger' : 'neutral'} className="ml-1">
-                  {PAYMENT_STATUS_LABELS[o.paymentStatus]}
-                </Badge>
+                <Wallet className="size-4 text-muted" /> {o.paymentMethod === 'online' ? 'PIX online (Mercado Pago)' : PAYMENT_METHOD_LABELS[o.paymentMethod]}
+                {o.payment ? (
+                  <Badge tone={o.payment.status === 'approved' ? 'brand' : o.payment.status === 'pending' ? 'warn' : o.payment.status === 'refunded' ? 'danger' : 'neutral'} className="ml-1">
+                    {PAYMENT_TRANSACTION_STATUS_LABELS[o.payment.status]}
+                  </Badge>
+                ) : (
+                  <Badge tone={o.paymentStatus === 'paid' ? 'brand' : o.paymentStatus === 'refunded' ? 'danger' : 'neutral'} className="ml-1">
+                    {PAYMENT_STATUS_LABELS[o.paymentStatus]}
+                  </Badge>
+                )}
               </p>
+              {o.payment && (
+                <p className="mt-0.5 text-xs text-muted">
+                  {o.payment.approvedAt ? `Confirmado pelo Mercado Pago em ${formatDateTime(o.payment.approvedAt)}` : o.payment.status === 'pending' && o.payment.expiresAt ? `Vence às ${formatTime(o.payment.expiresAt)}` : 'Situação consultada no Mercado Pago'}
+                  {o.payment.refundedCents > 0 && ` · estornado ${formatBRL(o.payment.refundedCents)}`}
+                  {o.payment.providerPaymentId && <span className="num"> · nº {o.payment.providerPaymentId}</span>}
+                </p>
+              )}
               {o.paymentMethod === 'cash' && o.changeForCents !== null && (
                 <p className="mt-0.5 text-xs text-muted">
                   Troco para {formatBRL(o.changeForCents)} · levar <span className="num">{formatBRL(o.changeForCents - o.totalCents)}</span>
@@ -377,6 +446,11 @@ function OrderDetailView({ id, onClose }: { id: string; onClose: () => void }) {
             {canEdit && o.status !== 'canceled' && o.paymentMethod !== 'online' && (
               <Button size="sm" variant="secondary" loading={paymentStatus.isPending} onClick={() => paymentStatus.mutate(o.paymentStatus === 'paid' ? 'pending' : 'paid')}>
                 {o.paymentStatus === 'paid' ? 'Desfazer recebimento' : 'Registrar recebimento'}
+              </Button>
+            )}
+            {canManage && o.payment?.status === 'approved' && !paidButCanceled && (
+              <Button size="sm" variant="secondary" icon={<RotateCcw className="size-4" />} loading={refund.isPending} onClick={() => void askRefund()}>
+                Estornar
               </Button>
             )}
           </div>
@@ -458,8 +532,21 @@ function describeEvent(e: OrderEvent): string {
       return `Pagamento alterado: ${String(d.from)} → ${String(d.to)}`;
     case 'payment_status_changed':
       return `Pagamento: ${String(d.from)} → ${String(d.to)}`;
-    case 'customer_notified':
-      return `Mensagem de “${ORDER_STATUS_LABELS[d.status as OrderStatus] ?? ''}” aberta no WhatsApp para envio`;
+    case 'customer_notified': {
+      const label = ORDER_STATUS_LABELS[d.status as OrderStatus] ?? '';
+      if (d.via !== 'whatsapp_api') return `Mensagem de “${label}” aberta no WhatsApp para envio`;
+      if (d.result === 'sent') return `Aviso de “${label}” enviado pelo WhatsApp`;
+      if (d.result === 'skipped') return `Aviso de “${label}” não enviado: ${String(d.reason ?? '')}`;
+      return `Falha ao enviar o aviso de “${label}”${d.error ? `: ${String(d.error)}` : ''}`;
+    }
+    case 'courier_assigned':
+      return d.courierName ? `Entrega atribuída a ${String(d.courierName)}` : 'Entregador removido da entrega';
+    case 'delivery_problem':
+      return `Problema na entrega: ${String(d.reason)}`;
+    case 'payment_updated': {
+      const to = PAYMENT_TRANSACTION_STATUS_LABELS[d.to as keyof typeof PAYMENT_TRANSACTION_STATUS_LABELS] ?? String(d.to);
+      return `Mercado Pago: pagamento ${to.toLowerCase()}${d.amountMatches === false ? ' (valor diferente do total do pedido)' : ''}`;
+    }
     case 'printed':
       return 'Comanda impressa';
     default:

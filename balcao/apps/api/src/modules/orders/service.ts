@@ -18,6 +18,7 @@ import type { Database, DbExecutor } from '../../db/client';
 import {
   branches,
   customerAddresses,
+  couriers,
   customers,
   deliveries,
   deliveryZones,
@@ -544,6 +545,7 @@ export async function changeOrderStatus(
       number: order.number,
       status: params.to,
       change: 'status',
+      fromStatus: order.status,
     });
     return updated!;
   });
@@ -809,14 +811,21 @@ export async function getOrderDetail(db: DbExecutor, tenantId: string, orderId: 
     .where(and(eq(payments.tenantId, tenantId), eq(payments.orderId, order.id)))
     .orderBy(desc(payments.createdAt))
     .limit(1);
-  const [delivery] = order.fulfillment === 'delivery' ? await db.select().from(deliveries).where(and(eq(deliveries.tenantId, tenantId), eq(deliveries.orderId, order.id))) : [];
+  const [delivery] =
+    order.fulfillment === 'delivery'
+      ? await db
+          .select({ status: deliveries.status, courierId: deliveries.courierId, zoneName: deliveries.zoneName, problemReason: deliveries.problemReason, dispatchedAt: deliveries.dispatchedAt, deliveredAt: deliveries.deliveredAt, courierName: couriers.name })
+          .from(deliveries)
+          .leftJoin(couriers, and(eq(couriers.id, deliveries.courierId), eq(couriers.tenantId, deliveries.tenantId)))
+          .where(and(eq(deliveries.tenantId, tenantId), eq(deliveries.orderId, order.id)))
+      : [];
 
   return {
     ...serializeOrder(order, items),
     payment: payment
       ? { provider: payment.provider, status: payment.status, amountCents: payment.amountCents, refundedCents: payment.refundedCents, expiresAt: payment.expiresAt, approvedAt: payment.approvedAt, providerPaymentId: payment.providerPaymentId }
       : null,
-    delivery: delivery ? { status: delivery.status, courierId: delivery.courierId, zoneName: delivery.zoneName, problemReason: delivery.problemReason } : null,
+    delivery: delivery ?? null,
     duplicatedFromOrderId: order.duplicatedFromOrderId,
     customer,
     events: events.map((e) => ({

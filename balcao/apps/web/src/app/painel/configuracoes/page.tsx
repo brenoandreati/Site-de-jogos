@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { Suspense, useEffect, useState, type ReactNode } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Copy, Plus, Trash2 } from 'lucide-react';
 import {
@@ -26,6 +27,7 @@ import {
   type PaymentMethod,
 } from '@balcao/shared';
 import { useAdmin } from '@/components/admin/admin-context';
+import { IntegrationsSection } from '@/components/settings/integrations';
 import { Button } from '@/components/ui/button';
 import { Checkbox, Field, Input, MoneyInput, PhoneInput, Select, Switch, Textarea } from '@/components/ui/field';
 import { ImageUpload } from '@/components/ui/image-upload';
@@ -43,14 +45,26 @@ const SECTIONS = [
   { key: 'hours', label: 'Horário' },
   { key: 'orders', label: 'Pedidos, entrega e pagamento' },
   { key: 'messages', label: 'Mensagens ao cliente' },
+  { key: 'integrations', label: 'Integrações' },
 ] as const;
 type SectionKey = (typeof SECTIONS)[number]['key'];
+/** Endereço amigável de cada seção (?secao=...). */
+const SECTION_PARAM: Partial<Record<string, SectionKey>> = { integracoes: 'integrations', mensagens: 'messages', horario: 'hours', pedidos: 'orders' };
 
 export default function SettingsPage() {
+  return (
+    <Suspense>
+      <SettingsContent />
+    </Suspense>
+  );
+}
+
+function SettingsContent() {
   const settings = useSettings();
   const { me } = useAdmin();
   const perms = me.active!.permissions;
-  const [section, setSection] = useState<SectionKey>('store');
+  const initial = SECTION_PARAM[useSearchParams().get('secao') ?? ''] ?? 'store';
+  const [section, setSection] = useState<SectionKey>(initial);
 
   if (settings.isLoading) return <Skeleton className="h-96" />;
   if (settings.error || !settings.data) return <ErrorNotice message={settings.error?.message ?? 'Erro'} onRetry={() => void settings.refetch()} />;
@@ -85,6 +99,7 @@ export default function SettingsPage() {
           {section === 'hours' && <HoursSection data={settings.data} disabled={!canEdit} />}
           {section === 'orders' && <OrdersSection data={settings.data} disabled={!canEdit} />}
           {section === 'messages' && <MessagesSection data={settings.data} disabled={!canEdit} />}
+          {section === 'integrations' && <IntegrationsSection canEdit={canEdit} canManage={canManage} />}
         </div>
       </div>
     </div>
@@ -531,7 +546,7 @@ function MessagesSection({ data, disabled }: { data: Settings; disabled: boolean
       <fieldset disabled={disabled} className="min-w-0 space-y-6">
         <Panel
           title="Mensagens de atualização do pedido"
-          description="Usadas no botão “Avisar no WhatsApp” do pedido: o WhatsApp abre com o texto pronto e você só confirma o envio. Variáveis: {cliente} {pedido} {loja} {total} {link} {previsao}."
+          description="Usadas nos avisos automáticos pelo WhatsApp oficial (quando conectado em Integrações) e no botão “Avisar no WhatsApp” do pedido. Variáveis: {cliente} {pedido} {loja} {total} {link} {previsao}."
         >
           <div className="space-y-4">
             {MESSAGE_TEMPLATE_KEYS.map((k) => (

@@ -16,14 +16,30 @@ import { PermanentJobError } from '../services/jobs';
 import { loadAiSettings, runAgent } from './ai/agent';
 import { aiEnabledFor, findOrCreateConversation, handoffToHuman, hasNewerInbound, recentMessages, sendOutbound, windowOpen } from './inbox/service';
 import { findIntegration, type WhatsappConfig } from './integrations/service';
-import { expirePayment } from './payments/service';
+import { expirePayment, syncPayment } from './payments/service';
 
 export function registerJobHandlers(app: FastifyInstance) {
   app.jobs.register('notify_order_status', (payload) => notifyOrderStatus(app, payload as never));
-  app.jobs.register('ai_reply', (payload) => aiReply(app, payload as never));
+  app.jobs.register('ai_reply', async (payload, { job }) => {
+    const p = payload as { tenantId: string; conversationId: string; messageId: string };
+    try {
+      await aiReply(app, p);
+    } catch (err) {
+      // Provedor fora do ar em todas as tentativas: o cliente não pode ficar sem resposta.
+      if (!(err instanceof PermanentJobError) && job.attempts >= job.maxAttempts) {
+        await handoffToHuman(app, p.tenantId, p.conversationId, 'A assistente virtual está indisponível no momento');
+      }
+      throw err;
+    }
+  });
   app.jobs.register('payment_expiry', async (payload) => {
     const { tenantId, paymentId } = payload as { tenantId: string; paymentId: string };
     await expirePayment(app, tenantId, paymentId);
+  });
+  // Consulta direta ao provedor enquanto o cliente acompanha o PIX (não depende só do webhook).
+  app.jobs.register('payment_sync', async (payload) => {
+    const { tenantId, providerPaymentId } = payload as { tenantId: string; providerPaymentId: string };
+    await syncPayment(app, tenantId, providerPaymentId);
   });
 }
 

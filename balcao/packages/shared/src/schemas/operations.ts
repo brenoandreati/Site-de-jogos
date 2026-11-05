@@ -146,7 +146,12 @@ export const aiTestSchema = z.object({
 
 export const mercadoPagoConnectSchema = z.object({
   accessToken: z.string().trim().regex(/^(APP_USR|TEST)-[\w-]{20,}$/, 'Access token inválido (começa com APP_USR- ou TEST-)'),
-  webhookSecret: z.string().trim().min(16, 'Informe a assinatura secreta do webhook').max(200),
+  /** Pode vir depois: o Mercado Pago só gera a assinatura secreta quando a URL do webhook é cadastrada. */
+  webhookSecret: z.string().trim().min(16, 'A assinatura secreta tem pelo menos 16 caracteres').max(200).nullish().transform((v) => v || null),
+});
+
+export const mercadoPagoWebhookSecretSchema = z.object({
+  webhookSecret: z.string().trim().min(16, 'A assinatura secreta tem pelo menos 16 caracteres').max(200),
 });
 
 export const refundSchema = z.object({

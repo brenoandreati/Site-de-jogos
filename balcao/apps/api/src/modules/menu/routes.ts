@@ -143,6 +143,11 @@ export async function publicMenuRoutes(app: FastifyInstance) {
     const [tenant] = await db.select().from(tenants).where(eq(tenants.id, order.tenantId));
     const [branch] = await db.select().from(branches).where(eq(branches.id, order.branchId));
     const items = (await loadItems(db, order.tenantId, [order.id])).get(order.id) ?? [];
+    const payment = order.paymentMethod === 'online' ? await latestPayment(app, order.tenantId, order.id) : null;
+    if (payment?.status === 'pending' && order.status === 'awaiting_confirmation') {
+      // Cliente esperando o PIX: confere com o Mercado Pago no máximo a cada 10 s por pagamento.
+      await app.jobs.enqueue(db, 'payment_sync', { tenantId: order.tenantId, providerPaymentId: payment.providerPaymentId }, { dedupeKey: `payment-sync:${payment.id}:${Math.floor(Date.now() / 10_000)}`, maxAttempts: 1 });
+    }
     const timeline = await db
       .select({ toStatus: orderEvents.toStatus, createdAt: orderEvents.createdAt })
       .from(orderEvents)
@@ -177,7 +182,7 @@ export async function publicMenuRoutes(app: FastifyInstance) {
         modifiers: i.modifiers.map((m) => ({ name: m.name, quantity: m.quantity, groupName: m.groupName })),
       })),
       timeline: timeline.map((t) => ({ status: t.toStatus, at: t.createdAt })),
-      payment: order.paymentMethod === 'online' ? publicPayment(await latestPayment(app, order.tenantId, order.id)) : null,
+      payment: order.paymentMethod === 'online' ? publicPayment(payment) : null,
       store: {
         name: tenant?.tradeName ?? '',
         slug: tenant?.slug ?? '',

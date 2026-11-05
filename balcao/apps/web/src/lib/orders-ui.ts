@@ -11,7 +11,7 @@ import { formatTime, minutesSince } from './format';
 
 export const STATUS_TONE: Record<OrderStatus, 'brand' | 'info' | 'neutral' | 'warn' | 'danger' | 'outline'> = {
   new: 'brand',
-  awaiting_confirmation: 'brand',
+  awaiting_confirmation: 'info',
   confirmed: 'info',
   preparing: 'neutral',
   ready: 'brand',
@@ -38,7 +38,9 @@ export function targetMinutes(o: Pick<Order, 'prepTimeMinutes' | 'deliveryTimeMi
 export function lateness(o: Order, now = Date.now()): 'ok' | 'soon' | 'late' {
   if (o.status === 'completed' || o.status === 'canceled') return 'ok';
   const elapsed = minutesSince(o.createdAt, now);
-  if (o.status === 'new' || o.status === 'awaiting_confirmation') return elapsed > 5 ? 'late' : elapsed > 3 ? 'soon' : 'ok';
+  // Aguardando o PIX do cliente não depende da loja: não conta como atraso.
+  if (o.status === 'awaiting_confirmation') return 'ok';
+  if (o.status === 'new') return elapsed > 5 ? 'late' : elapsed > 3 ? 'soon' : 'ok';
   const target = targetMinutes(o);
   if (elapsed > target) return 'late';
   if (elapsed > target * 0.75) return 'soon';

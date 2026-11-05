@@ -237,3 +237,11 @@ export const WHATSAPP_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export const PAYMENT_TRANSACTION_STATUSES = ['pending', 'approved', 'rejected', 'cancelled', 'refunded', 'expired'] as const;
 export type PaymentTransactionStatus = (typeof PAYMENT_TRANSACTION_STATUSES)[number];
+export const PAYMENT_TRANSACTION_STATUS_LABELS: Record<PaymentTransactionStatus, string> = {
+  pending: 'Aguardando pagamento',
+  approved: 'Aprovado',
+  rejected: 'Recusado',
+  cancelled: 'Cancelado',
+  refunded: 'Estornado',
+  expired: 'Vencido',
+};

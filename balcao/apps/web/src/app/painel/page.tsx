@@ -356,7 +356,8 @@ function Tile({ label, value, sub, current, previous, upIsBad }: { label: string
 
 function LiveStrip({ live }: { live: Dashboard['live'] }) {
   const items = [
-    { label: 'Aguardando confirmação', value: (live.new ?? 0) + (live.awaiting_confirmation ?? 0), attention: true },
+    { label: 'Aguardando confirmação', value: live.new ?? 0, attention: true },
+    ...(live.awaiting_confirmation ? [{ label: 'Aguardando PIX', value: live.awaiting_confirmation }] : []),
     { label: 'Em produção', value: (live.confirmed ?? 0) + (live.preparing ?? 0) },
     { label: 'Prontos', value: live.ready ?? 0 },
     { label: 'Em entrega', value: live.out_for_delivery ?? 0 },

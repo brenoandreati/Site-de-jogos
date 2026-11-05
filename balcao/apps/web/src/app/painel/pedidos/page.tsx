@@ -91,7 +91,7 @@ function Board({ canEdit }: { canEdit: boolean }) {
   }, [board.data]);
 
   // Título da aba mostra quantos pedidos aguardam confirmação.
-  const pending = board.data?.orders.filter((o) => o.status === 'new' || o.status === 'awaiting_confirmation').length ?? 0;
+  const pending = board.data?.orders.filter((o) => o.status === 'new').length ?? 0;
   useEffect(() => {
     const base = 'Pedidos · Balcão';
     document.title = pending ? `(${pending}) ${base}` : base;

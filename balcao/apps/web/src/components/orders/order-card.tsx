@@ -92,8 +92,9 @@ export function OrderTicket({
 
         <div className="mt-3 flex items-baseline justify-between text-xs text-muted">
           <span>
-            {PAYMENT_METHOD_LABELS[order.paymentMethod]}
+            {order.paymentMethod === 'online' ? 'PIX online' : PAYMENT_METHOD_LABELS[order.paymentMethod]}
             {order.paymentStatus === 'paid' && <span className="ml-1 text-brand">· pago</span>}
+            {order.status === 'awaiting_confirmation' && <span className="ml-1 text-info">· aguardando o cliente pagar</span>}
           </span>
           <span className="num text-[0.8125rem] font-medium text-ink">{formatBRL(order.totalCents)}</span>
         </div>

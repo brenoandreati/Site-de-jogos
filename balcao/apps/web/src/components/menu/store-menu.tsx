@@ -8,7 +8,7 @@ import { formatBRL, type ItemSelection } from '@balcao/shared';
 import { ProductConfigurator, useConfigurator, type ConfigurableProduct } from '@/components/catalog/product-configurator';
 import { Modal } from '@/components/ui/modal';
 import { get } from '@/lib/api';
-import { deliveryFeeFor, lastOrder, useCart, type CartLineView } from '@/lib/cart';
+import { deliveryFeeHint, lastOrder, useCart, type CartLineView } from '@/lib/cart';
 import { cx } from '@/lib/format';
 import type { PublicProduct, PublicStore } from '@/lib/types';
 import { StoreHeader } from './store-header';
@@ -305,7 +305,6 @@ function CartPanel({
   onClose?: () => void;
   onEdit: (line: CartLineView) => void;
 }) {
-  const fee = store.acceptsDelivery ? deliveryFeeFor(store, cart.subtotalCents) : 0;
   const belowMin = store.acceptsDelivery && !store.acceptsPickup && !store.acceptsDineIn && cart.subtotalCents < store.minOrderCents;
   return (
     <div className="flex max-h-[inherit] flex-col">
@@ -370,7 +369,7 @@ function CartPanel({
             {store.acceptsDelivery && (
               <div className="flex justify-between text-muted">
                 <span>Entrega (se escolher)</span>
-                <span className="num">{fee ? formatBRL(fee) : 'grátis'}</span>
+                <span className="num">{deliveryFeeHint(store, cart.subtotalCents)}</span>
               </div>
             )}
             {belowMin && <p className="text-xs text-warn">Pedido mínimo de {formatBRL(store.minOrderCents)}.</p>}

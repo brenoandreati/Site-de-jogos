@@ -13,7 +13,46 @@ export const keys = {
   catalog: ['catalog'] as const,
   dashboard: (params: string) => ['dashboard', params] as const,
   team: ['team'] as const,
+  inbox: (filter: string) => ['inbox', 'list', filter] as const,
+  conversation: (id: string) => ['inbox', 'conversation', id] as const,
+  kitchen: ['kitchen'] as const,
+  delivery: ['delivery', 'board'] as const,
+  zones: ['delivery', 'zones'] as const,
+  integrations: ['integrations'] as const,
+  ai: ['ai', 'settings'] as const,
 };
+
+export interface InboxListResponse {
+  conversations: {
+    id: string;
+    contactId: string;
+    contactName: string | null;
+    customerName: string | null;
+    customerPhone: string | null;
+    status: 'open' | 'waiting' | 'closed';
+    mode: 'ai' | 'human';
+    unreadCount: number;
+    lastMessageAt: string | null;
+    lastInboundAt: string | null;
+    lastMessagePreview: string | null;
+    handoffReason: string | null;
+    assignedUserId: string | null;
+    assignedUserName: string | null;
+    windowOpen: boolean;
+  }[];
+  counts: { unread: number; waiting: number; ai: number };
+  whatsapp: { status: string; displayPhoneNumber: string | null; lastError: string | null } | null;
+  aiEnabled: boolean;
+}
+
+export function useInboxCounts(enabled = true) {
+  return useQuery({
+    queryKey: keys.inbox('all'),
+    queryFn: ({ signal }) => get<InboxListResponse>('/inbox/conversations?filter=all', signal),
+    enabled,
+    staleTime: 10_000,
+  });
+}
 
 export function useBoard(options: { enabled?: boolean; poll?: boolean } = {}) {
   return useQuery({

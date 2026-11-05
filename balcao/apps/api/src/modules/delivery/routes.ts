@@ -103,7 +103,8 @@ export async function deliveryRoutes(app: FastifyInstance) {
         deliveredAt: r.delivery.deliveredAt,
         deliveryTimeMinutes: r.order.deliveryTimeMinutes,
       })),
-      couriers: list.map((c) => ({ id: c.id, name: c.name, phone: c.phone, status: c.status, isActive: c.isActive, userId: c.userId })),
+      // O entregador só enxerga o próprio cadastro, não os contatos dos colegas.
+      couriers: (mine ? list.filter((c) => c.id === mine.id) : list).map((c) => ({ id: c.id, name: c.name, phone: c.phone, status: c.status, isActive: c.isActive, userId: c.userId })),
       courierProfile: mine ? { id: mine.id, name: mine.name } : null,
     };
   });

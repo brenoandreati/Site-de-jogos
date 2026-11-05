@@ -113,7 +113,7 @@ export async function webhookRoutes(app: FastifyInstance) {
     let valid = false;
     if (integration && dataId) {
       const { secrets } = mercadoPagoClient(app, integration);
-      valid = verifyMercadoPagoSignature(secrets.webhookSecret, request.headers['x-signature'] as string | undefined, request.headers['x-request-id'] as string | undefined, dataId);
+      valid = !!secrets.webhookSecret && verifyMercadoPagoSignature(secrets.webhookSecret, request.headers['x-signature'] as string | undefined, request.headers['x-request-id'] as string | undefined, dataId);
     }
     const [event] = await app.db
       .insert(webhookEvents)

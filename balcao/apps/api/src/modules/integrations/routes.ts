@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { and, eq } from 'drizzle-orm';
-import { mercadoPagoConnectSchema, whatsappConnectSchema, whatsappSettingsSchema } from '@balcao/shared';
+import { mercadoPagoConnectSchema, mercadoPagoWebhookSecretSchema, whatsappConnectSchema, whatsappSettingsSchema } from '@balcao/shared';
 import { webhookBaseUrl } from '../../config';
 import { integrations } from '../../db/schema';
 import { audit } from '../../lib/audit';
@@ -10,7 +10,7 @@ import { MercadoPagoClient } from '../../integrations/mercadopago';
 import { ProviderError } from '../../integrations/http';
 import { WhatsAppClient } from '../../integrations/whatsapp';
 import { requireTenant, tenantCtx } from '../../plugins/context';
-import { findIntegration, markIntegrationError, publicIntegration, whatsappClient, type WhatsappConfig } from './service';
+import { findIntegration, markIntegrationError, mercadoPagoClient, publicIntegration, whatsappClient, type WhatsappConfig } from './service';
 
 export async function integrationRoutes(app: FastifyInstance) {
   const db = app.db;
@@ -22,7 +22,7 @@ export async function integrationRoutes(app: FastifyInstance) {
     const base = webhookBaseUrl(app.config);
     return {
       whatsapp: publicIntegration(wa),
-      mercadopago: publicIntegration(mp),
+      mercadopago: mp ? { ...publicIntegration(mp)!, webhookConfigured: !!mercadoPagoClient(app, mp).secrets.webhookSecret } : null,
       platform: {
         whatsappAppConfigured: !!(app.config.WHATSAPP_APP_SECRET && app.config.WHATSAPP_VERIFY_TOKEN),
         whatsappWebhookUrl: `${base}/api/webhooks/whatsapp`,
@@ -166,6 +166,22 @@ export async function integrationRoutes(app: FastifyInstance) {
       });
     });
     return publicIntegration(await findIntegration(db, ctx.tenantId, 'mercadopago'));
+  });
+
+  app.put('/mercadopago/webhook-secret', { preHandler: requireTenant('settings', 'manage') }, async (request) => {
+    const ctx = tenantCtx(request);
+    const { webhookSecret } = parse(mercadoPagoWebhookSecretSchema, request.body);
+    const row = await findIntegration(db, ctx.tenantId, 'mercadopago');
+    if (!row) throw notFound('Mercado Pago não conectado.');
+    const { secrets } = mercadoPagoClient(app, row);
+    await db.transaction(async (tx) => {
+      await tx
+        .update(integrations)
+        .set({ secrets: app.secrets.seal({ ...secrets, webhookSecret }) })
+        .where(and(eq(integrations.id, row.id), eq(integrations.tenantId, ctx.tenantId)));
+      await audit(tx, request, { action: 'integration.mercadopago_webhook', entityType: 'integration', entityId: row.id, summary: 'Assinatura do webhook do Mercado Pago atualizada' });
+    });
+    return { ok: true };
   });
 
   app.delete('/mercadopago', { preHandler: requireTenant('settings', 'manage') }, async (request) => {

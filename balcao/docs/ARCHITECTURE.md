@@ -1,7 +1,7 @@
 # Arquitetura do Balcão
 
-Este documento descreve como a plataforma está organizada, as decisões tomadas na Fase 1 e o que
-cada fase seguinte precisa construir. A regra que guia tudo: **o sistema não pode fingir**. Nada é
+Este documento descreve como a plataforma está organizada, as decisões tomadas nas fases 1 e 2 e
+o que cada fase seguinte precisa construir. A regra que guia tudo: **o sistema não pode fingir**. Nada é
 dado como pago, enviado ou confirmado sem que tenha realmente acontecido, e nenhuma tela existe só
 para enfeitar.
 
@@ -25,10 +25,17 @@ para enfeitar.
                 ┌───────────────▼──────────────────────────────┴───────────┐
                 │  apps/api · Fastify 5 (Node 22)                           │
                 │  módulos: auth · settings · catalog · menu (público) ·    │
-                │  orders · dashboard · team · uploads · realtime           │
+                │  orders · dashboard · team · uploads · realtime ·         │
+                │  kitchen · delivery · inbox · ai · integrations ·         │
+                │  payments · webhooks                                      │
                 │  plugins: sessão/tenant · CSRF · rate limit · auditoria   │
-                └───────┬───────────────────────────────┬──────────────────┘
-                        │ SQL (Drizzle ORM)             │ LISTEN/NOTIFY
+                │  fila de tarefas (jobs) · cofre de credenciais            │
+                └───┬───────────────────────────┬───────────────┬──────────┘
+                    │ HTTPS                     │               │
+       Meta Graph API · Mercado Pago ·          │               │
+       Anthropic (e os webhooks de volta)       │               │
+                        ┌───────────────────────┘               │
+                        │ SQL (Drizzle ORM)             LISTEN/NOTIFY
                 ┌───────▼───────────────────────────────▼──────────────────┐
                 │  PostgreSQL 16                                            │
                 └──────────────────────────────────────────────────────────┘
@@ -85,13 +92,13 @@ está pronto para isso (todas as tabelas têm `tenant_id`).
 | Menu (público) | Cardápio digital, sacola, finalização, acompanhamento | 1 | ✅ |
 | Orders | Recebimento, quadro, status, edição, histórico, impressão | 1 | ✅ |
 | Dashboard | Indicadores, gráficos, atividade recente | 1 | ✅ |
-| Notifications | Aviso sonoro e lista de pedidos novos no painel | 1 | ✅ parcial (central completa na Fase 2) |
-| WhatsApp | Integração oficial Cloud API, envio de atualizações | 2 | ⏳ |
-| AI Assistant | Atendente virtual com acesso controlado ao cardápio | 2 | ⏳ |
-| Inbox | Central de conversas (lista, chat, ficha do cliente) | 2 | ⏳ |
-| Kitchen | Painel de produção para telas grandes/tablets | 2 | ⏳ |
-| Delivery | Bairros e taxas, entregadores, painel de entregas | 2 | ⏳ |
-| Payments | Gateways (Mercado Pago, Stripe…), PIX dinâmico, webhooks | 2 | ⏳ |
+| Notifications | Aviso sonoro, lista de pedidos novos, aviso de cliente aguardando atendimento | 1–2 | ✅ |
+| WhatsApp | Cloud API oficial: conexão por loja, webhooks, envio, avisos automáticos de pedido | 2 | ✅ |
+| AI Assistant | Atendente virtual com ferramentas sobre o cardápio e os pedidos | 2 | ✅ |
+| Inbox | Central de conversas (lista, chat, notas, transferências, ficha do cliente) | 2 | ✅ |
+| Kitchen | Painel de produção para telas grandes/tablets | 2 | ✅ |
+| Delivery | Bairros e taxas, entregadores, painel de entregas | 2 | ✅ |
+| Payments | PIX online pelo Mercado Pago, webhooks, vencimento, estorno | 2 | ✅ (outros gateways: mesma interface) |
 | Customers / CRM | Ficha única, segmentos, etiquetas, LGPD (exportar/excluir) | 3 | ⏳ |
 | Marketing | Campanhas com opt-in, automações | 3 | ⏳ |
 | Coupons / Promotions | Cupons e promoções | 3 | ⏳ |
@@ -112,7 +119,7 @@ permissão) e, quando há regra relevante, `service.ts` (regra de negócio e tra
 
 ---
 
-## 4. Modelo de dados (Fase 1)
+## 4. Modelo de dados
 
 Tabelas criadas na migração `apps/api/drizzle/0000_init.sql`:
 
@@ -133,11 +140,29 @@ Tabelas criadas na migração `apps/api/drizzle/0000_init.sql`:
 | `audit_logs` | quem fez, o quê, quando, em qual empresa, de qual IP |
 | `uploads` | imagens enviadas por empresa (base para cota de armazenamento por plano) |
 
-Entidades listadas no escopo e previstas para as próximas fases: `product_variations` (na Fase 1
-tamanhos são grupos de adicionais de escolha única), `payments`, `coupons`, `campaigns`,
-`loyalty_accounts`, `loyalty_transactions`, `inventory_items`, `inventory_movements`, `recipes`,
-`suppliers`, `expenses`, `cash_registers`, `cash_movements`, `delivery_zones`, `couriers`,
-`conversations`, `messages`, `ai_settings`, `notifications`, `subscriptions`/`plans`.
+Tabelas da Fase 2 (`apps/api/drizzle/0001_fase2.sql`):
+
+| Tabela | Observações |
+|---|---|
+| `delivery_zones` | bairro/região por unidade, nome único (sem diferenciar maiúsculas), taxa, mínimo e tempo próprios |
+| `couriers` | entregadores da unidade, situação (disponível, em entrega, fora), vínculo opcional a um usuário |
+| `deliveries` | uma por pedido de entrega: bairro, entregador, situação, horários de atribuição/saída/entrega, ocorrência |
+| `integrations` | uma por provedor e empresa; `config` visível ao painel e `secrets` cifrados (AES-256-GCM); número da WhatsApp único entre empresas |
+| `conversations` | contato × canal por empresa, modo IA/equipe, responsável, não lidas, última mensagem do cliente (janela de 24 h), rascunho do pedido da IA |
+| `messages` | entrada, saída e notas internas; id da Meta único (reenvios não duplicam); situação enviada/entregue/lida/falhou com o erro |
+| `quick_replies` | respostas rápidas da equipe |
+| `ai_settings` · `ai_usage` | configuração da assistente por empresa; consumo por resposta (tokens, cache, modelo) |
+| `payments` | cobrança no provedor por pedido: valor, situação, QR Code, vencimento, aprovação, estorno, resposta bruta |
+| `webhook_events` | todo webhook recebido, com assinatura válida ou não, e quando foi processado |
+| `jobs` | fila de tarefas no próprio PostgreSQL (ver seção 8) |
+
+`customers` ganhou `tags`, e `order_events` ganhou `courier_assigned`, `delivery_problem` e
+`payment_updated`.
+
+Previstas para as próximas fases: `product_variations` (hoje tamanhos são grupos de adicionais de
+escolha única), `coupons`, `campaigns`, `loyalty_accounts`, `loyalty_transactions`,
+`inventory_items`, `inventory_movements`, `recipes`, `suppliers`, `expenses`, `cash_registers`,
+`cash_movements`, `notifications`, `subscriptions`/`plans`.
 Todas seguem o mesmo padrão: `tenant_id`, chave composta e migração nova (nunca editar uma
 migração já aplicada).
 
@@ -167,16 +192,23 @@ tabela `orders` tem `CHECK (total = subtotal − desconto + taxa)` e `order_item
    (`UPDATE … WHERE estoque >= quantidade`, sem venda acima do disponível), número sequencial da
    unidade, pedido, itens, histórico e evento em tempo real.
 5. Status inicial: `new` (aguarda a loja) ou `confirmed` se a confirmação automática estiver ligada.
-   Pedidos lançados pela equipe já entram confirmados.
+   Pedidos lançados pela equipe já entram confirmados. Pedidos com PIX online começam em
+   `awaiting_confirmation` (aguardando pagamento) e não aparecem para a cozinha nem para as entregas.
+6. Entrega: se a unidade tem bairros cadastrados, o bairro é obrigatório no cardápio e define taxa,
+   pedido mínimo e tempo; um bairro fora da lista é recusado. A linha de `deliveries` nasce junto.
+7. Ainda na transação, a tarefa do aviso automático ao cliente entra na fila.
 
 ### Status
 
 ```
-new ─┬─> awaiting_confirmation ─> confirmed
-     └─> confirmed ─> preparing ─> ready ─┬─> out_for_delivery ─> completed   (entrega)
-                                          └─> completed                       (retirada/local)
-qualquer etapa ativa ─> canceled (com motivo; devolve o estoque reservado)
+awaiting_confirmation ─(PIX aprovado pelo provedor)─> new ou confirmed      (PIX online)
+new ─> confirmed ─> preparing ─> ready ─┬─> out_for_delivery ─> completed   (entrega)
+                                        └─> completed                       (retirada/local)
+qualquer etapa ativa ─> canceled (com motivo; devolve o estoque reservado e cancela PIX pendente)
 ```
+
+Só o sistema tira um pedido de `awaiting_confirmation` (pagamento aprovado, recusado ou vencido);
+a equipe pode cancelá-lo.
 
 - Transições validadas no servidor (`canTransition`). Pedido de entrega só conclui depois de sair.
 - Linha travada com `SELECT … FOR UPDATE`; o painel envia o status que estava vendo
@@ -193,19 +225,37 @@ qualquer etapa ativa ─> canceled (com motivo; devolve o estoque reservado)
   API confere sessão e vínculo antes de aceitar e filtra eventos de pedido por permissão.
 - Se a conexão cair, o painel reconecta com espera crescente e passa a consultar a cada 20 s.
 
-### Comunicação com o cliente na Fase 1
+### Comunicação com o cliente
 
-Sem integração com WhatsApp ainda, o botão **Avisar no WhatsApp** abre o WhatsApp da equipe com a
-mensagem personalizada pronta (link `wa.me`). O histórico registra “mensagem aberta para envio”,
-não “mensagem enviada”, porque o sistema não tem como saber se foi enviada. Na Fase 2, os mesmos
-modelos de mensagem serão enviados pela Cloud API, com status de entrega vindo do webhook.
+- **Com o WhatsApp oficial conectado**, cada mudança de etapa habilitada em Integrações gera a
+  tarefa `notify_order_status`. Ao rodar, ela confere se o pedido ainda está naquela etapa (avisos
+  atrasados não saem), monta o texto com os modelos de mensagem da loja e envia pela Cloud API.
+  Dentro da janela de 24 h vai como texto; fora dela, só com um **modelo aprovado na Meta**
+  configurado para a etapa. Sem modelo, nada é enviado e o histórico do pedido registra “não
+  enviado” com o motivo. Erros da Meta também ficam no histórico.
+- **Sem integração**, o botão **Avisar no WhatsApp** abre o WhatsApp da equipe com a mensagem pronta
+  (link `wa.me`) e o histórico registra “mensagem aberta para envio”, não “enviada”.
+- A situação de cada mensagem (enviada, entregue, lida, falhou) vem só do webhook de status da Meta
+  e nunca regride (um “entregue” atrasado não desfaz um “lida”).
 
-### Pagamento na Fase 1
+### Pagamento
 
-Formas presenciais (PIX, dinheiro, cartões, vale-refeição). A chave PIX da loja aparece para o
-cliente; **a equipe só marca como recebido depois de conferir no banco**. A forma `online` existe
-no modelo, mas não pode ser escolhida até haver um provedor integrado, e a API recusa marcar como
-pago um pagamento online manualmente: isso só poderá vir do webhook do provedor.
+- Formas presenciais (PIX com chave, dinheiro, cartões, vale-refeição): a chave PIX da loja aparece
+  para o cliente e **a equipe só marca como recebido depois de conferir no banco**.
+- **PIX online (Mercado Pago)**: ao criar o pedido, a API cria a cobrança com
+  `X-Idempotency-Key = pix-{pedido}` (reenvios não geram outra) e mostra QR Code e copia e cola no
+  acompanhamento, com 30 minutos de prazo.
+- `syncPayment` é **o único caminho** para um pagamento online ficar pago: consulta o pagamento
+  direto no Mercado Pago e confere a referência do pedido e o valor. É chamado pelo webhook (com
+  assinatura `x-signature` conferida) e pela tarefa `payment_sync`, que roda no máximo a cada 10 s
+  enquanto o cliente está na tela do PIX (funciona mesmo sem webhook configurado). O corpo do
+  webhook nunca é usado como prova. Comprovante enviado pelo cliente não muda nada.
+- Aprovado com o valor certo: o pedido vai para `new` (ou `confirmed`, com confirmação automática).
+  Recusado, cancelado ou vencido (tarefa `payment_expiry`): a cobrança é cancelada no provedor e o
+  pedido é cancelado com o motivo. Se a loja cancela o pedido antes, a cobrança pendente é
+  cancelada na hora; se o cliente pagou mesmo assim, o painel mostra o aviso para estornar.
+- A equipe não consegue marcar pagamento online como pago ou pendente manualmente (a API recusa).
+  O estorno é pedido ao Mercado Pago, e o resultado oficial vem da consulta.
 
 ---
 
@@ -238,42 +288,85 @@ pago um pagamento online manualmente: isso só poderá vir do webhook do provedo
 | Dados públicos | o acompanhamento do pedido usa token aleatório e não expõe notas internas nem nomes da equipe (há teste) |
 | Auditoria | `audit_logs` com autor, ação, resumo, mudanças, IP e navegador; tela “Registro de atividades” |
 | LGPD | consentimento de marketing explícito e datado no pedido; dados mínimos; política de privacidade publicada; exportação/correção/exclusão de dados do cliente entram com o CRM (Fase 3) |
+| Credenciais de integração | tokens da Meta e do Mercado Pago cifrados com AES-256-GCM (`ENCRYPTION_KEY`), conferidos no provedor antes de salvar, nunca devolvidos ao painel; só o fim do token aparece no registro de atividades |
+| Webhooks | sem sessão nem CSRF, autenticados pela assinatura do provedor sobre o corpo bruto (`X-Hub-Signature-256` da Meta, `x-signature` do Mercado Pago); todo evento é gravado com o resultado da verificação |
+| Dados de pagamento | a plataforma não recebe dados de cartão nem do banco do cliente; guarda só a referência e a situação da cobrança |
+| Entregador | quem tem a função Entregador vê só as próprias entregas e o próprio cadastro |
 
 ---
 
-## 8. Integrações (camada preparada)
+## 8. Integrações
 
-Padrão para cada integração das próximas fases:
+Padrão seguido por todas:
 
-- Configuração por empresa (credenciais criptografadas em repouso, nunca devolvidas ao front).
-- Cliente HTTP isolado em `apps/api/src/integrations/<provedor>/` com tempo limite e novas tentativas.
-- **Webhooks** em `/api/webhooks/<provedor>` com verificação de assinatura, gravação do evento bruto
-  e processamento idempotente (mesma ideia da chave de pedido).
-- Trabalhos em fila (ex.: `pg-boss` sobre o próprio PostgreSQL, ou Redis/BullMQ em escala).
-- Estado de conexão visível no painel; nada é dado como enviado/pago sem confirmação do provedor.
+- Configuração por empresa em `integrations` (credenciais cifradas, nunca devolvidas ao front).
+- Cliente HTTP isolado em `apps/api/src/integrations/<provedor>.ts`, com tempo limite e erro
+  tipado (`ProviderError`, que diz se vale tentar de novo). O `fetch` é injetável: nos testes, a Meta,
+  o Mercado Pago e a IA são substituídos por provedores falsos, sem chamar a internet.
+- **Webhooks** em `/api/webhooks/<provedor>` com verificação de assinatura sobre o corpo bruto,
+  gravação do evento em `webhook_events` e processamento idempotente.
+- Estado da conexão visível no painel; token recusado pela Meta marca a integração como “com
+  erro”, e o Atendimento deixa de oferecer resposta até a loja verificar ou trocar o token.
 
-Já existem nesta fase:
+### Fila de tarefas
+
+`services/jobs.ts`: fila sobre o próprio PostgreSQL (`SELECT … FOR UPDATE SKIP LOCKED`), sem Redis.
+Funciona com várias instâncias da API. Cada tarefa tem `dedupe_key` única opcional (a mesma
+tarefa não entra duas vezes), novas tentativas com espera crescente e `PermanentJobError` para
+falhas que não adianta repetir. Tarefas: `notify_order_status`, `ai_reply`, `payment_sync`,
+`payment_expiry`. Nos testes a fila não roda sozinha; cada teste executa as tarefas pendentes.
+
+### WhatsApp Business Platform (Cloud API)
+
+- A plataforma tem **um app na Meta** (`WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`) com o
+  webhook `/api/webhooks/whatsapp`. Cada loja conecta o próprio número informando o identificador
+  do número, o da conta WhatsApp Business e um token permanente; a API confere o número na Graph
+  API e assina o app na conta da loja (`subscribed_apps`). O fluxo de Embedded Signup (login da
+  Meta dentro do painel) é uma evolução possível sobre a mesma tabela.
+- Mensagens recebidas são roteadas pela `phone_number_id`, gravadas uma única vez (id da Meta
+  único) e criam/atualizam cliente e conversa. O número do cliente é normalizado (o `wa_id` de
+  celulares brasileiros pode vir sem o 9).
+- Envio sempre pela Graph API oficial (`/messages`): texto e imagem dentro da janela de 24 h,
+  modelos aprovados fora dela. Nenhum método não oficial (WhatsApp Web, automação de aparelho).
+- Mídias recebidas são baixadas sob demanda com o token da loja (as URLs da Meta são temporárias e
+  protegidas) e servidas ao painel por `/api/inbox/messages/:id/media`.
+
+### Assistente de IA
+
+- Provedor: Anthropic, modelo `AI_MODEL` (padrão `claude-opus-5-5`), com fallback de servidor
+  habilitado. Sem `ANTHROPIC_API_KEY`, a assistente aparece como indisponível e não pode ser ligada.
+- Quando chega mensagem numa conversa com a IA, a tarefa `ai_reply` espera 1,5 s para juntar
+  mensagens seguidas, monta o histórico e roda um laço de ferramentas de até 6 passos:
+  `consultar_produto` (cardápio, preços e disponibilidade atuais), `montar_pedido` (preço calculado
+  pelo mesmo `priceItem` e `quoteOrder` do cardápio), `registrar_pedido` (só registra o rascunho
+  montado, pelo mesmo `createOrder`, com o id do rascunho como chave de idempotência),
+  `consultar_pedidos` (pedidos do próprio cliente) e `transferir_para_humano`.
+- O prompt fixo da plataforma proíbe inventar produto, preço ou desconto, exige confirmar o resumo
+  antes de registrar e só permite dizer que o pedido foi feito depois que o sistema devolve o número.
+  O prompt da loja (tom, regras, perguntas frequentes) vem depois e não pode mudar essas regras.
+  A parte estável do prompt usa cache; dados que mudam (horário atual, loja aberta) vão no fim.
+- Transferência para a equipe: por palavra-chave (antes de chamar a IA), pela ferramenta quando a
+  IA decide (reclamação, problema de pagamento, pedido especial, pedido do cliente), por recusa do
+  modelo, por erro do provedor ou quando ele segue fora do ar depois das novas tentativas. A conversa entra na fila e a equipe recebe aviso sonoro.
+- O chat de teste do painel usa a IA de verdade com o cardápio atual, mas a ferramenta de registro
+  nunca grava pedidos nesse modo.
+
+### Outras
 
 | Integração | Situação |
 |---|---|
 | E-mail transacional | Resend via HTTP (`services/mailer.ts`). Sem chave: em desenvolvimento a mensagem vai para o log; em produção o envio falha com erro claro e o convite mostra o link para copiar |
 | Armazenamento | driver local (`services/storage.ts`). Interface pronta para um driver S3 compatível |
-| Impressão | comanda otimizada para impressora térmica de 80 mm pelo navegador; integração direta (ESC/POS) fica para a Fase 2 |
+| Impressão | comanda otimizada para impressora térmica de 80 mm pelo navegador, no painel de pedidos e na cozinha; integração direta (ESC/POS) é uma evolução futura |
 
 ---
 
 ## 9. Roteiro das próximas fases
 
-**Fase 2 · Operação e atendimento**
-- WhatsApp Business Platform (Cloud API): conexão por empresa (Embedded Signup), webhook de
-  mensagens e status, envio dos modelos de mensagem ao mudar o status do pedido, janela de 24 h e
-  templates aprovados.
-- Central de atendimento: `conversations`, `messages`, transferência humano/IA, notas internas.
-- Assistente de IA: ferramentas com acesso somente leitura ao cardápio, preços e horários; cria o
-  pedido pelo mesmo `createOrder` (as mesmas regras e a mesma idempotência), sempre confirmando o
-  resumo com o cliente; transferência automática por regras.
-- Painel da cozinha (telas grandes, um toque por etapa), entregas (bairros/taxas, entregadores,
-  atribuição) e pagamentos online (PIX dinâmico com QR Code e confirmação só por webhook).
+**Fase 2 · Operação e atendimento** ✅ entregue (cozinha, entregas, central de atendimento com
+WhatsApp oficial, avisos automáticos, assistente de IA e PIX online). Evoluções naturais: Embedded
+Signup da Meta, envio de documentos e áudio pela equipe, outros gateways (Stripe, Pagar.me) na
+mesma interface de pagamento, rastreio do entregador.
 
 **Fase 3 · Gestão comercial**: CRM com ficha única e segmentos, LGPD (exportar/corrigir/excluir),
 cupons e promoções (aplicados dentro de `createOrder`), campanhas com opt-in/opt-out, cashback e
@@ -288,10 +381,13 @@ assinaturas e cobrança recorrente, múltiplas unidades com visão consolidada, 
 
 ---
 
-## 10. Limitações conhecidas da Fase 1
+## 10. Limitações conhecidas
 
 - Uma unidade por empresa na interface (o modelo e a API já trabalham por unidade).
-- Taxa de entrega única; taxa por bairro/distância vem com o módulo Entregas.
+- Taxa de entrega por bairro cadastrado; cálculo por distância ainda não existe.
+- A equipe envia texto e imagem pelo Atendimento; documentos, áudio e localização são só recebidos.
+- Imagens enviadas pela equipe precisam estar em um endereço público (`APP_URL`) para a Meta buscar.
+- Pagamento online só pelo Mercado Pago (PIX); cartão online ainda não.
 - Estoque por produto (quantidade simples). Insumos e fichas técnicas vêm na Fase 4.
 - Ao editar os itens de um pedido, os preços são recalculados com o cardápio atual.
 - Arquivos enviados ficam no disco do servidor; para várias instâncias, usar o driver S3.

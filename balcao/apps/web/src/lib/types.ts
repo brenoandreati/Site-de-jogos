@@ -11,6 +11,8 @@ import type {
   OpeningInterval,
   StoreAvailability,
   MessageTemplateKey,
+  DeliveryStatus,
+  PaymentTransactionStatus,
 } from '@balcao/shared';
 
 export interface Me {
@@ -97,8 +99,28 @@ export interface OrderEvent {
   createdAt: string;
 }
 
+export type OnlinePaymentStatus = PaymentTransactionStatus;
+
 export interface OrderDetail extends Order {
   duplicatedFromOrderId: string | null;
+  payment: {
+    provider: string;
+    status: OnlinePaymentStatus;
+    amountCents: number;
+    refundedCents: number;
+    expiresAt: string | null;
+    approvedAt: string | null;
+    providerPaymentId: string | null;
+  } | null;
+  delivery: {
+    status: DeliveryStatus;
+    courierId: string | null;
+    courierName: string | null;
+    zoneName: string | null;
+    problemReason: string | null;
+    dispatchedAt: string | null;
+    deliveredAt: string | null;
+  } | null;
   events: OrderEvent[];
   customer: {
     id: string;
@@ -273,6 +295,8 @@ export interface PublicStore {
     paymentMethods: PaymentMethod[];
     pix: { key: string; keyType: string | null; holderName: string | null } | null;
     cancellationPolicy: string | null;
+    deliveryZones: { id: string; name: string; feeCents: number; minOrderCents: number | null; etaMinutes: number | null }[];
+    onlinePayment: boolean;
   };
   categories: { id: string; name: string; description: string | null; products: PublicProduct[] }[];
 }
@@ -299,6 +323,15 @@ export interface Tracking {
   confirmedAt: string | null;
   items: { productName: string; quantity: number; unitPriceCents: number; totalCents: number; notes: string | null; modifiers: { name: string; quantity: number; groupName: string }[] }[];
   timeline: { status: OrderStatus; at: string }[];
+  payment: {
+    status: OnlinePaymentStatus;
+    amountCents: number;
+    qrCode: string | null;
+    qrCodeBase64: string | null;
+    ticketUrl: string | null;
+    expiresAt: string | null;
+    approvedAt: string | null;
+  } | null;
   store: { name: string; slug: string; logoUrl: string | null; whatsapp: string | null; pix: { key: string; keyType: string | null; holderName: string | null } | null };
 }
 

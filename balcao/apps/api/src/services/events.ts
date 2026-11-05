@@ -16,7 +16,7 @@ export const EVENTS_CHANNEL = 'balcao_events';
 
 export type RealtimeEvent =
   | { type: 'order.created'; orderId: string; branchId: string; number: number; status: string; channel: string }
-  | { type: 'order.updated'; orderId: string; branchId: string; number: number; status: string; change: string }
+  | { type: 'order.updated'; orderId: string; branchId: string; number: number; status: string; change: string; fromStatus?: string }
   | { type: 'catalog.updated' }
   | { type: 'store.updated' }
   | { type: 'delivery.updated'; orderId: string; branchId: string }

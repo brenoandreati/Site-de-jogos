@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { AtSign, Bike, Clock, MapPin, MessageCircle, ShoppingBag, Utensils } from 'lucide-react';
 import { WEEKDAYS, formatBRL, whatsappLink } from '@balcao/shared';
 import { Modal } from '@/components/ui/modal';
+import { deliveryFeeHint } from '@/lib/cart';
 import { cx, formatAddress } from '@/lib/format';
 import type { PublicStore } from '@/lib/types';
 
@@ -47,7 +48,7 @@ export function StoreHeader({ store }: { store: PublicStore['store'] }) {
             <li className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-ink-2">
               <Bike className="size-3.5 text-muted" />
               Entrega <span className="tabular">{store.prepTimeMinutes + store.deliveryTimeMinutes}–{store.prepTimeMinutes + store.deliveryTimeMinutes + 10} min</span>
-              <span className="text-muted">· {store.deliveryFeeCents ? formatBRL(store.deliveryFeeCents) : 'grátis'}</span>
+              <span className="text-muted">· {deliveryFeeHint(store)}</span>
             </li>
           )}
           {store.acceptsPickup && (
@@ -65,7 +66,7 @@ export function StoreHeader({ store }: { store: PublicStore['store'] }) {
           {store.minOrderCents > 0 && store.acceptsDelivery && (
             <li className="inline-flex items-center rounded-full border border-line px-3 py-1.5 text-muted">Pedido mínimo {formatBRL(store.minOrderCents)}</li>
           )}
-          {store.freeDeliveryAboveCents !== null && store.acceptsDelivery && store.deliveryFeeCents > 0 && (
+          {store.freeDeliveryAboveCents !== null && store.acceptsDelivery && deliveryFeeHint(store) !== 'grátis' && (
             <li className="inline-flex items-center rounded-full bg-[var(--accent-soft)] px-3 py-1.5 text-ink">Entrega grátis acima de {formatBRL(store.freeDeliveryAboveCents)}</li>
           )}
         </ul>
