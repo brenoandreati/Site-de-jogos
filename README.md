@@ -28,3 +28,12 @@ Depois abra http://localhost:8080.
 ## Publicar no GitHub Pages
 
 Em *Settings → Pages*, escolha a branch e a pasta `/ (root)`.
+
+---
+
+## Balcão — plataforma de pedidos e gestão para alimentação
+
+A pasta [`balcao/`](balcao/) contém uma aplicação separada da landing page: a plataforma SaaS
+**Balcão** (cardápio digital, pedidos em tempo real, equipe e gestão para açaiterias,
+hamburguerias, pizzarias e restaurantes). Instruções em [`balcao/README.md`](balcao/README.md) e
+arquitetura em [`balcao/docs/ARCHITECTURE.md`](balcao/docs/ARCHITECTURE.md).

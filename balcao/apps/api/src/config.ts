@@ -16,11 +16,19 @@ const envSchema = z.object({
     .string()
     .optional()
     .transform((v) => (v ? v.split(',').map((s) => s.trim()).filter(Boolean) : [])),
-  /** Atrás de proxy/load balancer, para ler o IP real do cliente. */
+  /**
+   * Proxies confiáveis para ler o IP real do cliente (X-Forwarded-For): IPs/CIDRs separados por
+   * vírgula, ou "true". Em desenvolvimento o app web (Next.js) repassa as
+   * requisições a partir de 127.0.0.1. Nunca use "true" com a API exposta diretamente.
+   */
   TRUST_PROXY: z
     .string()
     .optional()
-    .transform((v) => v === 'true' || v === '1'),
+    .transform((v): boolean | string => {
+      if (!v || v === 'false') return false;
+      if (v === 'true') return true;
+      return v;
+    }),
 });
 
 export type Config = z.infer<typeof envSchema>;

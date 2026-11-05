@@ -8,7 +8,7 @@ import {
   resolvePermissions,
   updateMemberSchema,
 } from '@balcao/shared';
-import { authTokens, memberships, sessions, tenants, users } from '../../db/schema';
+import { auditLogs, authTokens, memberships, sessions, tenants, users } from '../../db/schema';
 import { audit } from '../../lib/audit';
 import { randomToken, sha256 } from '../../lib/crypto';
 import { conflict, forbidden, notFound, parse, unprocessable } from '../../lib/errors';
@@ -221,7 +221,6 @@ export async function teamRoutes(app: FastifyInstance) {
 
   app.get('/audit', { preHandler: requireTenant('team', 'manage') }, async (request) => {
     const ctx = tenantCtx(request);
-    const { auditLogs } = await import('../../db/schema');
     const rows = await db
       .select()
       .from(auditLogs)

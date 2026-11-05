@@ -1,0 +1,145 @@
+@import 'tailwindcss';
+
+/*
+ * Balcão — tokens de design
+ * Claro e neutro, uma cor primária (manjericão) e cores de estado usadas só quando informam algo.
+ * Interface em Schibsted Grotesk; números de comanda, preços e tempos em Martian Mono.
+ */
+@theme {
+  --font-sans: 'Schibsted Grotesk Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'Martian Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --color-canvas: #f5f5f2;
+  --color-surface: #ffffff;
+  --color-sunken: #efefeb;
+  --color-ink: #1b1b18;
+  --color-ink-2: #3f3e3a;
+  --color-muted: #6b6963;
+  --color-faint: #9b9993;
+  --color-line: #e7e6e1;
+  --color-line-strong: #d4d2cb;
+
+  --color-brand: #1f6b4f;
+  --color-brand-strong: #17553e;
+  --color-brand-soft: #e8f1ec;
+  --color-brand-ink: #134331;
+
+  --color-warn: #9a5208;
+  --color-warn-soft: #fbf0e1;
+  --color-danger: #b42318;
+  --color-danger-soft: #fcecea;
+  --color-info: #2a5a9b;
+  --color-info-soft: #e9eff8;
+
+  /* Gráficos (validados: contraste >= 3:1 no branco, separação para daltonismo). Verde = dado em foco; cinza = comparação. */
+  --color-chart: #1a7f58;
+  --color-chart-muted: #918f88;
+  --color-chart-grid: #eceae5;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  --shadow-soft: 0 1px 2px rgb(27 27 24 / 0.05);
+  --shadow-pop: 0 12px 32px -12px rgb(27 27 24 / 0.22), 0 2px 6px rgb(27 27 24 / 0.06);
+
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+
+  --animate-rise: rise 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-fade: fade 160ms ease-out;
+  --animate-slide-up: slide-up 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-arrive: arrive 900ms ease-out;
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(4px) scale(0.99); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slide-up {
+    from { transform: translateY(100%); }
+    to { transform: none; }
+  }
+  @keyframes arrive {
+    0% { box-shadow: 0 0 0 0 rgb(31 107 79 / 0.35); }
+    100% { box-shadow: 0 0 0 10px rgb(31 107 79 / 0); }
+  }
+}
+
+@layer base {
+  :root {
+    /* Cor de destaque: no painel é a cor da marca; no cardápio, a cor escolhida pela loja. */
+    --accent: var(--color-brand);
+    --accent-strong: var(--color-brand-strong);
+    --accent-soft: var(--color-brand-soft);
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-canvas text-ink font-sans antialiased;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+  }
+  ::selection {
+    background: var(--color-brand-soft);
+    color: var(--color-brand-ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  button, [role='button'], a, label, summary {
+    -webkit-tap-highlight-color: transparent;
+  }
+  dialog::backdrop {
+    background: rgb(27 27 24 / 0.32);
+  }
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] { -moz-appearance: textfield; }
+}
+
+@layer components {
+  /* Números de comanda, valores e cronômetros: largura fixa, sem saltos ao atualizar. */
+  .num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Borda serrilhada de comanda (o canhoto destacável). Usada só nos tickets. */
+  .ticket-edge {
+    --tooth: 7px;
+    mask:
+      radial-gradient(circle at 50% 0, transparent calc(var(--tooth) * 0.55), #000 calc(var(--tooth) * 0.55 + 0.5px)) 50% 0 / calc(var(--tooth) * 2) 51% repeat-x,
+      linear-gradient(#000, #000) 0 calc(var(--tooth) * 0.5) / 100% 100% no-repeat;
+  }
+  .scrollbar-none { scrollbar-width: none; }
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media print {
+  body { background: #fff; }
+  .no-print { display: none !important; }
+}
