@@ -2,7 +2,10 @@ import type { FastifyInstance } from 'fastify';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { describeAvailability, getStoreAvailability, localTime, publicCheckoutSchema } from '@balcao/shared';
-import { branches, openingHours, orderEvents, orders, tenants } from '../../db/schema';
+import { branches, deliveryZones, integrations, openingHours, orderEvents, orders, tenants } from '../../db/schema';
+import { AppError } from '../../lib/errors';
+import { createPixForOrder, latestPayment, publicPayment } from '../payments/service';
+import { changeOrderStatus } from '../orders/service';
 import { notFound, parse } from '../../lib/errors';
 import { loadPublicCatalog } from '../catalog/service';
 import { createOrder, loadItems } from '../orders/service';
@@ -39,6 +42,15 @@ export async function publicMenuRoutes(app: FastifyInstance) {
     const availability = getStoreAvailability({ hours, timeZone: branch.timezone, isPaused: branch.isPaused, pausedUntil: branch.pausedUntil });
     const today = localTime(new Date(), branch.timezone).weekday;
     const categories = await loadPublicCatalog(db, tenant.id);
+    const zones = await db
+      .select({ id: deliveryZones.id, name: deliveryZones.name, feeCents: deliveryZones.feeCents, minOrderCents: deliveryZones.minOrderCents, etaMinutes: deliveryZones.etaMinutes })
+      .from(deliveryZones)
+      .where(and(eq(deliveryZones.branchId, branch.id), eq(deliveryZones.isActive, true)))
+      .orderBy(asc(deliveryZones.name));
+    const [mp] = await db
+      .select({ id: integrations.id })
+      .from(integrations)
+      .where(and(eq(integrations.tenantId, tenant.id), eq(integrations.provider, 'mercadopago'), eq(integrations.status, 'connected')));
     reply.header('cache-control', 'public, max-age=0, s-maxage=15, stale-while-revalidate=30');
     return {
       store: {
@@ -77,6 +89,8 @@ export async function publicMenuRoutes(app: FastifyInstance) {
           ? { key: branch.pixKey, keyType: branch.pixKeyType, holderName: branch.pixHolderName }
           : null,
         cancellationPolicy: branch.cancellationPolicy,
+        deliveryZones: branch.acceptsDelivery ? zones : [],
+        onlinePayment: !!mp,
       },
       categories,
     };
@@ -102,10 +116,22 @@ export async function publicMenuRoutes(app: FastifyInstance) {
         address: input.address,
         customer: input.customer,
         marketingOptIn: input.marketingOptIn,
+        deliveryZoneId: input.deliveryZoneId,
         items: input.items,
         actor: { type: 'customer', name: input.customer.name },
         enforceStoreRules: true,
-      });
+      }, app.jobs);
+      if (order.paymentMethod === 'online' && order.status === 'awaiting_confirmation') {
+        try {
+          await createPixForOrder(app, order);
+        } catch (err) {
+          request.log.error({ err, orderId: order.id }, 'falha ao gerar PIX');
+          if (created) {
+            await changeOrderStatus(db, { tenantId: tenant.id, orderId: order.id, to: 'canceled', reason: 'Não foi possível gerar o PIX', actor: { type: 'system', name: 'Pagamento online' } }, app.jobs).catch(() => undefined);
+          }
+          throw new AppError(502, 'pix_failed', 'Não conseguimos gerar o PIX agora. Tente de novo ou escolha pagar na entrega/retirada.');
+        }
+      }
       return reply.status(created ? 201 : 200).send({ token: order.publicToken, number: order.number, status: order.status });
     },
   );
@@ -151,6 +177,7 @@ export async function publicMenuRoutes(app: FastifyInstance) {
         modifiers: i.modifiers.map((m) => ({ name: m.name, quantity: m.quantity, groupName: m.groupName })),
       })),
       timeline: timeline.map((t) => ({ status: t.toStatus, at: t.createdAt })),
+      payment: order.paymentMethod === 'online' ? publicPayment(await latestPayment(app, order.tenantId, order.id)) : null,
       store: {
         name: tenant?.tradeName ?? '',
         slug: tenant?.slug ?? '',

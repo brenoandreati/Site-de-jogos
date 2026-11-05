@@ -7,6 +7,8 @@ const env = {
   SESSION_SECRET: 'test-secret-test-secret-test-secret-1234',
   UPLOAD_DIR: '/tmp/balcao-test-uploads',
   LOG_LEVEL: 'silent',
+  WHATSAPP_APP_SECRET: 'meta-app-secret-de-teste',
+  WHATSAPP_VERIFY_TOKEN: 'verificacao-de-teste',
 };
 // O globalSetup roda no processo principal: as variáveis precisam existir aqui também.
 Object.assign(process.env, env);

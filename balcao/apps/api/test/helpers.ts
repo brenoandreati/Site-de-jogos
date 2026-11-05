@@ -3,6 +3,7 @@ import type { FastifyInstance, LightMyRequestResponse } from 'fastify';
 import { buildApp } from '../src/app';
 import { loadConfig } from '../src/config';
 import type { MailMessage, Mailer } from '../src/services/mailer';
+import type { AiProvider } from '../src/services/ai-provider';
 
 export class CapturingMailer implements Mailer {
   readonly configured = true;
@@ -18,11 +19,41 @@ export class CapturingMailer implements Mailer {
   }
 }
 
-export async function createTestApp() {
+export async function createTestApp(overrides: { http?: typeof fetch; ai?: AiProvider | null } = {}) {
   const mailer = new CapturingMailer();
-  const app = await buildApp(loadConfig(), { mailer });
+  const app = await buildApp(loadConfig(), { mailer, http: overrides.http, ai: overrides.ai ?? null });
   await app.ready();
   return { app, mailer };
+}
+
+/**
+ * Provedor HTTP falso para as integrações (Meta, Mercado Pago). Registra as chamadas e responde
+ * conforme as rotas cadastradas; qualquer chamada não prevista falha o teste.
+ */
+export class FakeHttp {
+  calls: { method: string; url: string; body: unknown; headers: Record<string, string> }[] = [];
+  private routes: { method: string; match: RegExp; respond: (body: unknown, url: string) => { status?: number; body: unknown } }[] = [];
+
+  on(method: string, match: RegExp, respond: (body: unknown, url: string) => { status?: number; body: unknown }) {
+    this.routes.unshift({ method, match, respond });
+    return this;
+  }
+
+  fetch: typeof fetch = async (input, init) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    const method = (init?.method ?? 'GET').toUpperCase();
+    const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+    const headers = Object.fromEntries(new Headers(init?.headers).entries());
+    this.calls.push({ method, url, body, headers });
+    const route = this.routes.find((r) => r.method === method && r.match.test(url));
+    if (!route) return new Response(JSON.stringify({ error: { message: `rota falsa não cadastrada: ${method} ${url}` } }), { status: 599 });
+    const r = route.respond(body, url);
+    return new Response(JSON.stringify(r.body), { status: r.status ?? 200, headers: { 'content-type': 'application/json' } });
+  };
+
+  callsTo(match: RegExp) {
+    return this.calls.filter((c) => match.test(c.url));
+  }
 }
 
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';

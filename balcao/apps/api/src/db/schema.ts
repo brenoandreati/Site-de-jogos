@@ -27,6 +27,15 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import {
+  CONVERSATION_MODES,
+  CONVERSATION_STATUSES,
+  COURIER_STATUSES,
+  DELIVERY_STATUSES,
+  MESSAGE_DIRECTIONS,
+  MESSAGE_SENDERS,
+  MESSAGE_STATUSES,
+  MESSAGE_TYPES,
+  PAYMENT_TRANSACTION_STATUSES,
   FULFILLMENT_TYPES,
   ORDER_CHANNELS,
   ORDER_EVENT_TYPES,
@@ -352,6 +361,7 @@ export const customers = pgTable(
     phone: text().notNull(),
     email: text(),
     notes: text(),
+    tags: text().array().notNull().default(sql`'{}'::text[]`),
     ordersCount: integer().notNull().default(0),
     totalSpentCents: integer().notNull().default(0),
     firstOrderAt: timestamp({ withTimezone: true }),
@@ -569,4 +579,305 @@ export const auditLogs = pgTable(
     createdAt: createdAt(),
   },
   (t) => [index('audit_logs_tenant_created_idx').on(t.tenantId, t.createdAt)],
+);
+
+// ═════════════════════════════ Fase 2 ═════════════════════════════
+
+export const deliveryStatusEnum = pgEnum('delivery_status', DELIVERY_STATUSES);
+export const courierStatusEnum = pgEnum('courier_status', COURIER_STATUSES);
+export const conversationStatusEnum = pgEnum('conversation_status', CONVERSATION_STATUSES);
+export const conversationModeEnum = pgEnum('conversation_mode', CONVERSATION_MODES);
+export const messageDirectionEnum = pgEnum('message_direction', MESSAGE_DIRECTIONS);
+export const messageSenderEnum = pgEnum('message_sender', MESSAGE_SENDERS);
+export const messageTypeEnum = pgEnum('message_type', MESSAGE_TYPES);
+export const messageStatusEnum = pgEnum('message_status', MESSAGE_STATUSES);
+export const integrationProviderEnum = pgEnum('integration_provider', ['whatsapp_cloud', 'mercadopago']);
+export const integrationStatusEnum = pgEnum('integration_status', ['connected', 'error', 'disconnected']);
+export const paymentTxStatusEnum = pgEnum('payment_tx_status', PAYMENT_TRANSACTION_STATUSES);
+export const jobStatusEnum = pgEnum('job_status', ['queued', 'running', 'done', 'failed']);
+
+// ───────────────────────────── Entregas ─────────────────────────────
+
+/** Bairros/regiões atendidos e a taxa de cada um. Sem nenhum ativo, vale a taxa única da unidade. */
+export const deliveryZones = pgTable(
+  'delivery_zones',
+  {
+    id: id(),
+    tenantId: uuid().notNull(),
+    branchId: uuid().notNull(),
+    name: text().notNull(),
+    feeCents: integer().notNull(),
+    minOrderCents: integer(),
+    etaMinutes: integer(),
+    isActive: boolean().notNull().default(true),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    unique('delivery_zones_tenant_id_id_key').on(t.tenantId, t.id),
+    foreignKey({ columns: [t.tenantId, t.branchId], foreignColumns: [branches.tenantId, branches.id] }).onDelete('cascade'),
+    uniqueIndex('delivery_zones_branch_name_key').on(t.branchId, sql`lower(${t.name})`),
+    check('delivery_zones_fee_non_negative', sql`${t.feeCents} >= 0`),
+  ],
+);
+
+export const couriers = pgTable(
+  'couriers',
+  {
+    id: id(),
+    tenantId: uuid().notNull(),
+    branchId: uuid().notNull(),
+    name: text().notNull(),
+    phone: text().notNull(),
+    userId: uuid().references(() => users.id, { onDelete: 'set null' }),
+    status: courierStatusEnum().notNull().default('available'),
+    isActive: boolean().notNull().default(true),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    unique('couriers_tenant_id_id_key').on(t.tenantId, t.id),
+    foreignKey({ columns: [t.tenantId, t.branchId], foreignColumns: [branches.tenantId, branches.id] }).onDelete('cascade'),
+    index('couriers_branch_idx').on(t.branchId),
+  ],
+);
+
+/** Uma entrega por pedido de entrega, acompanhando o status do pedido. */
+export const deliveries = pgTable(
+  'deliveries',
+  {
+    id: id(),
+    tenantId: uuid().notNull(),
+    branchId: uuid().notNull(),
+    orderId: uuid().notNull(),
+    courierId: uuid(),
+    zoneId: uuid(),
+    zoneName: text(),
+    status: deliveryStatusEnum().notNull().default('awaiting_courier'),
+    problemReason: text(),
+    assignedAt: timestamp({ withTimezone: true }),
+    dispatchedAt: timestamp({ withTimezone: true }),
+    deliveredAt: timestamp({ withTimezone: true }),
+    problemAt: timestamp({ withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    unique('deliveries_order_key').on(t.orderId),
+    foreignKey({ columns: [t.tenantId, t.orderId], foreignColumns: [orders.tenantId, orders.id] }).onDelete('cascade'),
+    foreignKey({ columns: [t.tenantId, t.courierId], foreignColumns: [couriers.tenantId, couriers.id] }),
+    index('deliveries_branch_status_idx').on(t.branchId, t.status),
+    index('deliveries_courier_idx').on(t.courierId),
+  ],
+);
+
+// ───────────────────────────── Integrações ─────────────────────────────
+
+/**
+ * Integrações por estabelecimento. `secrets` guarda credenciais cifradas (AES-256-GCM) e nunca
+ * volta para o navegador. `externalId` roteia webhooks (ex.: phone_number_id da WhatsApp).
+ */
+export const integrations = pgTable(
+  'integrations',
+  {
+    id: id(),
+    tenantId: uuid()
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    provider: integrationProviderEnum().notNull(),
+    status: integrationStatusEnum().notNull().default('connected'),
+    externalId: text(),
+    config: jsonb().$type<Record<string, unknown>>().notNull().default({}),
+    secrets: text().notNull(),
+    lastError: text(),
+    lastCheckedAt: timestamp({ withTimezone: true }),
+    connectedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    unique('integrations_tenant_provider_key').on(t.tenantId, t.provider),
+    uniqueIndex('integrations_provider_external_key').on(t.provider, t.externalId).where(sql`${t.externalId} IS NOT NULL`),
+  ],
+);
+
+/** Registro bruto dos webhooks recebidos (auditoria e diagnóstico). */
+export const webhookEvents = pgTable(
+  'webhook_events',
+  {
+    id: id(),
+    provider: integrationProviderEnum().notNull(),
+    tenantId: uuid().references(() => tenants.id, { onDelete: 'cascade' }),
+    signatureValid: boolean().notNull(),
+    payload: jsonb().$type<unknown>().notNull(),
+    error: text(),
+    receivedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    processedAt: timestamp({ withTimezone: true }),
+  },
+  (t) => [index('webhook_events_received_idx').on(t.receivedAt)],
+);
+
+// ───────────────────────────── Atendimento ─────────────────────────────
+
+export const conversations = pgTable(
+  'conversations',
+  {
+    id: id(),
+    tenantId: uuid().notNull(),
+    channel: text().notNull().default('whatsapp'),
+    customerId: uuid(),
+    /** wa_id exatamente como a WhatsApp envia (usado para responder). */
+    contactId: text().notNull(),
+    contactName: text(),
+    status: conversationStatusEnum().notNull().default('open'),
+    mode: conversationModeEnum().notNull().default('ai'),
+    assignedUserId: uuid().references(() => users.id, { onDelete: 'set null' }),
+    unreadCount: integer().notNull().default(0),
+    lastMessageAt: timestamp({ withTimezone: true }),
+    lastInboundAt: timestamp({ withTimezone: true }),
+    lastMessagePreview: text(),
+    handoffReason: text(),
+    handoffAt: timestamp({ withTimezone: true }),
+    closedAt: timestamp({ withTimezone: true }),
+    /** Rascunho do pedido montado pela IA, aguardando a confirmação do cliente. */
+    aiDraft: jsonb().$type<Record<string, unknown>>(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    unique('conversations_tenant_id_id_key').on(t.tenantId, t.id),
+    unique('conversations_tenant_contact_key').on(t.tenantId, t.channel, t.contactId),
+    foreignKey({ columns: [t.tenantId, t.customerId], foreignColumns: [customers.tenantId, customers.id] }),
+    index('conversations_tenant_last_idx').on(t.tenantId, t.lastMessageAt),
+  ],
+);
+
+export const messages = pgTable(
+  'messages',
+  {
+    id: id(),
+    tenantId: uuid().notNull(),
+    conversationId: uuid().notNull(),
+    direction: messageDirectionEnum().notNull(),
+    sender: messageSenderEnum().notNull(),
+    senderUserId: uuid().references(() => users.id, { onDelete: 'set null' }),
+    senderName: text(),
+    type: messageTypeEnum().notNull().default('text'),
+    body: text(),
+    mediaId: text(),
+    mediaUrl: text(),
+    mediaMime: text(),
+    templateName: text(),
+    externalId: text(),
+    status: messageStatusEnum().notNull(),
+    error: text(),
+    statusAt: timestamp({ withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    foreignKey({ columns: [t.tenantId, t.conversationId], foreignColumns: [conversations.tenantId, conversations.id] }).onDelete('cascade'),
+    uniqueIndex('messages_external_key').on(t.externalId).where(sql`${t.externalId} IS NOT NULL`),
+    index('messages_conversation_idx').on(t.conversationId, t.createdAt),
+  ],
+);
+
+export const quickReplies = pgTable(
+  'quick_replies',
+  {
+    id: id(),
+    tenantId: uuid()
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    title: text().notNull(),
+    body: text().notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index('quick_replies_tenant_idx').on(t.tenantId)],
+);
+
+// ───────────────────────────── Assistente de IA ─────────────────────────────
+
+export const aiSettings = pgTable('ai_settings', {
+  tenantId: uuid()
+    .primaryKey()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  settings: jsonb().$type<Record<string, unknown>>().notNull(),
+  updatedByUserId: uuid().references(() => users.id, { onDelete: 'set null' }),
+  updatedAt: updatedAt(),
+});
+
+/** Consumo de IA por estabelecimento (base para limites por plano na Fase 5). */
+export const aiUsage = pgTable(
+  'ai_usage',
+  {
+    id: id(),
+    tenantId: uuid()
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    conversationId: uuid(),
+    purpose: text().notNull(),
+    model: text().notNull(),
+    inputTokens: integer().notNull().default(0),
+    outputTokens: integer().notNull().default(0),
+    cacheReadTokens: integer().notNull().default(0),
+    createdAt: createdAt(),
+  },
+  (t) => [index('ai_usage_tenant_created_idx').on(t.tenantId, t.createdAt)],
+);
+
+// ───────────────────────────── Pagamentos ─────────────────────────────
+
+export const payments = pgTable(
+  'payments',
+  {
+    id: id(),
+    tenantId: uuid().notNull(),
+    orderId: uuid().notNull(),
+    provider: integrationProviderEnum().notNull(),
+    providerPaymentId: text().notNull(),
+    method: text().notNull(),
+    status: paymentTxStatusEnum().notNull(),
+    amountCents: integer().notNull(),
+    refundedCents: integer().notNull().default(0),
+    qrCode: text(),
+    qrCodeBase64: text(),
+    ticketUrl: text(),
+    expiresAt: timestamp({ withTimezone: true }),
+    approvedAt: timestamp({ withTimezone: true }),
+    statusDetail: text(),
+    raw: jsonb().$type<unknown>(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    foreignKey({ columns: [t.tenantId, t.orderId], foreignColumns: [orders.tenantId, orders.id] }).onDelete('cascade'),
+    uniqueIndex('payments_provider_external_key').on(t.provider, t.providerPaymentId),
+    index('payments_order_idx').on(t.orderId),
+  ],
+);
+
+// ───────────────────────────── Fila de tarefas ─────────────────────────────
+
+/** Tarefas em segundo plano (envio de mensagens, respostas da IA, expiração de PIX). */
+export const jobs = pgTable(
+  'jobs',
+  {
+    id: id(),
+    type: text().notNull(),
+    payload: jsonb().$type<Record<string, unknown>>().notNull(),
+    status: jobStatusEnum().notNull().default('queued'),
+    attempts: integer().notNull().default(0),
+    maxAttempts: integer().notNull().default(5),
+    runAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    lockedAt: timestamp({ withTimezone: true }),
+    lastError: text(),
+    dedupeKey: text(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index('jobs_queue_idx').on(t.status, t.runAt),
+    uniqueIndex('jobs_dedupe_key').on(t.dedupeKey).where(sql`${t.dedupeKey} IS NOT NULL`),
+  ],
 );

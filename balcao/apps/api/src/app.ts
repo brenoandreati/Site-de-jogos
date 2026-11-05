@@ -25,6 +25,16 @@ import { dashboardRoutes } from './modules/dashboard/routes';
 import { teamRoutes } from './modules/team/routes';
 import { uploadRoutes } from './modules/uploads/routes';
 import { realtimeRoutes } from './modules/realtime/routes';
+import { kitchenRoutes } from './modules/kitchen/routes';
+import { deliveryRoutes } from './modules/delivery/routes';
+import { integrationRoutes } from './modules/integrations/routes';
+import { inboxRoutes } from './modules/inbox/routes';
+import { aiRoutes } from './modules/ai/routes';
+import { webhookRoutes } from './modules/webhooks/routes';
+import { registerJobHandlers } from './modules/jobs';
+import { JobQueue } from './services/jobs';
+import { SecretBox } from './lib/secrets';
+import { createAiProvider, type AiProvider } from './services/ai-provider';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -34,6 +44,11 @@ declare module 'fastify' {
     hub: EventHub;
     mailer: Mailer;
     storage: StorageDriver;
+    jobs: JobQueue;
+    secrets: SecretBox;
+    /** fetch usado pelas integrações (substituível nos testes por um provedor falso). */
+    http: typeof fetch;
+    ai: AiProvider | null;
   }
 }
 
@@ -41,6 +56,8 @@ const MUTATING = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 export interface AppOverrides {
   mailer?: Mailer;
+  http?: typeof fetch;
+  ai?: AiProvider | null;
 }
 
 export async function buildApp(config: Config, overrides: AppOverrides = {}): Promise<FastifyInstance> {
@@ -69,6 +86,10 @@ export async function buildApp(config: Config, overrides: AppOverrides = {}): Pr
   app.decorate('hub', hub);
   app.decorate('mailer', overrides.mailer ?? createMailer(config, app.log));
   app.decorate('storage', new LocalStorage(uploadDir));
+  app.decorate('jobs', new JobQueue(db, app.log));
+  app.decorate('secrets', new SecretBox(config.ENCRYPTION_KEY, config.SESSION_SECRET));
+  app.decorate('http', overrides.http ?? fetch);
+  app.decorate('ai', overrides.ai !== undefined ? overrides.ai : createAiProvider(config, overrides.http ?? fetch));
   app.decorateRequest('sessionCtx', null);
   app.decorateRequest('tenantCtx', null);
 
@@ -104,6 +125,8 @@ export async function buildApp(config: Config, overrides: AppOverrides = {}): Pr
   const trustedOrigins = new Set([new URL(config.APP_URL).origin, ...config.TRUSTED_ORIGINS]);
   app.addHook('onRequest', async (request) => {
     if (!MUTATING.has(request.method) || !request.url.startsWith('/api/')) return;
+    // Webhooks vêm de servidores dos provedores e são autenticados por assinatura própria.
+    if (request.url.startsWith('/api/webhooks/')) return;
     if (request.headers['x-balcao-client'] !== 'web') {
       throw new AppError(403, 'csrf', 'Requisição recusada por segurança.');
     }
@@ -165,14 +188,24 @@ export async function buildApp(config: Config, overrides: AppOverrides = {}): Pr
       await api.register(uploadRoutes, { prefix: '/uploads' });
       await api.register(realtimeRoutes, { prefix: '/realtime' });
       await api.register(publicMenuRoutes, { prefix: '/public' });
+      await api.register(kitchenRoutes, { prefix: '/kitchen' });
+      await api.register(deliveryRoutes, { prefix: '/delivery' });
+      await api.register(integrationRoutes, { prefix: '/integrations' });
+      await api.register(inboxRoutes, { prefix: '/inbox' });
+      await api.register(aiRoutes, { prefix: '/ai' });
+      await api.register(webhookRoutes, { prefix: '/webhooks' });
     },
     { prefix: '/api' },
   );
 
+  registerJobHandlers(app);
   app.addHook('onReady', async () => {
     await hub.start();
+    if (config.JOBS_DISABLED || config.NODE_ENV === 'test') app.jobs.attach(app);
+    else app.jobs.start(app);
   });
   app.addHook('onClose', async () => {
+    app.jobs.stop();
     await hub.stop();
     await pool.end();
   });

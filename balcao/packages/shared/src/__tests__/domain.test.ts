@@ -272,9 +272,26 @@ describe('checkout schema', () => {
     expect(ok.success).toBe(true);
     if (ok.success) expect(ok.data.customer.phone).toBe('5511912345678');
   });
-  it('rejects online payment and change for non-cash', () => {
-    expect(publicCheckoutSchema.safeParse({ ...base, fulfillment: 'pickup', paymentMethod: 'online' }).success).toBe(false);
+  it('accepts online at schema level (API checks the provider), rejects change for non-cash', () => {
+    expect(publicCheckoutSchema.safeParse({ ...base, fulfillment: 'pickup', paymentMethod: 'online' }).success).toBe(true);
     expect(publicCheckoutSchema.safeParse({ ...base, fulfillment: 'pickup', changeForCents: 5000 }).success).toBe(false);
+  });
+});
+
+describe('whatsapp ids', () => {
+  it('adds the ninth digit to Brazilian mobile wa_ids', async () => {
+    const { normalizeWhatsAppId } = await import('../phone');
+    expect(normalizeWhatsAppId('551187654321')).toBe('5511987654321');
+    expect(normalizeWhatsAppId('5511987654321')).toBe('5511987654321');
+    expect(normalizeWhatsAppId('551132654321')).toBe('551132654321');
+  });
+});
+
+describe('payment pending orders', () => {
+  it('only the provider moves an awaiting-payment order forward', async () => {
+    const { nextStatus, canTransition } = await import('../orders');
+    expect(nextStatus('awaiting_confirmation', 'pickup')).toBeNull();
+    expect(canTransition('awaiting_confirmation', 'new', 'pickup')).toBe(true);
   });
 });
 

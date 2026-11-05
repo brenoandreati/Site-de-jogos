@@ -7,6 +7,7 @@ import {
   OFFLINE_PAYMENT_METHODS,
   ORDER_CHANNELS,
   ORDER_STATUSES,
+  PAYMENT_METHODS,
   PAYMENT_STATUSES,
   type OrderChannel,
   type PaymentMethod,
@@ -14,6 +15,8 @@ import {
 import { MAX_ITEMS_PER_ORDER, MAX_ITEM_QUANTITY } from '../pricing';
 
 const offlinePayment = z.enum(OFFLINE_PAYMENT_METHODS as [PaymentMethod, ...PaymentMethod[]], 'Escolha a forma de pagamento');
+/** No cardápio, o cliente também pode escolher PIX online quando a loja tem um provedor conectado (a API confere). */
+const anyPayment = z.enum(PAYMENT_METHODS, 'Escolha a forma de pagamento');
 
 export const cartItemSchema = z.object({
   productId: idSchema,
@@ -40,6 +43,8 @@ const orderBase = {
   changeForCents: centsSchema.nullish().transform((v) => v ?? null),
   notes: optionalText(500),
   items: itemsSchema,
+  /** Bairro de entrega cadastrado pela loja (obrigatório quando a loja usa taxa por bairro). */
+  deliveryZoneId: idSchema.nullish().transform((v) => v ?? null),
 };
 
 function refineOrder(
@@ -58,6 +63,7 @@ function refineOrder(
 export const publicCheckoutSchema = z
   .object({
     ...orderBase,
+    paymentMethod: anyPayment,
     customer: z.object({
       name: trimmed(2, 80, 'seu nome'),
       phone: phoneSchema,

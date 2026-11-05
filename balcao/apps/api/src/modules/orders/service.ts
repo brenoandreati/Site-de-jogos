@@ -19,16 +19,21 @@ import {
   branches,
   customerAddresses,
   customers,
+  deliveries,
+  deliveryZones,
+  integrations,
   openingHours,
   orderEvents,
   orderItemModifiers,
   orderItems,
   orders,
+  payments,
   products,
   type OrderAddress,
 } from '../../db/schema';
 import { randomToken } from '../../lib/crypto';
 import { AppError, conflict, isUniqueViolation, notFound, unprocessable } from '../../lib/errors';
+import type { JobQueue } from '../../services/jobs';
 import { publishEvent } from '../../services/events';
 import { loadPricingProducts } from '../catalog/service';
 
@@ -64,6 +69,8 @@ export interface CreateOrderParams {
   discountCents?: number;
   discountReason?: string | null;
   deliveryFeeOverrideCents?: number | null;
+  /** Bairro de entrega cadastrado (taxa por bairro). */
+  deliveryZoneId?: string | null;
   duplicatedFromOrderId?: string | null;
   actor: Actor;
   /** Pedido do cardápio público: aplica horário, tipos de atendimento, pagamentos aceitos e pedido mínimo. */
@@ -186,10 +193,22 @@ async function findByIdempotencyKey(db: DbExecutor, tenantId: string, key: strin
   return row ?? null;
 }
 
-export async function createOrder(db: Database, params: CreateOrderParams): Promise<{ order: OrderRow; created: boolean }> {
-  const existing = await findByIdempotencyKey(db, params.tenantId, params.idempotencyKey);
-  if (existing) return { order: existing, created: false };
+export type QuoteParams = Pick<
+  CreateOrderParams,
+  | 'tenantId'
+  | 'branchId'
+  | 'fulfillment'
+  | 'paymentMethod'
+  | 'changeForCents'
+  | 'items'
+  | 'discountCents'
+  | 'deliveryFeeOverrideCents'
+  | 'deliveryZoneId'
+  | 'enforceStoreRules'
+>;
 
+/** Valida e calcula um pedido sem gravar nada (usado no envio e pelo assistente de IA ao montar o resumo). */
+export async function quoteOrder(db: DbExecutor, params: QuoteParams) {
   const [branch] = await db
     .select()
     .from(branches)
@@ -207,7 +226,8 @@ export async function createOrder(db: Database, params: CreateOrderParams): Prom
     if (!accepted[params.fulfillment]) {
       throw unprocessable(`${FULFILLMENT_LABELS[params.fulfillment]} não está disponível nesta loja.`, { fulfillment: 'Indisponível' });
     }
-    if (!branch.paymentMethods.includes(params.paymentMethod)) {
+    // PIX online depende do provedor conectado (conferido abaixo), não da lista de pagamentos presenciais.
+    if (params.paymentMethod !== 'online' && !branch.paymentMethods.includes(params.paymentMethod)) {
       throw unprocessable(`A loja não aceita ${PAYMENT_METHOD_LABELS[params.paymentMethod]}.`, { paymentMethod: 'Indisponível' });
     }
   }
@@ -215,14 +235,38 @@ export async function createOrder(db: Database, params: CreateOrderParams): Prom
   const { priced } = await priceCart(db, params.tenantId, params.items);
   const subtotal = priced.reduce((s, i) => s + i.totalCents, 0);
 
+  if (params.paymentMethod === 'online') {
+    const [provider] = await db
+      .select({ id: integrations.id })
+      .from(integrations)
+      .where(and(eq(integrations.tenantId, params.tenantId), eq(integrations.provider, 'mercadopago'), eq(integrations.status, 'connected')));
+    if (!provider) throw unprocessable('Pagamento online indisponível nesta loja. Escolha outra forma de pagamento.', { paymentMethod: 'Indisponível' });
+  }
+
   let deliveryFeeCents = 0;
+  let zone: { id: string; name: string; etaMinutes: number | null } | null = null;
+  let deliveryTimeMinutes = 0;
   if (params.fulfillment === 'delivery') {
-    deliveryFeeCents = params.deliveryFeeOverrideCents ?? branch.deliveryFeeCents;
+    const zones = await db
+      .select()
+      .from(deliveryZones)
+      .where(and(eq(deliveryZones.tenantId, params.tenantId), eq(deliveryZones.branchId, branch.id), eq(deliveryZones.isActive, true)));
+    const chosen = params.deliveryZoneId ? zones.find((z) => z.id === params.deliveryZoneId) : undefined;
+    if (params.deliveryZoneId && !chosen) {
+      throw unprocessable('Não entregamos neste bairro. Escolha outro ou retire na loja.', { deliveryZoneId: 'Bairro não atendido' }, 'zone_not_served');
+    }
+    if (zones.length > 0 && !chosen && params.enforceStoreRules) {
+      throw unprocessable('Escolha o bairro de entrega.', { deliveryZoneId: 'Escolha o bairro' }, 'zone_required');
+    }
+    zone = chosen ? { id: chosen.id, name: chosen.name, etaMinutes: chosen.etaMinutes } : null;
+    const minOrder = chosen?.minOrderCents ?? branch.minOrderCents;
+    deliveryTimeMinutes = chosen?.etaMinutes ?? branch.deliveryTimeMinutes;
+    deliveryFeeCents = params.deliveryFeeOverrideCents ?? chosen?.feeCents ?? branch.deliveryFeeCents;
     if (params.deliveryFeeOverrideCents == null && branch.freeDeliveryAboveCents !== null && subtotal >= branch.freeDeliveryAboveCents) {
       deliveryFeeCents = 0;
     }
-    if (params.enforceStoreRules && subtotal < branch.minOrderCents) {
-      throw unprocessable(`O pedido mínimo para entrega é de R$ ${(branch.minOrderCents / 100).toFixed(2).replace('.', ',')}.`, undefined, 'min_order');
+    if (params.enforceStoreRules && subtotal < minOrder) {
+      throw unprocessable(`O pedido mínimo para entrega${chosen ? ` em ${chosen.name}` : ''} é de R$ ${(minOrder / 100).toFixed(2).replace('.', ',')}.`, undefined, 'min_order');
     }
   }
 
@@ -234,7 +278,19 @@ export async function createOrder(db: Database, params: CreateOrderParams): Prom
     throw unprocessable('O valor para troco deve ser maior que o total do pedido.', { changeForCents: 'Menor que o total' });
   }
 
-  const status: OrderStatus = params.channel === 'menu' && !branch.autoConfirm ? 'new' : 'confirmed';
+  return { branch, priced, totals, zone, deliveryTimeMinutes };
+}
+
+
+export async function createOrder(db: Database, params: CreateOrderParams, jobs?: JobQueue): Promise<{ order: OrderRow; created: boolean }> {
+  const existing = await findByIdempotencyKey(db, params.tenantId, params.idempotencyKey);
+  if (existing) return { order: existing, created: false };
+
+  const { branch, priced, totals, zone, deliveryTimeMinutes } = await quoteOrder(db, params);
+
+  // Pagamento online: espera a confirmação do provedor. Cardápio sem confirmação automática: espera a loja.
+  const status: OrderStatus =
+    params.paymentMethod === 'online' ? 'awaiting_confirmation' : params.channel === 'menu' && !branch.autoConfirm ? 'new' : 'confirmed';
   const now = new Date();
 
   try {
@@ -307,7 +363,7 @@ export async function createOrder(db: Database, params: CreateOrderParams): Prom
           customerId,
           customerName: params.customer.name,
           customerPhone: params.customer.phone,
-          address: params.fulfillment === 'delivery' ? params.address : null,
+          address: params.fulfillment === 'delivery' && params.address ? { ...params.address, neighborhood: zone?.name ?? params.address.neighborhood } : null,
           tableNumber: params.fulfillment === 'dine_in' ? params.tableNumber : null,
           changeForCents: params.paymentMethod === 'cash' ? params.changeForCents : null,
           subtotalCents: totals.subtotalCents,
@@ -317,7 +373,7 @@ export async function createOrder(db: Database, params: CreateOrderParams): Prom
           totalCents: totals.totalCents,
           notes: params.notes,
           prepTimeMinutes: branch.prepTimeMinutes,
-          deliveryTimeMinutes: params.fulfillment === 'delivery' ? branch.deliveryTimeMinutes : 0,
+          deliveryTimeMinutes: params.fulfillment === 'delivery' ? deliveryTimeMinutes : 0,
           stockReserved,
           createdByUserId: params.actor.type === 'user' ? params.actor.userId : null,
           duplicatedFromOrderId: params.duplicatedFromOrderId ?? null,
@@ -326,6 +382,16 @@ export async function createOrder(db: Database, params: CreateOrderParams): Prom
         .returning();
 
       await insertItems(tx, params.tenantId, row!.id, priced);
+
+      if (params.fulfillment === 'delivery') {
+        await tx.insert(deliveries).values({
+          tenantId: params.tenantId,
+          branchId: branch.id,
+          orderId: row!.id,
+          zoneId: zone?.id ?? null,
+          zoneName: zone?.name ?? params.address?.neighborhood ?? null,
+        });
+      }
 
       const actor = actorFields(params.actor);
       await tx.insert(orderEvents).values({
@@ -355,6 +421,9 @@ export async function createOrder(db: Database, params: CreateOrderParams): Prom
           data: { discountCents: totals.discountCents, reason: params.discountReason },
           ...actor,
         });
+      }
+      if (jobs && status !== 'awaiting_confirmation' && params.customer.phone) {
+        await jobs.enqueue(tx, 'notify_order_status', { tenantId: params.tenantId, orderId: row!.id, status }, { dedupeKey: `notify:${row!.id}:${status}` });
       }
       await publishEvent(tx, params.tenantId, {
         type: 'order.created',
@@ -399,6 +468,7 @@ async function lockOrder(tx: DbExecutor, tenantId: string, orderId: string) {
 export async function changeOrderStatus(
   db: Database,
   params: { tenantId: string; orderId: string; to: OrderStatus; reason: string | null; actor: Actor; expectedFrom?: OrderStatus },
+  jobs?: JobQueue,
 ) {
   return db.transaction(async (tx) => {
     const order = await lockOrder(tx, params.tenantId, params.orderId);
@@ -428,6 +498,25 @@ export async function changeOrderStatus(
     if (params.to === 'canceled' && order.stockReserved) {
       await releaseStock(tx, params.tenantId, order.id);
     }
+    // A entrega acompanha o pedido.
+    if (order.fulfillment === 'delivery') {
+      const deliveryPatch =
+        params.to === 'out_for_delivery'
+          ? { status: 'out_for_delivery' as const, dispatchedAt: now }
+          : params.to === 'completed'
+            ? { status: 'delivered' as const, deliveredAt: now }
+            : params.to === 'canceled'
+              ? { status: 'canceled' as const }
+              : null;
+      if (deliveryPatch) {
+        await tx.update(deliveries).set(deliveryPatch).where(and(eq(deliveries.tenantId, params.tenantId), eq(deliveries.orderId, order.id)));
+        await publishEvent(tx, params.tenantId, { type: 'delivery.updated', orderId: order.id, branchId: order.branchId });
+      }
+    }
+    if (jobs && order.customerPhone) {
+      await jobs.enqueue(tx, 'notify_order_status', { tenantId: params.tenantId, orderId: order.id, status: params.to }, { dedupeKey: `notify:${order.id}:${params.to}` });
+    }
+
     if (params.to === 'completed' && order.customerId) {
       await tx
         .update(customers)
@@ -714,8 +803,20 @@ export async function getOrderDetail(db: DbExecutor, tenantId: string, orderId: 
     }
   }
 
+  const [payment] = await db
+    .select()
+    .from(payments)
+    .where(and(eq(payments.tenantId, tenantId), eq(payments.orderId, order.id)))
+    .orderBy(desc(payments.createdAt))
+    .limit(1);
+  const [delivery] = order.fulfillment === 'delivery' ? await db.select().from(deliveries).where(and(eq(deliveries.tenantId, tenantId), eq(deliveries.orderId, order.id))) : [];
+
   return {
     ...serializeOrder(order, items),
+    payment: payment
+      ? { provider: payment.provider, status: payment.status, amountCents: payment.amountCents, refundedCents: payment.refundedCents, expiresAt: payment.expiresAt, approvedAt: payment.approvedAt, providerPaymentId: payment.providerPaymentId }
+      : null,
+    delivery: delivery ? { status: delivery.status, courierId: delivery.courierId, zoneName: delivery.zoneName, problemReason: delivery.problemReason } : null,
     duplicatedFromOrderId: order.duplicatedFromOrderId,
     customer,
     events: events.map((e) => ({

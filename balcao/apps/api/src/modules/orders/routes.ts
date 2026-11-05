@@ -22,6 +22,8 @@ import { customerAddresses, customers, orders } from '../../db/schema';
 import { audit } from '../../lib/audit';
 import { forbidden, parse, unprocessable } from '../../lib/errors';
 import { requireTenant, tenantCtx, type TenantContext } from '../../plugins/context';
+import { refundOrderPayment } from '../payments/service';
+import { refundSchema } from '@balcao/shared';
 import {
   changeOrderStatus,
   createOrder,
@@ -177,9 +179,10 @@ export async function orderRoutes(app: FastifyInstance) {
       discountCents: input.discountCents,
       discountReason: input.discountReason,
       deliveryFeeOverrideCents: input.deliveryFeeCents,
+      deliveryZoneId: input.deliveryZoneId,
       actor: userActor(ctx),
       enforceStoreRules: false,
-    });
+    }, app.jobs);
     const detail = await getOrderDetail(db, ctx.tenantId, order.id);
     return reply.status(created ? 201 : 200).send(detail);
   });
@@ -198,7 +201,7 @@ export async function orderRoutes(app: FastifyInstance) {
       reason: input.reason,
       actor: userActor(ctx),
       expectedFrom: input.expectedFrom,
-    });
+    }, app.jobs);
     if (input.status === 'canceled') {
       await audit(db, request, { action: 'order.canceled', entityType: 'order', entityId: id, summary: `Pedido cancelado: ${input.reason}` });
     }
@@ -316,6 +319,17 @@ export async function orderRoutes(app: FastifyInstance) {
     return getOrderDetail(db, ctx.tenantId, id);
   });
 
+  /** Estorno de pagamento online: pedido ao provedor; o status vem da consulta ao Mercado Pago. */
+  app.post('/:id/refund', { preHandler: requireTenant('orders', 'manage') }, async (request) => {
+    const ctx = tenantCtx(request);
+    const { id } = parse(idParam, request.params);
+    const { reason } = parse(refundSchema, request.body);
+    await getOrderDetail(db, ctx.tenantId, id);
+    const payment = await refundOrderPayment(app, ctx.tenantId, id);
+    await audit(db, request, { action: 'order.refund', entityType: 'order', entityId: id, summary: `Estorno solicitado ao Mercado Pago: ${reason} (situação: ${payment?.status})` });
+    return getOrderDetail(db, ctx.tenantId, id);
+  });
+
   /** Registra que a equipe abriu o WhatsApp com a mensagem de atualização (não confirma envio). */
   app.post('/:id/notified', { preHandler: requireTenant('orders', 'edit') }, async (request) => {
     const ctx = tenantCtx(request);
@@ -377,7 +391,7 @@ export async function orderRoutes(app: FastifyInstance) {
       duplicatedFromOrderId: source.id,
       actor: userActor(ctx),
       enforceStoreRules: false,
-    });
+    }, app.jobs);
     return reply.status(created ? 201 : 200).send(await getOrderDetail(db, ctx.tenantId, order.id));
   });
 }

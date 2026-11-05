@@ -17,7 +17,7 @@ export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   new: 'Novo pedido',
-  awaiting_confirmation: 'Aguardando confirmação',
+  awaiting_confirmation: 'Aguardando pagamento',
   confirmed: 'Confirmado',
   preparing: 'Em preparação',
   ready: 'Pronto',
@@ -29,7 +29,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 /** Texto exibido para o cliente no acompanhamento do pedido. */
 export const ORDER_STATUS_CUSTOMER_LABELS: Record<OrderStatus, string> = {
   new: 'Recebemos seu pedido',
-  awaiting_confirmation: 'Aguardando confirmação da loja',
+  awaiting_confirmation: 'Aguardando a confirmação do pagamento',
   confirmed: 'Pedido confirmado',
   preparing: 'Estamos preparando seu pedido',
   ready: 'Seu pedido está pronto',
@@ -101,7 +101,8 @@ export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
 
 const TRANSITIONS: Record<OrderStatus, readonly OrderStatus[]> = {
   new: ['awaiting_confirmation', 'confirmed', 'canceled'],
-  awaiting_confirmation: ['confirmed', 'canceled'],
+  // Pagamento online pendente: entra como novo (ou confirmado) quando o provedor confirmar.
+  awaiting_confirmation: ['new', 'confirmed', 'canceled'],
   confirmed: ['preparing', 'ready', 'canceled'],
   preparing: ['ready', 'canceled'],
   ready: ['out_for_delivery', 'completed', 'canceled'],
@@ -125,6 +126,8 @@ export function canTransition(from: OrderStatus, to: OrderStatus, fulfillment: F
 
 /** Próximo passo "natural" usado no botão principal dos cards. */
 export function nextStatus(from: OrderStatus, fulfillment: FulfillmentType): OrderStatus | null {
+  // Aguardando pagamento: quem avança é a confirmação do provedor, não um botão.
+  if (from === 'awaiting_confirmation') return null;
   const options = allowedTransitions(from, fulfillment).filter(
     (s) => s !== 'canceled' && s !== 'awaiting_confirmation',
   );
@@ -161,6 +164,9 @@ export const ORDER_EVENT_TYPES = [
   'customer_notified',
   'printed',
   'duplicated_from',
+  'courier_assigned',
+  'delivery_problem',
+  'payment_updated',
 ] as const;
 export type OrderEventType = (typeof ORDER_EVENT_TYPES)[number];
 
@@ -173,3 +179,61 @@ export const CANCEL_REASONS = [
   'Suspeita de fraude ou trote',
   'Outro motivo',
 ] as const;
+
+export const KITCHEN_STATUS_LABELS: Partial<Record<OrderStatus, string>> = {
+  confirmed: 'Aguardando preparo',
+  preparing: 'Em preparação',
+  ready: 'Preparação concluída',
+};
+
+// ───────────────────────────── Entregas ─────────────────────────────
+
+export const DELIVERY_STATUSES = ['awaiting_courier', 'assigned', 'out_for_delivery', 'delivered', 'problem', 'canceled'] as const;
+export type DeliveryStatus = (typeof DELIVERY_STATUSES)[number];
+export const DELIVERY_STATUS_LABELS: Record<DeliveryStatus, string> = {
+  awaiting_courier: 'Aguardando entregador',
+  assigned: 'Entregador atribuído',
+  out_for_delivery: 'Saiu para entrega',
+  delivered: 'Entregue',
+  problem: 'Problema na entrega',
+  canceled: 'Cancelada',
+};
+
+export const COURIER_STATUSES = ['available', 'busy', 'offline'] as const;
+export type CourierStatus = (typeof COURIER_STATUSES)[number];
+export const COURIER_STATUS_LABELS: Record<CourierStatus, string> = {
+  available: 'Disponível',
+  busy: 'Em entrega',
+  offline: 'Fora de serviço',
+};
+
+// ───────────────────────────── Atendimento ─────────────────────────────
+
+export const CONVERSATION_STATUSES = ['open', 'waiting', 'closed'] as const;
+export type ConversationStatus = (typeof CONVERSATION_STATUSES)[number];
+export const CONVERSATION_MODES = ['ai', 'human'] as const;
+export type ConversationMode = (typeof CONVERSATION_MODES)[number];
+
+export const MESSAGE_DIRECTIONS = ['inbound', 'outbound', 'internal'] as const;
+export type MessageDirection = (typeof MESSAGE_DIRECTIONS)[number];
+export const MESSAGE_SENDERS = ['customer', 'user', 'ai', 'system'] as const;
+export type MessageSender = (typeof MESSAGE_SENDERS)[number];
+export const MESSAGE_TYPES = ['text', 'image', 'document', 'audio', 'video', 'location', 'template', 'other'] as const;
+export type MessageType = (typeof MESSAGE_TYPES)[number];
+/** received: mensagem do cliente. pending → sent (aceita pela Meta) → delivered → read, ou failed. */
+export const MESSAGE_STATUSES = ['received', 'pending', 'sent', 'delivered', 'read', 'failed'] as const;
+export type MessageStatus = (typeof MESSAGE_STATUSES)[number];
+export const MESSAGE_STATUS_LABELS: Record<MessageStatus, string> = {
+  received: 'Recebida',
+  pending: 'Enviando',
+  sent: 'Enviada',
+  delivered: 'Entregue',
+  read: 'Lida',
+  failed: 'Falhou',
+};
+
+/** A WhatsApp só permite mensagem livre até 24 h depois da última mensagem do cliente. */
+export const WHATSAPP_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+export const PAYMENT_TRANSACTION_STATUSES = ['pending', 'approved', 'rejected', 'cancelled', 'refunded', 'expired'] as const;
+export type PaymentTransactionStatus = (typeof PAYMENT_TRANSACTION_STATUSES)[number];

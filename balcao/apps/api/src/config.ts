@@ -11,6 +11,22 @@ const envSchema = z.object({
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().default('Balcão <nao-responda@balcao.app>'),
+  /** Chave das credenciais de integrações (openssl rand -base64 32). Obrigatória em produção. */
+  ENCRYPTION_KEY: z.string().optional(),
+  /** Endereço público pelo qual os provedores alcançam os webhooks (padrão: APP_URL, que repassa /api). */
+  PUBLIC_WEBHOOK_URL: z.url().optional(),
+  // WhatsApp Business Platform (Cloud API): credenciais do app Meta da plataforma.
+  WHATSAPP_APP_SECRET: z.string().optional(),
+  WHATSAPP_VERIFY_TOKEN: z.string().optional(),
+  WHATSAPP_GRAPH_VERSION: z.string().default('v23.0'),
+  // Assistente de IA (Anthropic Claude).
+  ANTHROPIC_API_KEY: z.string().optional(),
+  AI_MODEL: z.string().default('claude-opus-5-5'),
+  /** Desliga a fila de tarefas neste processo (os testes executam as tarefas manualmente). */
+  JOBS_DISABLED: z
+    .string()
+    .optional()
+    .transform((v) => v === 'true' || v === '1'),
   /** Origens extras aceitas em requisições que alteram dados (além de APP_URL). */
   TRUSTED_ORIGINS: z
     .string()
@@ -39,5 +55,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     const details = parsed.error.issues.map((i) => `  - ${i.path.join('.')}: ${i.message}`).join('\n');
     throw new Error(`Configuração inválida:\n${details}`);
   }
+  if (parsed.data.NODE_ENV === 'production' && !parsed.data.ENCRYPTION_KEY) {
+    throw new Error('Configuração inválida:\n  - ENCRYPTION_KEY: obrigatória em produção para cifrar as credenciais das integrações');
+  }
   return parsed.data;
+}
+
+export function webhookBaseUrl(config: Config) {
+  return (config.PUBLIC_WEBHOOK_URL ?? config.APP_URL).replace(/\/$/, '');
 }

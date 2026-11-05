@@ -13,3 +13,4 @@ export * from './schemas/tenant';
 export * from './schemas/catalog';
 export * from './schemas/orders';
 export * from './schemas/team';
+export * from './schemas/operations';

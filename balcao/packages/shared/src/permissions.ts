@@ -10,7 +10,7 @@
  * já nasçam preparados; `phase` indica quando o módulo passa a existir.
  */
 
-export const CURRENT_PHASE = 1;
+export const CURRENT_PHASE = 2;
 
 export const MODULES = [
   { key: 'dashboard', label: 'Visão geral', phase: 1 },
@@ -78,10 +78,11 @@ export const ROLE_DEFAULTS: Record<Role, PermissionMap> = {
   owner: fill('manage'),
   admin: fill('manage'),
   manager: fill('edit', { dashboard: 'view', team: 'view', settings: 'view', financial: 'view', reports: 'view' }),
-  attendant: fill('none', { orders: 'edit', catalog: 'view', inbox: 'edit', customers: 'view', kitchen: 'view', delivery: 'view' }),
+  attendant: fill('none', { orders: 'edit', catalog: 'view', inbox: 'edit', ai_assistant: 'view', customers: 'view', kitchen: 'view', delivery: 'view' }),
   cashier: fill('none', { orders: 'edit', catalog: 'view', cash_register: 'edit', customers: 'view', delivery: 'view' }),
   kitchen: fill('none', { orders: 'view', kitchen: 'edit', inventory: 'view' }),
-  courier: fill('none', { delivery: 'view' }),
+  // O entregador vê e atualiza apenas as entregas atribuídas a ele.
+  courier: fill('none', { delivery: 'edit' }),
 };
 
 const RANK: Record<AccessLevel, number> = { none: 0, view: 1, edit: 2, manage: 3 };

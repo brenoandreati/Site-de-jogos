@@ -18,7 +18,10 @@ export type RealtimeEvent =
   | { type: 'order.created'; orderId: string; branchId: string; number: number; status: string; channel: string }
   | { type: 'order.updated'; orderId: string; branchId: string; number: number; status: string; change: string }
   | { type: 'catalog.updated' }
-  | { type: 'store.updated' };
+  | { type: 'store.updated' }
+  | { type: 'delivery.updated'; orderId: string; branchId: string }
+  | { type: 'conversation.updated'; conversationId: string; reason: 'message' | 'status' | 'handoff' | 'read' }
+  | { type: 'payment.updated'; orderId: string; status: string };
 
 export type TenantEvent = RealtimeEvent & { tenantId: string };
 

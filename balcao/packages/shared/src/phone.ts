@@ -44,3 +44,15 @@ export function whatsappLink(normalized: string, text?: string): string {
   const base = `https://wa.me/${normalized.replace(/\D/g, '')}`;
   return text ? `${base}?text=${encodeURIComponent(text)}` : base;
 }
+
+/**
+ * A WhatsApp às vezes identifica celulares brasileiros sem o nono dígito (ex.: 551187654321).
+ * Para o cadastro do cliente usamos o número completo; para responder, o wa_id original.
+ */
+export function normalizeWhatsAppId(waId: string): string | null {
+  const digits = waId.replace(/\D/g, '');
+  if (digits.length === 12 && digits.startsWith('55') && /^[6-9]/.test(digits.slice(4))) {
+    return normalizeBrazilianPhone(`${digits.slice(0, 4)}9${digits.slice(4)}`);
+  }
+  return normalizeBrazilianPhone(digits) ?? (digits.length >= 8 && digits.length <= 15 ? digits : null);
+}
