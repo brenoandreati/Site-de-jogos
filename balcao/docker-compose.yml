@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: balcao
+      POSTGRES_PASSWORD: balcao
+      POSTGRES_DB: balcao
+    ports:
+      - "5432:5432"
+    volumes:
+      - balcao-pg:/var/lib/postgresql/data
+      - ./docker/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U balcao"]
+      interval: 5s
+      retries: 10
+
+volumes:
+  balcao-pg:
