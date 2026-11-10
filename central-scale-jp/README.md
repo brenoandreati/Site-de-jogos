@@ -120,3 +120,24 @@ Reels novos sem classificação à mão passam pelas regras automáticas. Se uma
 - Nenhuma rolagem lateral de 360 px para cima.
 
 Falta o teste num celular de verdade.
+
+## Planejamento Semanal (versão publicada à parte)
+
+O mesmo sistema também está publicado sozinho no Cloudflare, na conta pessoal: **https://planejamento-semanal.brenoandreati.workers.dev**. O código fica em `planejamento-semanal/`.
+
+- `/` é o Plano de Gravação com o nome "Planejamento semanal".
+- `/mapa` é o Mapa de Gravação de 16 a 29/11: o motivo de cada local, as captações e a sugestão de dias. As duas páginas compartilham as marcações de gravado.
+- O Worker (`src/index.js`) busca ao vivo, na Central publicada, o Calendário de Posts, a Central Scale e a Central do JP, com 60 segundos de cache. Nenhum roteiro fica copiado no Worker. Quando a Central muda, o planejamento muda junto, sem publicar de novo.
+- Descartes e horários editados no Calendário ficam salvos no navegador, no endereço da Central, e não chegam neste endereço. Aqui vale o plano padrão do Calendário.
+
+Para publicar de novo (por exemplo, depois de mudar o módulo), dentro de `planejamento-semanal/`, com `CLOUDFLARE_API_TOKEN` definido:
+
+```bash
+node build.mjs --mapa caminho/do/mapa-gravacao.html
+```
+
+```bash
+npx wrangler@4.153.0 deploy
+```
+
+A pasta `public/` é gerada pelo build e fica fora do git, porque o mapa tem conteúdo da Central.

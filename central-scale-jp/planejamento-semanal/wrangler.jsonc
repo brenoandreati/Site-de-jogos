@@ -1,0 +1,9 @@
+// Planejamento Semanal · https://planejamento-semanal.brenoandreati.workers.dev
+// Publicar: node build.mjs --mapa <arquivo do Mapa de Gravação> && npx wrangler@4.153.0 deploy
+{
+  "name": "planejamento-semanal",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-01",
+  "workers_dev": true,
+  "assets": { "directory": "./public", "binding": "ASSETS" }
+}
