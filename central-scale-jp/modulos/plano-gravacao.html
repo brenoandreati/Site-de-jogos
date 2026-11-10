@@ -21,7 +21,7 @@
   --line:#E4DED3; --line-2:#EEE9E1;
   --head:#0F1E3A; --head-ink:#FFFFFF; --head-muted:rgba(255,255,255,.68); --head-line:rgba(255,255,255,.12);
   --gold:#C9A24D; --gold-ink:#7D5F18; --accent:#0B2A8A; --on-accent:#FFFFFF;
-  --int:#1B4FBF; --int-soft:#E6EDFB; --ext:#A9822C; --ext-soft:#F6EDDA; --flex:#1F7A4D; --flex-soft:#E4F2EA;
+  --int:#1B4FBF; --int-soft:#E6EDFB; --ext:#A9822C; --ext-soft:#F6EDDA;
   --topo:#2670C4; --topo-soft:#E4EEFA; --topo-ink:#1A57A0;
   --meio:#C9A24D; --meio-soft:#F6EDDA; --meio-ink:#6E5310;
   --fundo:#0B2A8A; --fundo-soft:#E5EAF8; --fundo-ink:#0B2A8A;
@@ -38,7 +38,7 @@
     --line:#262D3C; --line-2:#1E2431;
     --head:#0A0D14; --head-line:rgba(255,255,255,.08);
     --gold:#D9B766; --gold-ink:#D9B766; --accent:#9DB4F5; --on-accent:#0D1018;
-    --int:#8DAAF5; --int-soft:#1A2547; --ext:#D9B766; --ext-soft:#2E2819; --flex:#6FD3A0; --flex-soft:#15302A;
+    --int:#8DAAF5; --int-soft:#1A2547; --ext:#D9B766; --ext-soft:#2E2819;
     --topo:#5AA6F0; --topo-soft:#16293F; --topo-ink:#9CCBF7;
     --meio:#D4B25C; --meio-soft:#2E2819; --meio-ink:#E8CF8E;
     --fundo:#8EA6F2; --fundo-soft:#1A2547; --fundo-ink:#B4C4F7;
@@ -54,7 +54,7 @@
   --line:#262D3C; --line-2:#1E2431;
   --head:#0A0D14; --head-line:rgba(255,255,255,.08);
   --gold:#D9B766; --gold-ink:#D9B766; --accent:#9DB4F5; --on-accent:#0D1018;
-  --int:#8DAAF5; --int-soft:#1A2547; --ext:#D9B766; --ext-soft:#2E2819; --flex:#6FD3A0; --flex-soft:#15302A;
+  --int:#8DAAF5; --int-soft:#1A2547; --ext:#D9B766; --ext-soft:#2E2819;
   --topo:#5AA6F0; --topo-soft:#16293F; --topo-ink:#9CCBF7;
   --meio:#D4B25C; --meio-soft:#2E2819; --meio-ink:#E8CF8E;
   --fundo:#8EA6F2; --fundo-soft:#1A2547; --fundo-ink:#B4C4F7;
@@ -283,36 +283,33 @@ main{padding-top:16px;padding-bottom:calc(56px + env(safe-area-inset-bottom,0px)
    1. Configuração do plano (não é conteúdo: os roteiros ficam em dados/)
    ===================================================================== */
 const SETUPS=[
-  {k:'poltrona',   nome:'Poltrona (bate-papo)',               local:'interno', dica:'Quem filma lê as perguntas fora da câmera. Monta uma vez e grava todos em sequência.'},
-  {k:'serie',      nome:'Canto fixo da série',                local:'interno', dica:'Erro do Dono, CLT do CNPJ, Recado e afins. Mesmo canto, enquadramento e abertura em todos.'},
-  {k:'caderno',    nome:'Mesa com caderno',                   local:'interno', dica:'Aulas e frameworks de fundo de funil. Caderno, caneta e bloco de papel à mão.'},
-  {k:'notebook',   nome:'Notebook + tela',                    local:'interno', dica:'JP abre e fecha falando. O meio é gravação de tela, com dados fictícios.'},
-  {k:'blackfriday',nome:'Black Friday com celular',           local:'interno', dica:'Em casa, com o celular na mão. Gravar primeiro: precisam sair até 26/11.'},
-  {k:'tatame',     nome:'Tatame (academia)',                  local:'externo', dica:'JP de kimono, com as faixas. Grava tudo no mesmo treino.'},
-  {k:'praia',      nome:'Praia de manhã',                     local:'externo', dica:'Luz natural da manhã. Chinelo, óculos escuros e cadeira de praia.'},
-  {k:'flex',       nome:'Fala direta: dá pra levar pra fora', local:'flex',    dica:'Não depende de objeto. Funciona caminhando na praia ou numa cafeteria.'}
+  {k:'poltrona', nome:'Sala · poltrona',         local:'interno', dica:'Bate-papo com quem filma lendo as perguntas fora da câmera. Monta a poltrona uma vez e grava todos em sequência.'},
+  {k:'caderno',  nome:'Mesa com caderno',        local:'interno', dica:'Aulas e frameworks de fundo de funil. Caderno, caneta, bloco e post-it à mão: o JP escreve o que está falando.'},
+  {k:'notebook', nome:'Mesa com notebook',       local:'interno', dica:'O JP abre e fecha falando; o meio é gravação de tela com dados fictícios. Deixe as telas prontas antes de ligar a câmera.'},
+  {k:'serie',    nome:'Canto fixo das séries',   local:'interno', dica:'Erro do Dono, CLT do CNPJ e Escala × Trava. Mesmo canto, enquadramento e abertura em todos.'},
+  {k:'varanda',  nome:'Varanda · série Recado',  local:'interno', dica:'A série Recado pede o mesmo cenário em todos os episódios. A varanda dá luz natural e separa o Recado do canto do Erro do Dono.'},
+  {k:'shopping', nome:'Shopping',                local:'externo', dica:'Black Friday e o POV do vendedor. Corredor do shopping, sem logo de loja aparecendo.'},
+  {k:'cafe',     nome:'Cafeteria',               local:'externo', dica:'Opiniões e conversas de dono, em fala direta. Nos de IA, o JP usa o celular na mesa. Se chover, dá para gravar na varanda.'},
+  {k:'praia',    nome:'Praia e orla, de manhã',  local:'externo', dica:'Chinelo, óculos escuros e cadeira de praia para o POV. Os outros são caminhando na orla.'},
+  {k:'tatame',   nome:'Tatame',                  local:'externo', dica:'JP de kimono, com as cinco faixas. Grava tudo num treino só e aproveita para as fotos do treino.'}
 ];
 const LOCAIS=[
-  {k:'interno',nome:'Interno · casa e condomínio',curto:'Interno',cor:'var(--int)'},
-  {k:'externo',nome:'Externo',curto:'Externo',cor:'var(--ext)'},
-  {k:'flex',nome:'Pode ir pra fora',curto:'Pode ir pra fora',cor:'var(--flex)'}
+  {k:'interno',nome:'Interno · apartamento e condomínio',curto:'Interno',cor:'var(--int)'},
+  {k:'externo',nome:'Externo · shopping, café, praia e tatame',curto:'Externo',cor:'var(--ext)'}
 ];
 
-/* Classificação feita à mão para 16 a 29/11. Sempre vence a regra automática
-   (só perde para a escolha feita no próprio card, salva neste aparelho). */
+/* Classificação feita à mão para 16 a 29/11, lendo o teor de cada roteiro (não só a
+   direção). Sempre vence a regra automática; só perde para a escolha feita no card. */
 const SETUP_POR_ID={
-  RE002:'poltrona',RE003:'poltrona',RJ01:'poltrona',RJ19:'poltrona',RJ16:'poltrona',R001x:'poltrona',R004x:'poltrona',R012x:'poltrona',
-  R005x:'poltrona',R006x:'poltrona',R008x:'poltrona',R009x:'poltrona',R010x:'poltrona',R011x:'poltrona',R002x:'poltrona',R003x:'poltrona',R19j:'poltrona',
-  RE016:'serie',RE017:'serie',RE019:'serie',RJ02:'serie',RJ03:'serie',RJ07:'serie',RJ04:'serie',RJ05:'serie',RJ14:'serie',RJ15:'serie',R07j:'serie',
-  RE052:'notebook',RJ08:'notebook',RJ17:'notebook',RJ18:'notebook',RJ20:'notebook',RJ24:'notebook',R050x:'notebook',R051x:'notebook',
-  R08j:'notebook',R17j:'notebook',R18j:'notebook',R20j:'notebook',R24j:'notebook',
-  RE054:'caderno',RE057:'caderno',RJ11:'caderno',RJ12:'caderno',RJ21:'caderno',RJ22:'caderno',RJ23:'caderno',R055x:'caderno',R056x:'caderno',
-  R058x:'caderno',R059x:'caderno',R061x:'caderno',R062x:'caderno',R054x:'caderno',R057x:'caderno',R11j:'caderno',R12j:'caderno',R21j:'caderno',
-  R22j:'caderno',R23j:'caderno',
-  NV04:'blackfriday',NV05:'blackfriday',NV06:'blackfriday',
-  RJ10:'tatame',RJ13:'tatame',R030x:'tatame',R031x:'tatame',R032x:'tatame',R033x:'tatame',R034x:'tatame',R007x:'tatame',R10j:'tatame',
-  RE035:'praia',R035x:'praia',
-  RJ06:'flex',RJ09:'flex',RE060:'flex',R070x:'flex',R063x:'flex',R075x:'flex',R039x:'flex',R036x:'flex',R06j:'flex',R09j:'flex',R060x:'flex'
+  R001x:'poltrona',RE002:'poltrona',RE003:'poltrona',R004x:'poltrona',R005x:'poltrona',RJ01:'poltrona',RJ19:'poltrona',R008x:'poltrona',R009x:'poltrona',R011x:'poltrona',RJ16:'poltrona',
+  RE054:'caderno',R055x:'caderno',R056x:'caderno',RE057:'caderno',R058x:'caderno',RJ11:'caderno',R059x:'caderno',RJ12:'caderno',RJ21:'caderno',R061x:'caderno',R062x:'caderno',RJ22:'caderno',R063x:'caderno',RJ23:'caderno',
+  RE052:'notebook',R050x:'notebook',R051x:'notebook',RJ17:'notebook',RJ20:'notebook',RJ24:'notebook',
+  RE016:'serie',RE017:'serie',RE019:'serie',RJ02:'serie',RJ03:'serie',RJ07:'serie',RJ04:'serie',RJ14:'serie',RJ05:'serie',
+  R070x:'varanda',R075x:'varanda',RJ15:'varanda',
+  NV04:'shopping',NV05:'shopping',NV06:'shopping',R012x:'shopping',R036x:'shopping',
+  RJ06:'cafe',RJ09:'cafe',R039x:'cafe',R010x:'cafe',RJ08:'cafe',RJ18:'cafe',
+  RE035:'praia',R006x:'praia',RE060:'praia',
+  R030x:'tatame',R031x:'tatame',R032x:'tatame',R033x:'tatame',R034x:'tatame',RJ13:'tatame',R007x:'tatame',RJ10:'tatame'
 };
 
 /* Mesmo vídeo com códigos diferentes: código do JP → código do Scale.
@@ -490,25 +487,27 @@ function prepVideo(v){
 }
 
 /* ---------- setup ---------- */
-const SERIES=['erro do dono','clt do cnpj','recado #','pov: o cliente disse','dono que escala'];
+const SERIES=['erro do dono','erro de gestão','clt do cnpj','pov: o cliente disse','dono que escala'];
 function autoSetup(v){
   const ids=[...v.ids.scale,...v.ids.jp];
   for(const id of [v.vid.slice(2),...ids])if(SETUP_POR_ID[id])return {k:SETUP_POR_ID[id],why:'classificado à mão na lista de 16 a 29/11'};
   const tits=v.posts.map(p=>N(p.titulo));
   const dir=N([v.src.jp&&v.src.jp.direcao,v.src.scale&&v.src.scale.direcao].filter(Boolean).join('\n'));
   const cen=v.src.jp&&v.src.jp.momento&&v.src.jp.momento.cenario;
+  const starts=list=>list.find(s=>tits.some(t=>t.indexOf(N(s))===0));
   let w;
-  if(tits.some(t=>t.indexOf('black friday #')===0))return {k:'blackfriday',why:'título “Black Friday #”'};
+  if(starts(['black friday #']))return {k:'shopping',why:'título “Black Friday #”'};
   if((w=has(dir,['poltrona','voz fora da câmera'])))return {k:'poltrona',why:'direção cita “'+w+'”'};
   if((w=has(dir,['tatame','kimono'])))return {k:'tatame',why:'direção cita “'+w+'”'};
   if(cen==='treino')return {k:'tatame',why:'momento do JP: treino'};
   if((w=has(dir,['externo','praia','rua'])))return {k:'praia',why:'direção cita “'+w+'”'};
   if(cen==='praia')return {k:'praia',why:'momento do JP: praia'};
+  if(cen==='cafe')return {k:'cafe',why:'momento do JP: café'};
   if((w=has(dir,['notebook','gravação de tela','gravar a tela'])))return {k:'notebook',why:'direção cita “'+w+'”'};
-  const sr=SERIES.find(s=>tits.some(t=>t.indexOf(s)===0));
-  if(sr)return {k:'serie',why:'título de série'};
+  if(starts(['recado #']))return {k:'varanda',why:'série Recado'};
+  if(starts(SERIES))return {k:'serie',why:'título de série'};
   if((w=has(dir,['caderno','quadro','bloco de papel'])))return {k:'caderno',why:'direção cita “'+w+'”'};
-  return {k:'flex',why:'fala direta, sem objeto na direção'};
+  return {k:'cafe',why:'fala direta, sem objeto na direção: vai bem numa cafeteria'};
 }
 let MANUAL=lsGet(K.setup,{});
 const setupOf=v=>(MANUAL[v.vid]&&SETUP_BY[MANUAL[v.vid]])?MANUAL[v.vid]:v.auto;

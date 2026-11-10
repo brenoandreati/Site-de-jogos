@@ -67,23 +67,33 @@ Quando o roteiro muda entre os perfis (em geral, a chamada final), o card avisa 
 
 O "gravado" vale para o vídeo, então marcar numa aba marca nas outras.
 
-**Setup de cada vídeo.** Vale o que vier primeiro nesta ordem:
-1. A escolha feita no card, salva no aparelho.
-2. A lista `SETUP_POR_ID` do módulo (classificação feita à mão para 16 a 29/11).
-3. As regras automáticas, aplicadas à direção e ao `momento.cenario` do JP:
+**Locais de gravação.** São dois lados:
 
-| Regra | Setup |
+- **Interno** (apartamento do JP e condomínio): sala com a poltrona, mesa com caderno, mesa com notebook, canto fixo das séries e varanda (série Recado).
+- **Externo**: shopping, cafeteria, praia e orla, e tatame.
+
+**Local de cada vídeo.** Vale o que vier primeiro nesta ordem:
+1. A escolha feita no card, salva no aparelho.
+2. A lista `SETUP_POR_ID` do módulo. Para 16 a 29/11, ela foi feita lendo o teor de cada roteiro, não só o cenário sugerido na direção: 43 vídeos internos e 22 externos. Alguns exemplos:
+   - Black Friday vai para o shopping.
+   - "Versão capixaba" vai para a orla.
+   - "Conhecendo o JP", as opiniões e a IA no celular vão para a cafeteria.
+3. As regras automáticas, aplicadas à direção, ao título e ao `momento.cenario` do JP:
+
+| Regra | Local |
 |---|---|
-| Título "Black Friday #" | `blackfriday` |
+| Título "Black Friday #" | `shopping` |
 | "Poltrona" ou "voz fora da câmera" | `poltrona` |
 | "Tatame" ou "kimono", ou cenário `treino` | `tatame` |
 | "Externo", "praia" ou "rua", ou cenário `praia` | `praia` |
+| Cenário `cafe` | `cafe` |
 | "Notebook", "gravação de tela" ou "Gravar a tela" | `notebook` |
-| Título "Erro do Dono", "CLT do CNPJ", "Recado #", "POV: o cliente disse" ou "Dono que escala" | `serie` |
+| Título "Recado #" | `varanda` |
+| Título "Erro do Dono", "Erro de gestão", "CLT do CNPJ", "POV: o cliente disse" ou "Dono que escala" | `serie` |
 | "caderno", "quadro" ou "bloco de papel" | `caderno` |
-| Qualquer outro | `flex` |
+| Fala direta, sem objeto | `cafe` |
 
-A regra de Black Friday vem antes da de caderno porque o título não deixa dúvida. Sem isso, o NV06 (que cita bloco de papel) cairia em caderno. Cada card explica o motivo do setup padrão.
+Cada card explica o motivo do local padrão.
 
 **Datas divergentes.** Um aviso lista os Reels cujo campo `cal` na Central Scale ou na Central do JP não bate com o Calendário de Posts. Para 16 a 29/11 são 77 (44 do JP e 33 do Scale). O plano sempre usa o Calendário.
 
@@ -95,7 +105,7 @@ A aba e os filtros ficam só na sessão.
 
 ## Para as próximas semanas
 
-Reels novos sem classificação à mão passam pelas regras automáticas. Se uma regra errar, troque o setup no card (fica salvo no aparelho). Para valer em todos os aparelhos, ponha o código em `SETUP_POR_ID`. Vídeos iguais com títulos diferentes entram em `MESMO_VIDEO`.
+Reels novos sem classificação à mão passam pelas regras automáticas. Se uma regra errar, troque o local no card (fica salvo no aparelho). Para valer em todos os aparelhos, ponha o código em `SETUP_POR_ID`. Vídeos iguais com títulos diferentes entram em `MESMO_VIDEO`.
 
 ## Testes feitos (Chromium, 360 a 1280 px de largura)
 
