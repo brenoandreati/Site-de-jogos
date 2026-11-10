@@ -190,6 +190,8 @@ main{padding-top:16px;padding-bottom:calc(56px + env(safe-area-inset-bottom,0px)
 .tag.dur{background:transparent;border:1px solid var(--line);color:var(--muted)}
 .tag.code{background:transparent;color:var(--faint);font:600 11.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;padding-inline:2px}
 .tag.diff{background:var(--warn-bg);color:var(--warn-fg)}
+.tag.rel{background:var(--meio-soft);color:var(--meio-ink)}
+.difr{margin:0;padding:8px 10px;border-radius:8px;background:var(--meio-soft);color:var(--meio-ink);font-size:13.5px}
 .acts{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:9px}
 .btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 10px;min-height:38px;font-size:13px;font-weight:600;color:var(--ink);display:inline-flex;align-items:center;gap:5px}
 .btn:hover{border-color:var(--faint)}
@@ -288,6 +290,7 @@ const SETUPS=[
   {k:'notebook', nome:'Mesa com notebook',       local:'interno', dica:'O JP abre e fecha falando; o meio é gravação de tela com dados fictícios. Deixe as telas prontas antes de ligar a câmera.'},
   {k:'serie',    nome:'Canto fixo das séries',   local:'interno', dica:'Erro do Dono, CLT do CNPJ e Escala × Trava. Mesmo canto, enquadramento e abertura em todos.'},
   {k:'varanda',  nome:'Varanda · série Recado',  local:'interno', dica:'A série Recado pede o mesmo cenário em todos os episódios. A varanda dá luz natural e separa o Recado do canto do Erro do Dono.'},
+  {k:'quadro',   nome:'Quadro · série Gestão na prática', local:'interno', dica:'Série do Scale: os seis episódios no mesmo quadro (ou bloco grande na mesa), com o mesmo enquadramento e a mesma abertura.'},
   {k:'shopping', nome:'Shopping',                local:'externo', dica:'Black Friday e o POV do vendedor. Corredor do shopping, sem logo de loja aparecendo.'},
   {k:'cafe',     nome:'Cafeteria',               local:'externo', dica:'Opiniões e conversas de dono, em fala direta. Nos de IA, o JP usa o celular na mesa. Se chover, dá para gravar na varanda.'},
   {k:'praia',    nome:'Praia e orla, de manhã',  local:'externo', dica:'Chinelo, óculos escuros e cadeira de praia para o POV. Os outros são caminhando na orla.'},
@@ -309,7 +312,11 @@ const SETUP_POR_ID={
   NV04:'shopping',NV05:'shopping',NV06:'shopping',R012x:'shopping',R036x:'shopping',
   RJ06:'cafe',RJ09:'cafe',R039x:'cafe',R010x:'cafe',RJ08:'cafe',RJ18:'cafe',
   RE035:'praia',R006x:'praia',RE060:'praia',
-  R030x:'tatame',R031x:'tatame',R032x:'tatame',R033x:'tatame',R034x:'tatame',RJ13:'tatame',R007x:'tatame',RJ10:'tatame'
+  R030x:'tatame',R031x:'tatame',R032x:'tatame',R033x:'tatame',R034x:'tatame',RJ13:'tatame',R007x:'tatame',RJ10:'tatame',
+  /* originais do JP cujo par no Scale virou releitura */
+  R002x:'poltrona',R003x:'poltrona',R19j:'poltrona',R01j:'poltrona',R16j:'poltrona',R06j:'cafe',R09j:'cafe',R08j:'cafe',R18j:'cafe',
+  R17j:'notebook',R20j:'notebook',R052x:'notebook',R035x:'praia',R13j:'tatame',R15j:'varanda',
+  R07j:'serie',R04j:'serie',R05j:'serie',R14j:'serie',R016x:'serie',R017x:'serie',R019x:'serie',R02j:'serie',R03j:'serie'
 };
 
 /* Mesmo vídeo com códigos diferentes: código do JP → código do Scale.
@@ -394,13 +401,14 @@ async function fromModule(f){
   return JSON.parse(data);
 }
 async function loadAll(){
-  await Promise.all(FONTES.map(f=>loadScript(f.js)));
+  await Promise.all([...FONTES.map(f=>loadScript(f.js)),loadScript('../dados/releituras.js')]);
   const D=window.CENTRAL_DADOS||{};const out={};
   for(const f of FONTES){
     if(D[f.chave]){out[f.chave]=D[f.chave];continue;}
     origem='modulos';
     out[f.chave]=await fromModule(f);
   }
+  out.releituras=D.releituras||null;
   return out;
 }
 
@@ -410,6 +418,19 @@ async function loadAll(){
        salvos pelo Calendário neste aparelho).
    ===================================================================== */
 let C=null,SC=null,JP=null,IDX={scale:new Map(),jp:new Map()};
+/* Releituras: o post indicado ganha outro conteúdo e deixa de ser o mesmo vídeo do outro perfil */
+let REL=new Map(),SEPARA=new Set();
+function aplicarReleituras(R){
+  REL=new Map();SEPARA=new Set();
+  if(!R||!Array.isArray(R.itens))return;
+  R.itens.forEach(r=>{
+    const src=IDX[r.perfil]&&IDX[r.perfil].get(r.id);if(!src)return;
+    IDX[r.perfil].set(r.id,Object.assign({},src,{titulo:r.titulo,hook:r.hook,roteiro:r.roteiro,direcao:r.direcao,legenda:r.legenda,momento:null}));
+    const k=(r.perfil==='scale'?'s:':'j:')+r.id;if(C.ITEMS[k])C.ITEMS[k]=Object.assign({},C.ITEMS[k],{t:r.titulo});
+    REL.set(r.perfil+':'+r.id,r);
+    if(r.original&&r.original.id)SEPARA.add(r.original.id);
+  });
+}
 let VIDEOS=[],POSTS=[],LAUNCH='';
 
 function calState(){
@@ -458,12 +479,14 @@ function scaleByTitle(){
 function buildVideos(){
   const byTitle=scaleByTitle(),map=new Map();
   POSTS.forEach(p=>{
-    let vid;
-    if(p.perfil==='scale')vid='s:'+p.id;
+    let vid;const rel=REL.get(p.perfil+':'+p.id);
+    if(rel)vid='r:'+p.id;
+    else if(p.perfil==='scale')vid='s:'+p.id;
+    else if(SEPARA.has(p.id))vid='j:'+p.id;
     else{const s=MESMO_VIDEO[p.id]||byTitle.get(normTitle(p.titulo));vid=s?'s:'+s:'j:'+p.id;}
     p.vid=vid;
     let v=map.get(vid);
-    if(!v){v={vid,posts:[],ids:{scale:[],jp:[]}};map.set(vid,v);}
+    if(!v){v={vid,posts:[],ids:{scale:[],jp:[]},rel:rel||null,temRel:SEPARA.has(p.id)};map.set(vid,v);}
     v.posts.push(p);
     if(v.ids[p.perfil].indexOf(p.id)<0)v.ids[p.perfil].push(p.id);
   });
@@ -481,7 +504,7 @@ function prepVideo(v){
   /* direção: a do JP primeiro (é a que descreve a gravação em casa), depois a do Scale */
   v.dir=(v.src.jp&&v.src.jp.direcao)||(v.src.scale&&v.src.scale.direcao)||'';
   v.dur=duracao(v.dir)||duracao(v.src.scale&&v.src.scale.direcao);
-  v.code=[...v.ids.scale.map(id=>'Scale '+id),...v.ids.jp.map(id=>'JP '+id)].join(' · ');
+  v.code=[...v.ids.scale.map(id=>'Scale '+id),...v.ids.jp.map(id=>'JP '+id)].join(' · ')+(v.rel?' · releitura '+v.rel.codigo:'');
   v.fin=(v.both&&v.src.scale&&v.src.jp)?finais(v.src.scale.roteiro,v.src.jp.roteiro):null;
   const a=autoSetup(v);v.auto=a.k;v.why=a.why;
 }
@@ -490,6 +513,7 @@ function prepVideo(v){
 const SERIES=['erro do dono','erro de gestão','clt do cnpj','pov: o cliente disse','dono que escala'];
 function autoSetup(v){
   const ids=[...v.ids.scale,...v.ids.jp];
+  if(v.rel&&SETUP_BY[v.rel.setup])return {k:v.rel.setup,why:'releitura do Scale. '+(v.rel.porque||'')};
   for(const id of [v.vid.slice(2),...ids])if(SETUP_POR_ID[id])return {k:SETUP_POR_ID[id],why:'classificado à mão na lista de 16 a 29/11'};
   const tits=v.posts.map(p=>N(p.titulo));
   const dir=N([v.src.jp&&v.src.jp.direcao,v.src.scale&&v.src.scale.direcao].filter(Boolean).join('\n'));
@@ -556,10 +580,10 @@ function defaultWindow(){const a=nextMonday();return {a,b:addDays(a,13)};}
 if(!isDate(UI.a)||!isDate(UI.b)||UI.a>UI.b){const w=defaultWindow();UI.a=w.a;UI.b=w.b;}
 const closed=new Set(UI.closed),opened=new Set(UI.open);
 
-const isDone=v=>!!(FEITO[v.vid]||[...v.ids.scale.map(i=>'s:'+i),...v.ids.jp.map(i=>'j:'+i)].some(k=>FEITO[k]));
+const isDone=v=>!!(FEITO[v.vid]||(!v.rel&&[...v.ids.scale.map(i=>'s:'+i),...v.ids.jp.map(i=>'j:'+i)].some(k=>FEITO[k])));
 function setDone(v,on){
   if(on)FEITO[v.vid]=Date.now();
-  else{delete FEITO[v.vid];v.ids.scale.forEach(i=>delete FEITO['s:'+i]);v.ids.jp.forEach(i=>delete FEITO['j:'+i]);}
+  else{delete FEITO[v.vid];if(!v.rel){v.ids.scale.forEach(i=>delete FEITO['s:'+i]);v.ids.jp.forEach(i=>delete FEITO['j:'+i]);}}
   lsSet(K.feito,FEITO);
 }
 
@@ -631,6 +655,8 @@ function item(v,perfil){
   let tags=mine.map(p=>postTag(p,!perfil,!inRange(p))).join('');
   if(perfil&&other.length)tags+=`<span class="tag both">Também no ${PERFIS[other[0].perfil]} · ${esc(other.map(p=>dm(p.date)).join(', '))}</span>`;
   else if(!perfil&&v.both)tags+=`<span class="tag both">JP + Scale: grava uma vez</span>`;
+  if(v.rel)tags+=`<span class="tag rel">Releitura · o original fica no JP</span>`;
+  else if(v.temRel)tags+=`<span class="tag rel">Original · o Scale tem uma releitura</span>`;
   if(v.fin&&(!perfil||other.length))tags+=`<span class="tag diff">${v.fin.fim?'Final':'Trecho'} diferente em cada perfil</span>`;
   if(v.dur)tags+=`<span class="tag dur">${esc(v.dur)}</span>`;
   tags+=`<span class="tag code">${esc(v.code)}</span>`;
@@ -652,6 +678,7 @@ function item(v,perfil){
   const more=`<div class="more" id="m-${esc(v.vid)}"${open?'':' hidden'}>
       <div class="lb">Gancho</div><p class="hook">${esc(hookOf(src.hook)||'—')}</p>
       <div class="lb">Cenário</div><p>${esc(resumo(dirFull)||'Sem direção na Central.')}</p>
+      ${v.rel?`<div class="lb">O que muda em relação ao JP</div><p class="difr">${esc(v.rel.diferenca||'')}</p>`:''}
       ${fin}
       ${dirFull?`<details><summary>Direção completa</summary><pre>${esc(dirFull)}</pre></details>`:''}
       <div class="lb">Setup de gravação</div>
@@ -841,6 +868,7 @@ async function init(){
     const d=await loadAll();
     C=d.calendario;SC=d.scale;JP=d.jp;
     IDX={scale:new Map(SC.map(x=>[x.id,x])),jp:new Map(JP.map(x=>[x.id,x]))};
+    aplicarReleituras(d.releituras);
     buildPosts();buildVideos();render();
   }catch(err){
     console.error(err);

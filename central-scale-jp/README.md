@@ -95,6 +95,16 @@ O "gravado" vale para o vídeo, então marcar numa aba marca nas outras.
 
 Cada card explica o motivo do local padrão.
 
+**Releituras.** Se existir `dados/releituras.js`, o módulo troca o conteúdo dos posts indicados lá (título, gancho, roteiro, direção, legenda e local de gravação) e separa esses posts do vídeo do outro perfil:
+- a releitura vira um vídeo próprio, com marcação de gravado própria;
+- o original fica sozinho no perfil dele.
+
+Regra adotada em 10/11:
+- **Topo e meio:** o que repetia no JP e no Scale fica com o original no JP, e o Scale ganha uma releitura no mesmo horário.
+- **Fundo de funil:** continua em collab, com o mesmo vídeo nos dois perfis.
+
+Sem o arquivo, nada muda. O arquivo tem conteúdo (roteiros), então não fica neste repositório.
+
 **Datas divergentes.** Um aviso lista os Reels cujo campo `cal` na Central Scale ou na Central do JP não bate com o Calendário de Posts. Para 16 a 29/11 são 77 (44 do JP e 33 do Scale). O plano sempre usa o Calendário.
 
 **Salvo no aparelho (localStorage):**
@@ -126,14 +136,17 @@ Falta o teste num celular de verdade.
 O mesmo sistema também está publicado sozinho no Cloudflare, na conta pessoal: **https://planejamento-semanal.brenoandreati.workers.dev**. O código fica em `planejamento-semanal/`.
 
 - `/` é o Plano de Gravação com o nome "Planejamento semanal".
-- `/mapa` é o Mapa de Gravação de 16 a 29/11: o motivo de cada local, as captações e a sugestão de dias. As duas páginas compartilham as marcações de gravado.
+- `/mapa` é o Mapa de Gravação de 16 a 29/11: o motivo de cada local, as captações e a sugestão de dias.
+- `/releituras` mostra as releituras do Scale ao lado do original do JP, com roteiro, direção e legenda para copiar.
+- `/dados/releituras.js` são os roteiros das releituras, lidos pelo sistema.
+- As páginas compartilham as marcações de gravado.
 - O Worker (`src/index.js`) busca ao vivo, na Central publicada, o Calendário de Posts, a Central Scale e a Central do JP, com 60 segundos de cache. Nenhum roteiro fica copiado no Worker. Quando a Central muda, o planejamento muda junto, sem publicar de novo.
 - Descartes e horários editados no Calendário ficam salvos no navegador, no endereço da Central, e não chegam neste endereço. Aqui vale o plano padrão do Calendário.
 
 Para publicar de novo (por exemplo, depois de mudar o módulo), dentro de `planejamento-semanal/`, com `CLOUDFLARE_API_TOKEN` definido:
 
 ```bash
-node build.mjs --mapa caminho/do/mapa-gravacao.html
+node build.mjs --mapa mapa-gravacao.html --pagina-releituras releituras-scale.html --releituras releituras.js
 ```
 
 ```bash
