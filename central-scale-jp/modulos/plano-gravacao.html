@@ -1,0 +1,856 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Plano de Gravação</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* =====================================================================
+   Plano de Gravação · Central Scale & JP
+   Reels a gravar numa janela de datas, agrupados pelo cenário que precisa
+   ser montado. Datas e horários vêm do Calendário de Posts; gancho, direção
+   e roteiro vêm da Central Scale e da Central do JP (pasta dados/).
+   Cores do Scale Design System: azul #0B2A8A, royal #1B4FBF, ouro #C9A24D,
+   JP #16294A. Funil igual ao Calendário (topo, meio, fundo).
+   ===================================================================== */
+:root{
+  --bg:#F4F1EC; --surface:#FFFFFF; --surface-2:#FAF8F5; --soft:#EFEAE1; --ink:#14192A; --muted:#5E6577; --faint:#8D93A1;
+  --line:#E4DED3; --line-2:#EEE9E1;
+  --head:#0F1E3A; --head-ink:#FFFFFF; --head-muted:rgba(255,255,255,.68); --head-line:rgba(255,255,255,.12);
+  --gold:#C9A24D; --gold-ink:#7D5F18; --accent:#0B2A8A; --on-accent:#FFFFFF;
+  --int:#1B4FBF; --int-soft:#E6EDFB; --ext:#A9822C; --ext-soft:#F6EDDA; --flex:#1F7A4D; --flex-soft:#E4F2EA;
+  --topo:#2670C4; --topo-soft:#E4EEFA; --topo-ink:#1A57A0;
+  --meio:#C9A24D; --meio-soft:#F6EDDA; --meio-ink:#6E5310;
+  --fundo:#0B2A8A; --fundo-soft:#E5EAF8; --fundo-ink:#0B2A8A;
+  --both:#5B2FC0; --both-soft:#EFE8FA;
+  --ok:#1F7A4D; --ok-soft:#EAF5EF; --ok-bar:#6FD3A0;
+  --warn-bg:#FFF4D6; --warn-fg:#5A4306;
+  --shadow:0 1px 2px rgba(20,25,42,.04),0 8px 22px rgba(20,25,42,.06);
+  --f-ui:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif; --f-display:"Fraunces",Georgia,serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1018; --surface:#151A26; --surface-2:#121620; --soft:#1C2231; --ink:#ECEEF3; --muted:#A2AABA; --faint:#717989;
+    --line:#262D3C; --line-2:#1E2431;
+    --head:#0A0D14; --head-line:rgba(255,255,255,.08);
+    --gold:#D9B766; --gold-ink:#D9B766; --accent:#9DB4F5; --on-accent:#0D1018;
+    --int:#8DAAF5; --int-soft:#1A2547; --ext:#D9B766; --ext-soft:#2E2819; --flex:#6FD3A0; --flex-soft:#15302A;
+    --topo:#5AA6F0; --topo-soft:#16293F; --topo-ink:#9CCBF7;
+    --meio:#D4B25C; --meio-soft:#2E2819; --meio-ink:#E8CF8E;
+    --fundo:#8EA6F2; --fundo-soft:#1A2547; --fundo-ink:#B4C4F7;
+    --both:#C7AEF7; --both-soft:#2A2142;
+    --ok:#6FD3A0; --ok-soft:#14291F;
+    --warn-bg:#2B2410; --warn-fg:#EBD79A;
+    --shadow:0 1px 2px rgba(0,0,0,.35),0 8px 22px rgba(0,0,0,.3);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1018; --surface:#151A26; --surface-2:#121620; --soft:#1C2231; --ink:#ECEEF3; --muted:#A2AABA; --faint:#717989;
+  --line:#262D3C; --line-2:#1E2431;
+  --head:#0A0D14; --head-line:rgba(255,255,255,.08);
+  --gold:#D9B766; --gold-ink:#D9B766; --accent:#9DB4F5; --on-accent:#0D1018;
+  --int:#8DAAF5; --int-soft:#1A2547; --ext:#D9B766; --ext-soft:#2E2819; --flex:#6FD3A0; --flex-soft:#15302A;
+  --topo:#5AA6F0; --topo-soft:#16293F; --topo-ink:#9CCBF7;
+  --meio:#D4B25C; --meio-soft:#2E2819; --meio-ink:#E8CF8E;
+  --fundo:#8EA6F2; --fundo-soft:#1A2547; --fundo-ink:#B4C4F7;
+  --both:#C7AEF7; --both-soft:#2A2142;
+  --ok:#6FD3A0; --ok-soft:#14291F;
+  --warn-bg:#2B2410; --warn-fg:#EBD79A;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 8px 22px rgba(0,0,0,.3);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:8px}
+[hidden]{display:none!important}
+.wrap{max-width:860px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* ---------- topo ---------- */
+.hd{background:var(--head);color:var(--head-ink);padding-top:calc(18px + env(safe-area-inset-top,0px))}
+.hd .wrap{display:flex;gap:16px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;padding-bottom:16px}
+.eyebrow{margin:0;font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.hd h1{margin:4px 0 4px;font-family:var(--f-display);font-weight:600;font-size:clamp(22px,5.4vw,30px);line-height:1.12;letter-spacing:-.01em;text-wrap:balance}
+.hd .sub{margin:0;font-size:13px;color:var(--head-muted)}
+.prog{min-width:150px;flex:0 0 auto;text-align:right}
+.prog .num{font-size:13px;color:var(--head-muted)}
+.prog .num b{font-size:26px;font-weight:700;color:var(--head-ink);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.prog .num span{font-variant-numeric:tabular-nums}
+.bar{height:6px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;width:0;background:var(--ok-bar);border-radius:99px;transition:width .35s ease}
+@media (max-width:520px){.prog{text-align:left;width:100%}}
+
+.tabs{position:sticky;top:0;z-index:20;background:var(--head);border-top:1px solid var(--head-line);box-shadow:0 6px 18px rgba(10,14,25,.12)}
+.tabs .wrap{display:flex;gap:2px}
+.tab{flex:1 1 auto;min-width:0;border:0;background:transparent;color:var(--head-muted);font-weight:600;font-size:14px;padding:13px 6px 12px;border-bottom:3px solid transparent;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.tab .n{font-size:11.5px;font-weight:700;background:rgba(255,255,255,.12);color:var(--head-ink);padding:2px 7px;border-radius:99px;font-variant-numeric:tabular-nums}
+.tab[aria-selected="true"]{color:var(--head-ink);border-bottom-color:var(--gold)}
+.tab[aria-selected="true"] .n{background:var(--gold);color:#1B1505}
+.tabs .tbar{height:3px;background:rgba(255,255,255,.06)}
+.tabs .tbar i{display:block;height:100%;width:0;background:var(--ok-bar);transition:width .35s ease}
+
+/* ---------- controles ---------- */
+main{padding-top:16px;padding-bottom:calc(56px + env(safe-area-inset-bottom,0px))}
+.ctl{display:flex;flex-direction:column;gap:10px}
+.lbl{font-size:11.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0}
+.win{display:flex;gap:8px;align-items:stretch}
+.ib{flex:none;width:44px;min-height:48px;border:1px solid var(--line);background:var(--surface);border-radius:12px;font-size:20px;line-height:1;color:var(--ink)}
+.ib:hover{border-color:var(--faint)}
+.dt{flex:1 1 0;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:1px;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:5px 10px;min-height:48px;cursor:pointer}
+.dt:focus-within{border-color:var(--gold)}
+.dt span{font-size:11px;color:var(--muted);font-weight:600}
+.dt input{border:0;background:transparent;padding:0;min-width:0;width:100%;font-weight:600;font-size:14.5px;font-variant-numeric:tabular-nums;cursor:pointer;outline:0}
+.dt input::-webkit-calendar-picker-indicator{display:none}
+.dt input::-webkit-date-and-time-value{text-align:left}
+/* segmentado, igual às chaves de marca e formato do Design System */
+.seg{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:4px;background:var(--soft);padding:4px;border-radius:13px;border:1px solid var(--line)}
+.seg button{border:0;background:transparent;border-radius:10px;padding:6px 4px;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;color:var(--muted);min-width:0}
+.seg b{font-size:13.5px;font-weight:600;color:var(--ink);white-space:nowrap}
+.seg small{font-size:11.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--surface);box-shadow:var(--shadow)}
+.seg button[aria-pressed="true"] small{color:var(--ink)}
+.reset{align-self:flex-start;border:0;background:none;padding:2px 0;color:var(--accent);font-weight:600;font-size:13px;text-decoration:underline;text-underline-offset:3px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--muted);font-weight:600;font-size:13px;padding:8px 13px;border-radius:99px;min-height:38px;display:inline-flex;align-items:center;gap:7px}
+.chip:hover{border-color:var(--faint);color:var(--ink)}
+.chip .d{width:8px;height:8px;border-radius:50%;flex:none}
+.chip .c{font-size:11.5px;font-weight:700;color:var(--faint);font-variant-numeric:tabular-nums}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.chip[aria-pressed="true"] .c{color:inherit;opacity:.7}
+.intro{margin:16px 0 0;font-size:14px;color:var(--muted);line-height:1.55;text-wrap:pretty}
+
+/* ---------- avisos ---------- */
+.note{margin-top:14px;background:var(--warn-bg);color:var(--warn-fg);border-radius:12px;font-size:13.5px}
+.note summary{list-style:none;cursor:pointer;padding:11px 40px 11px 14px;position:relative;line-height:1.45}
+.note summary::-webkit-details-marker{display:none}
+.note summary::after{content:"+";position:absolute;right:14px;top:9px;font-size:20px;font-weight:500;opacity:.8}
+.note[open] summary::after{content:"–"}
+.note .in{padding:0 14px 12px}
+.note p{margin:0 0 8px}
+.note h4{margin:12px 0 4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.note ul{margin:0;padding:0;list-style:none}
+.note li{padding:7px 0;border-top:1px solid rgba(90,67,6,.14);display:flex;flex-direction:column;gap:2px}
+.note li b{font-weight:600}
+.note li span{font-variant-numeric:tabular-nums;opacity:.9}
+.note code{font:600 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace;background:rgba(90,67,6,.1);padding:2px 5px;border-radius:5px}
+
+/* ---------- zonas e setups ---------- */
+.zone{margin-top:24px}
+.zone>h2{margin:0 0 10px;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:8px;color:var(--ink)}
+.zone>h2 .d{width:10px;height:10px;border-radius:50%}
+.zone>h2 small{margin-left:auto;font-size:12px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--muted);font-variant-numeric:tabular-nums}
+.setup{background:var(--surface);border:1px solid var(--line);border-radius:16px;margin-bottom:12px;overflow:hidden;box-shadow:var(--shadow)}
+.sh{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;border:0;background:transparent;padding:14px 14px 13px 16px;position:relative}
+.sh::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c)}
+.sh .t{flex:1;min-width:0}
+.sh h3{margin:0;font-family:var(--f-display);font-weight:600;font-size:17px;line-height:1.25;letter-spacing:-.005em}
+.sh p{margin:4px 0 0;font-size:13px;color:var(--muted);line-height:1.45}
+.sh .cnt{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:6px;padding-top:2px}
+.sh .cnt b{font-size:14px;font-variant-numeric:tabular-nums}
+.sh .cnt b small{font-size:12px;color:var(--muted);font-weight:600}
+.sh .cnt .mb{width:56px;height:4px;border-radius:99px;background:var(--line-2);overflow:hidden}
+.sh .cnt .mb i{display:block;height:100%;background:var(--ok)}
+.sh .chev{flex:none;width:20px;height:20px;margin-top:2px;color:var(--faint);transition:transform .2s}
+.setup.closed .chev{transform:rotate(-90deg)}
+.setup.closed .list{display:none}
+.setup.full .cnt b{color:var(--ok)}
+.list{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+
+/* ---------- vídeo ---------- */
+.item{display:flex;gap:2px;padding:12px 12px 12px 4px;border-top:1px solid var(--line-2)}
+.item:first-child{border-top:0}
+.ck{flex:none;width:42px;height:44px;display:grid;place-items:center;cursor:pointer;margin-top:-8px}
+.ck input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.ck span{width:24px;height:24px;border:2px solid var(--faint);border-radius:7px;background:var(--surface);display:grid;place-items:center;transition:background .15s,border-color .15s}
+.ck span::after{content:"";width:6px;height:11px;border:solid transparent;border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.ck input:checked+span{background:var(--ok);border-color:var(--ok)}
+.ck input:checked+span::after{border-color:#fff}
+.ck input:focus-visible+span{outline:2px solid var(--gold);outline-offset:2px}
+.item .body{flex:1;min-width:0}
+.tt{font-weight:600;font-size:15px;line-height:1.35;overflow-wrap:anywhere}
+.item.done{background:var(--ok-soft)}
+.item.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
+.meta{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 8px;border-radius:7px;background:var(--soft);color:var(--ink);line-height:1.2;font-variant-numeric:tabular-nums}
+.tag i{width:7px;height:7px;border-radius:50%;flex:none;background:currentColor}
+.tag.t{background:var(--topo-soft);color:var(--topo-ink)}.tag.t i{background:var(--topo)}
+.tag.m{background:var(--meio-soft);color:var(--meio-ink)}.tag.m i{background:var(--meio)}
+.tag.f{background:var(--fundo-soft);color:var(--fundo-ink)}.tag.f i{background:var(--fundo)}
+.tag.out{background:transparent;border:1px dashed var(--line);color:var(--muted)}
+.tag.out i{background:var(--faint)}
+.tag.both{background:var(--both-soft);color:var(--both)}
+.tag.dur{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.tag.code{background:transparent;color:var(--faint);font:600 11.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;padding-inline:2px}
+.tag.diff{background:var(--warn-bg);color:var(--warn-fg)}
+.acts{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:9px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 10px;min-height:38px;font-size:13px;font-weight:600;color:var(--ink);display:inline-flex;align-items:center;gap:5px}
+.btn:hover{border-color:var(--faint)}
+.btn.tog{color:var(--accent);border-color:transparent;background:transparent;padding-left:0;padding-right:2px}
+.btn.tog:hover{text-decoration:underline;text-underline-offset:3px}
+.btn.tog svg{transition:transform .2s}
+.btn.tog[aria-expanded="true"] svg{transform:rotate(180deg)}
+.btn svg{width:15px;height:15px;flex:none}
+.split{display:inline-flex;align-items:stretch;border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden;min-height:38px}
+.split .sl{display:inline-flex;align-items:center;gap:6px;padding:0 10px;font-size:13px;font-weight:600;color:var(--muted)}
+.split .sl svg{width:15px;height:15px}
+.split button{border:0;border-left:1px solid var(--line);background:transparent;padding:0 12px;font-size:13px;font-weight:700;color:var(--ink);min-width:44px}
+.split button:hover{background:var(--surface-2)}
+@media (max-width:380px){.acts{gap:4px}.acts .btn,.split{font-size:12.5px}.acts .btn:not(.tog) svg,.split .sl svg{display:none}.split .sl{padding:0 8px}.split button{padding:0 10px}}
+.more{margin-top:10px;padding:12px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line-2);font-size:14px;line-height:1.55}
+.item.done .more{background:var(--surface)}
+.more .lb{margin:12px 0 4px;font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.more .lb:first-child{margin-top:0}
+.more p{margin:0}
+.hook{margin:0;padding:9px 12px;border-left:3px solid var(--gold);background:var(--surface);border-radius:0 8px 8px 0;font-weight:500}
+.fin{display:grid;gap:6px}
+.fin p{padding:8px 10px;border-radius:8px;background:var(--surface);border:1px solid var(--line-2)}
+.fin p b{display:block;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.hint{font-size:12.5px;color:var(--muted);margin-top:4px}
+.more details{margin-top:10px}
+.more details summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--accent)}
+.more pre{white-space:pre-wrap;font:13px/1.55 var(--f-ui);margin:8px 0 0;color:var(--ink)}
+.setsel{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.setsel select{appearance:none;-webkit-appearance:none;border:1px solid var(--line);background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238D93A1' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 11px center;border-radius:10px;padding:9px 32px 9px 11px;min-height:42px;max-width:100%;font-size:14px}
+.setsel .manual{font-size:12px;font-weight:600;color:var(--gold-ink);background:var(--meio-soft);padding:3px 8px;border-radius:6px}
+
+.empty{margin-top:22px;padding:22px 16px;text-align:center;border:1px dashed var(--line);border-radius:16px;color:var(--muted);font-size:14px}
+.foot{margin-top:28px;font-size:12.5px;color:var(--muted);line-height:1.6}
+.foot p{margin:0 0 6px}
+
+/* ---------- carregando ---------- */
+.load{margin-top:22px;display:grid;gap:12px}
+.load div{height:96px;border-radius:16px;background:linear-gradient(90deg,var(--surface) 0%,var(--soft) 50%,var(--surface) 100%);background-size:200% 100%;animation:sh 1.3s linear infinite;border:1px solid var(--line)}
+@keyframes sh{from{background-position:200% 0}to{background-position:-200% 0}}
+.err{margin-top:22px;padding:16px;border-radius:14px;background:var(--warn-bg);color:var(--warn-fg);font-size:14px}
+.err button{margin-top:10px}
+
+#toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;font-weight:500;z-index:50;max-width:calc(100vw - 32px);box-shadow:var(--shadow)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media print{.tabs,.ctl,.acts,.note,#toast{display:none!important}.setup{break-inside:avoid;box-shadow:none}.setup.closed .list{display:block}}
+</style>
+</head>
+<body>
+<header class="hd">
+  <div class="wrap">
+    <div>
+      <p class="eyebrow">Plano de gravação</p>
+      <h1 id="h1">Reels a gravar</h1>
+      <p class="sub" id="sub">Carregando o Calendário de Posts…</p>
+    </div>
+    <div class="prog" aria-live="polite">
+      <div class="num"><b id="pg">0</b> de <span id="pt">0</span> vídeos gravados</div>
+      <div class="bar"><i id="pb"></i></div>
+    </div>
+  </div>
+</header>
+<nav class="tabs" aria-label="Visão">
+  <div class="wrap" role="tablist" id="tabs"></div>
+  <div class="tbar" aria-hidden="true"><i id="tb"></i></div>
+</nav>
+<main class="wrap">
+  <section class="ctl" aria-label="Filtros">
+    <p class="lbl" id="winLbl">Posts entre</p>
+    <div class="win" role="group" aria-labelledby="winLbl">
+      <button class="ib" type="button" data-shift="-7" aria-label="Uma semana antes">‹</button>
+      <label class="dt"><span>De</span><input type="date" id="dA" required></label>
+      <label class="dt"><span>Até</span><input type="date" id="dB" required></label>
+      <button class="ib" type="button" data-shift="7" aria-label="Uma semana depois">›</button>
+    </div>
+    <button class="reset" type="button" id="reset" hidden>Voltar para as duas próximas semanas</button>
+    <div class="seg" id="fw" role="group" aria-label="Semana"></div>
+    <div class="chips" id="fl" role="group" aria-label="Local de gravação"></div>
+  </section>
+  <p class="intro" id="intro"></p>
+  <details class="note" id="divg" hidden></details>
+  <div id="out"><div class="load" aria-label="Carregando"><div></div><div></div><div></div></div></div>
+  <footer class="foot" id="foot"></footer>
+</main>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(function(){
+'use strict';
+
+/* =====================================================================
+   1. Configuração do plano (não é conteúdo: os roteiros ficam em dados/)
+   ===================================================================== */
+const SETUPS=[
+  {k:'poltrona',   nome:'Poltrona (bate-papo)',               local:'interno', dica:'Quem filma lê as perguntas fora da câmera. Monta uma vez e grava todos em sequência.'},
+  {k:'serie',      nome:'Canto fixo da série',                local:'interno', dica:'Erro do Dono, CLT do CNPJ, Recado e afins. Mesmo canto, enquadramento e abertura em todos.'},
+  {k:'caderno',    nome:'Mesa com caderno',                   local:'interno', dica:'Aulas e frameworks de fundo de funil. Caderno, caneta e bloco de papel à mão.'},
+  {k:'notebook',   nome:'Notebook + tela',                    local:'interno', dica:'JP abre e fecha falando. O meio é gravação de tela, com dados fictícios.'},
+  {k:'blackfriday',nome:'Black Friday com celular',           local:'interno', dica:'Em casa, com o celular na mão. Gravar primeiro: precisam sair até 26/11.'},
+  {k:'tatame',     nome:'Tatame (academia)',                  local:'externo', dica:'JP de kimono, com as faixas. Grava tudo no mesmo treino.'},
+  {k:'praia',      nome:'Praia de manhã',                     local:'externo', dica:'Luz natural da manhã. Chinelo, óculos escuros e cadeira de praia.'},
+  {k:'flex',       nome:'Fala direta: dá pra levar pra fora', local:'flex',    dica:'Não depende de objeto. Funciona caminhando na praia ou numa cafeteria.'}
+];
+const LOCAIS=[
+  {k:'interno',nome:'Interno · casa e condomínio',curto:'Interno',cor:'var(--int)'},
+  {k:'externo',nome:'Externo',curto:'Externo',cor:'var(--ext)'},
+  {k:'flex',nome:'Pode ir pra fora',curto:'Pode ir pra fora',cor:'var(--flex)'}
+];
+
+/* Classificação feita à mão para 16 a 29/11. Sempre vence a regra automática
+   (só perde para a escolha feita no próprio card, salva neste aparelho). */
+const SETUP_POR_ID={
+  RE002:'poltrona',RE003:'poltrona',RJ01:'poltrona',RJ19:'poltrona',RJ16:'poltrona',R001x:'poltrona',R004x:'poltrona',R012x:'poltrona',
+  R005x:'poltrona',R006x:'poltrona',R008x:'poltrona',R009x:'poltrona',R010x:'poltrona',R011x:'poltrona',R002x:'poltrona',R003x:'poltrona',R19j:'poltrona',
+  RE016:'serie',RE017:'serie',RE019:'serie',RJ02:'serie',RJ03:'serie',RJ07:'serie',RJ04:'serie',RJ05:'serie',RJ14:'serie',RJ15:'serie',R07j:'serie',
+  RE052:'notebook',RJ08:'notebook',RJ17:'notebook',RJ18:'notebook',RJ20:'notebook',RJ24:'notebook',R050x:'notebook',R051x:'notebook',
+  R08j:'notebook',R17j:'notebook',R18j:'notebook',R20j:'notebook',R24j:'notebook',
+  RE054:'caderno',RE057:'caderno',RJ11:'caderno',RJ12:'caderno',RJ21:'caderno',RJ22:'caderno',RJ23:'caderno',R055x:'caderno',R056x:'caderno',
+  R058x:'caderno',R059x:'caderno',R061x:'caderno',R062x:'caderno',R054x:'caderno',R057x:'caderno',R11j:'caderno',R12j:'caderno',R21j:'caderno',
+  R22j:'caderno',R23j:'caderno',
+  NV04:'blackfriday',NV05:'blackfriday',NV06:'blackfriday',
+  RJ10:'tatame',RJ13:'tatame',R030x:'tatame',R031x:'tatame',R032x:'tatame',R033x:'tatame',R034x:'tatame',R007x:'tatame',R10j:'tatame',
+  RE035:'praia',R035x:'praia',
+  RJ06:'flex',RJ09:'flex',RE060:'flex',R070x:'flex',R063x:'flex',R075x:'flex',R039x:'flex',R036x:'flex',R06j:'flex',R09j:'flex',R060x:'flex'
+};
+
+/* Mesmo vídeo com códigos diferentes: código do JP → código do Scale.
+   Além deste mapa, títulos iguais (sem acento e pontuação) também juntam. */
+const MESMO_VIDEO={
+  R054x:'RE054',R06j:'RJ06',R09j:'RJ09',R002x:'RE002',R003x:'RE003',R19j:'RJ19',R057x:'RE057',R060x:'RE060',R08j:'RJ08',R10j:'RJ10',
+  R11j:'RJ11',R035x:'RE035',R17j:'RJ17',R18j:'RJ18',R12j:'RJ12',R21j:'RJ21',R20j:'RJ20',R22j:'RJ22',R23j:'RJ23',R24j:'RJ24',R07j:'RJ07'
+};
+
+/* Espelha o Calendário de Posts: descartes que já vêm marcados de fábrica. */
+const DISC0={scale:{'s:C04':1},jp:{}};
+
+const PERFIS={scale:'Scale',jp:'JP'};
+const FUNIL={t:'Topo',m:'Meio',f:'Fundo'};
+const DOW3=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const MES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const K={feito:'pg:gravado',setup:'pg:setup',ui:'pg:ui'};
+
+/* =====================================================================
+   2. Utilidades
+   ===================================================================== */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const N=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const normTitle=s=>N(s).replace(/[^a-z0-9#]+/g,' ').trim();
+const has=(txt,list)=>{for(const w of list){if(new RegExp('(^|[^a-z0-9])'+N(w).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'([^a-z0-9]|$)').test(txt))return w;}return '';};
+const pad=n=>String(n).padStart(2,'0');
+const parse=s=>{const p=s.split('-').map(Number);return new Date(Date.UTC(p[0],p[1]-1,p[2]));};
+const iso=d=>d.toISOString().slice(0,10);
+const addDays=(s,n)=>{const d=parse(s);d.setUTCDate(d.getUTCDate()+n);return iso(d);};
+const diffDays=(a,b)=>Math.round((parse(a)-parse(b))/864e5);
+const mondayOf=s=>addDays(s,-((parse(s).getUTCDay()+6)%7));
+const dm=s=>{const d=parse(s);return d.getUTCDate()+'/'+pad(d.getUTCMonth()+1);};
+const dow=s=>DOW3[parse(s).getUTCDay()];
+const isDate=s=>/^\d{4}-\d{2}-\d{2}$/.test(s||'');
+const lsGet=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
+const ssGet=(k,d)=>{try{const v=sessionStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;}};
+const ssSet=(k,v)=>{try{sessionStorage.setItem(k,JSON.stringify(v));}catch(e){}};
+function today(){const n=new Date();return n.getFullYear()+'-'+pad(n.getMonth()+1)+'-'+pad(n.getDate());}
+function nextMonday(){const t=today();const w=parse(t).getUTCDay();return addDays(t,((8-w)%7)||7);}
+function rangeLabel(a,b){
+  const A=parse(a),B=parse(b);
+  if(A.getUTCFullYear()===B.getUTCFullYear()&&A.getUTCMonth()===B.getUTCMonth())return A.getUTCDate()+' a '+B.getUTCDate()+' de '+MES[B.getUTCMonth()];
+  return A.getUTCDate()+' de '+MES[A.getUTCMonth()]+' a '+B.getUTCDate()+' de '+MES[B.getUTCMonth()];
+}
+function shortRange(a,b){const A=parse(a),B=parse(b);return A.getUTCMonth()===B.getUTCMonth()?A.getUTCDate()+' a '+dm(b):dm(a)+' a '+dm(b);}
+let toastT;function toast(t){const e=$('toast');e.textContent=t;e.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{e.hidden=true;},2200);}
+const ICON={
+  copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>',
+  down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>',
+  chev:'<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>'
+};
+
+/* =====================================================================
+   3. Dados: dados/*.js (fonte única). Se a pasta ainda não foi publicada,
+      lê direto dos módulos (calendario-posts, central-scale, central-jp).
+   ===================================================================== */
+const FONTES=[
+  {chave:'calendario',js:'../dados/calendario.js',html:'calendario-posts.html'},
+  {chave:'scale',js:'../dados/central-scale.js',html:'central-scale.html'},
+  {chave:'jp',js:'../dados/central-jp.js',html:'central-jp.html'}
+];
+let origem='dados';
+function loadScript(src){
+  return new Promise(res=>{const s=document.createElement('script');s.src=src;s.onload=()=>res(true);s.onerror=()=>{s.remove();res(false);};document.head.appendChild(s);});
+}
+function lineValue(src,re){const m=re.exec(src);return m?m[1]:null;}
+async function fromModule(f){
+  const r=await fetch(f.html,{cache:'no-cache'});
+  if(!r.ok)throw new Error(f.html+' respondeu '+r.status);
+  const src=await r.text();
+  if(f.chave==='calendario'){
+    const items=lineValue(src,/^const ITEMS=(\{.*\});\s*$/m),plans=lineValue(src,/^const PLANS=(\{.*\});\s*$/m);
+    const launch=lineValue(src,/^let LAUNCH='(\d{4}-\d{2}-\d{2})';/m);
+    const defs=/^const DEFAULTS=(\{[\s\S]*?\n\});/m.exec(src);
+    if(!items||!plans||!defs)throw new Error('não achei ITEMS, PLANS e DEFAULTS em '+f.html);
+    return {LAUNCH:launch||'',DEFAULTS:Function('"use strict";return ('+defs[1]+');')(),ITEMS:JSON.parse(items),PLANS:JSON.parse(plans)};
+  }
+  const data=lineValue(src,/^const DATA=(\[.*\]);\s*$/m);
+  if(!data)throw new Error('não achei DATA em '+f.html);
+  return JSON.parse(data);
+}
+async function loadAll(){
+  await Promise.all(FONTES.map(f=>loadScript(f.js)));
+  const D=window.CENTRAL_DADOS||{};const out={};
+  for(const f of FONTES){
+    if(D[f.chave]){out[f.chave]=D[f.chave];continue;}
+    origem='modulos';
+    out[f.chave]=await fromModule(f);
+  }
+  return out;
+}
+
+/* =====================================================================
+   4. Plano efetivo: o mesmo cálculo do Calendário de Posts
+      (descartes, horários editados e posts já agendados ou postados,
+       salvos pelo Calendário neste aparelho).
+   ===================================================================== */
+let C=null,SC=null,JP=null,IDX={scale:new Map(),jp:new Map()};
+let VIDEOS=[],POSTS=[],LAUNCH='';
+
+function calState(){
+  let cfg={},docs={};
+  try{cfg=JSON.parse(localStorage.getItem('cal-cfg')||'{}')||{};docs=JSON.parse(localStorage.getItem('cal-docs')||'{}')||{};}catch(e){}
+  return {cfg,docs};
+}
+function buildPosts(){
+  const {cfg,docs}=calState();
+  const ITEMS=C.ITEMS,PLANS=C.PLANS;
+  LAUNCH=(cfg.start&&PLANS[cfg.start.date])?cfg.start.date:(PLANS[C.LAUNCH]?C.LAUNCH:Object.keys(PLANS).sort()[0]);
+  const PLAN=PLANS[LAUNCH]||{};
+  const posts=[];
+  ['scale','jp'].forEach(p=>{
+    const base=PLAN[p]||{},disc=(cfg['disc_'+p]&&cfg['disc_'+p].ids)||DISC0[p]||{},dates=Object.keys(base).sort();
+    const D=C.DEFAULTS[p]||[];let sl=D;const c=cfg[p];
+    if(c&&Array.isArray(c.slots)&&c.slots.length){if(c.v===2)sl=c.slots;else if(c.slots.length===D.length)sl=c.slots.map((s,i)=>({t:s.t,f:D[i].f}));}
+    const stateOf=(d,i)=>{const w=docs[p+'_'+mondayOf(d)];return (w&&w.slots&&w.slots[d+'_'+i])||{};};
+    const eff={};dates.forEach(d=>{eff[d]={s:base[d].s.slice(),x:base[d].x};});
+    const cats={},taken={};
+    dates.forEach(d=>base[d].s.forEach((k,i)=>{
+      if(!k||!ITEMS[k]||k==='s:EP')return;
+      const st=stateOf(d,i);
+      if(st.st==='agendado'||st.st==='postado'){const pk=st.pk||k;eff[d].s[i]=pk;taken[pk]=1;return;}
+      const it=ITEMS[k];if(it.p&&!disc[k]){taken[k]=1;return;}
+      const cat=it.k+'|'+it.f;(cats[cat]=cats[cat]||[]).push({d,i,k});
+    }));
+    Object.keys(cats).forEach(c=>{const R=cats[c],q=R.map(x=>x.k).filter(k=>!disc[k]&&!taken[k]);R.forEach((x,n)=>{eff[x.d].s[x.i]=n<q.length?q[n]:null;});});
+    dates.forEach(d=>{
+      const add=(k,hora,i)=>{const it=ITEMS[k];if(!it||it.k!=='Reel')return;posts.push({perfil:p,date:d,hora,i,key:k,id:k.slice(2),titulo:it.t,funil:it.f});};
+      sl.forEach((s,i)=>{const k=eff[d].s[i];if(k)add(k,s.t||'',i);});
+      if(eff[d].x)add(eff[d].x,'extra',99);
+    });
+  });
+  posts.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:(a.hora<b.hora?-1:a.hora>b.hora?1:0));
+  POSTS=posts;
+}
+
+/* ---------- vídeos: um por gravação, juntando Scale e JP ---------- */
+function srcOf(p,id){return IDX[p].get(id)||null;}
+function scaleByTitle(){
+  const m=new Map();
+  Object.keys(C.ITEMS).forEach(k=>{if(k.charAt(0)!=='s'||C.ITEMS[k].k!=='Reel')return;const t=normTitle(C.ITEMS[k].t);m.set(t,m.has(t)?null:k.slice(2));});
+  return m;
+}
+function buildVideos(){
+  const byTitle=scaleByTitle(),map=new Map();
+  POSTS.forEach(p=>{
+    let vid;
+    if(p.perfil==='scale')vid='s:'+p.id;
+    else{const s=MESMO_VIDEO[p.id]||byTitle.get(normTitle(p.titulo));vid=s?'s:'+s:'j:'+p.id;}
+    p.vid=vid;
+    let v=map.get(vid);
+    if(!v){v={vid,posts:[],ids:{scale:[],jp:[]}};map.set(vid,v);}
+    v.posts.push(p);
+    if(v.ids[p.perfil].indexOf(p.id)<0)v.ids[p.perfil].push(p.id);
+  });
+  VIDEOS=[...map.values()];
+  VIDEOS.forEach(prepVideo);
+}
+function prepVideo(v){
+  /* um vídeo do JP ligado a um código do Scale que não posta no Scale nesse plano
+     ainda usa o texto do Scale como referência, mas não conta como "nos dois perfis" */
+  const scIds=v.ids.scale.length?v.ids.scale:(v.vid.charAt(0)==='s'?[v.vid.slice(2)]:[]);
+  const sc=scIds.map(id=>srcOf('scale',id)).filter(Boolean);
+  const jp=v.ids.jp.map(id=>srcOf('jp',id)).filter(Boolean);
+  v.src={scale:sc[0]||null,jp:jp[0]||null};
+  v.both=v.ids.scale.length>0&&v.ids.jp.length>0;
+  /* direção: a do JP primeiro (é a que descreve a gravação em casa), depois a do Scale */
+  v.dir=(v.src.jp&&v.src.jp.direcao)||(v.src.scale&&v.src.scale.direcao)||'';
+  v.dur=duracao(v.dir)||duracao(v.src.scale&&v.src.scale.direcao);
+  v.code=[...v.ids.scale.map(id=>'Scale '+id),...v.ids.jp.map(id=>'JP '+id)].join(' · ');
+  v.fin=(v.both&&v.src.scale&&v.src.jp)?finais(v.src.scale.roteiro,v.src.jp.roteiro):null;
+  const a=autoSetup(v);v.auto=a.k;v.why=a.why;
+}
+
+/* ---------- setup ---------- */
+const SERIES=['erro do dono','clt do cnpj','recado #','pov: o cliente disse','dono que escala'];
+function autoSetup(v){
+  const ids=[...v.ids.scale,...v.ids.jp];
+  for(const id of [v.vid.slice(2),...ids])if(SETUP_POR_ID[id])return {k:SETUP_POR_ID[id],why:'classificado à mão na lista de 16 a 29/11'};
+  const tits=v.posts.map(p=>N(p.titulo));
+  const dir=N([v.src.jp&&v.src.jp.direcao,v.src.scale&&v.src.scale.direcao].filter(Boolean).join('\n'));
+  const cen=v.src.jp&&v.src.jp.momento&&v.src.jp.momento.cenario;
+  let w;
+  if(tits.some(t=>t.indexOf('black friday #')===0))return {k:'blackfriday',why:'título “Black Friday #”'};
+  if((w=has(dir,['poltrona','voz fora da câmera'])))return {k:'poltrona',why:'direção cita “'+w+'”'};
+  if((w=has(dir,['tatame','kimono'])))return {k:'tatame',why:'direção cita “'+w+'”'};
+  if(cen==='treino')return {k:'tatame',why:'momento do JP: treino'};
+  if((w=has(dir,['externo','praia','rua'])))return {k:'praia',why:'direção cita “'+w+'”'};
+  if(cen==='praia')return {k:'praia',why:'momento do JP: praia'};
+  if((w=has(dir,['notebook','gravação de tela','gravar a tela'])))return {k:'notebook',why:'direção cita “'+w+'”'};
+  const sr=SERIES.find(s=>tits.some(t=>t.indexOf(s)===0));
+  if(sr)return {k:'serie',why:'título de série'};
+  if((w=has(dir,['caderno','quadro','bloco de papel'])))return {k:'caderno',why:'direção cita “'+w+'”'};
+  return {k:'flex',why:'fala direta, sem objeto na direção'};
+}
+let MANUAL=lsGet(K.setup,{});
+const setupOf=v=>(MANUAL[v.vid]&&SETUP_BY[MANUAL[v.vid]])?MANUAL[v.vid]:v.auto;
+const SETUP_BY=Object.fromEntries(SETUPS.map(s=>[s.k,s]));
+const LOCAL_BY=Object.fromEntries(LOCAIS.map(l=>[l.k,l]));
+
+/* ---------- textos derivados da direção e do roteiro ---------- */
+function duracao(dir){
+  if(!dir)return '';
+  let m=/Dura[çc][ãa]o:\s*([^.\n]+)/i.exec(dir);
+  if(!m)m=/(?:^|[\s.,;:])(\d{1,3}(?:\s*a\s*\d{1,3})?\s*(?:s|seg|segundos))(?=[\s.,;)]|$)/i.exec(dir);
+  return m?m[1].replace(/\s*(segundos|seg)\b/i,' s').replace(/\s+/g,' ').trim():'';
+}
+function resumo(dir){
+  if(!dir)return '';
+  let p=dir.split(/\n\s*\n/)[0];
+  p=p.replace(/^Cen[áa]rio:\s*/i,'').replace(/\s*Dura[çc][ãa]o:\s*[^.]+\.\s*/i,' ');
+  p=p.replace(/(^|[.:]\s+)\d{1,3}(?:\s*a\s*\d{1,3})?\s*(?:s|seg|segundos)\.\s*/i,'$1');
+  p=p.replace(/\s+/g,' ').trim();
+  if(p.length>340){const cut=p.lastIndexOf('. ',330);p=cut>120?p.slice(0,cut+1):p.slice(0,330)+'…';}
+  return p.charAt(0).toUpperCase()+p.slice(1);
+}
+const linhas=s=>String(s||'').split('\n').map(l=>l.trim()).filter(Boolean);
+function finais(rs,rj){
+  const A=linhas(rs),B=linhas(rj);if(!A.length||!B.length)return null;
+  let i=0;while(i<A.length&&i<B.length&&normTitle(A[i])===normTitle(B[i]))i++;
+  let j=0;while(j<A.length-i&&j<B.length-i&&normTitle(A[A.length-1-j])===normTitle(B[B.length-1-j]))j++;
+  const a=A.slice(i,A.length-j),b=B.slice(i,B.length-j);
+  if(!a.length&&!b.length)return null;
+  const wa=new Set(normTitle(a.join(' ')).split(' ').filter(Boolean)),wb=new Set(normTitle(b.join(' ')).split(' ').filter(Boolean));
+  let inter=0;wa.forEach(w=>{if(wb.has(w))inter++;});
+  const uni=wa.size+wb.size-inter;
+  if(uni&&inter/uni>=.75)return null; /* só troca de palavra (“esse”/“este”) */
+  return {scale:a.join('\n'),jp:b.join('\n'),fim:j===0};
+}
+const hookOf=s=>String(s||'').replace(/^\[JP\]\s*/,'');
+
+/* =====================================================================
+   5. Estado da tela
+   ===================================================================== */
+let FEITO=lsGet(K.feito,{});
+const UI0={tab:'gravacao',week:'all',loc:'all',a:null,b:null,closed:[],open:[]};
+const UI=Object.assign({},UI0,ssGet(K.ui,{}));
+function saveUI(){ssSet(K.ui,UI);}
+function defaultWindow(){const a=nextMonday();return {a,b:addDays(a,13)};}
+if(!isDate(UI.a)||!isDate(UI.b)||UI.a>UI.b){const w=defaultWindow();UI.a=w.a;UI.b=w.b;}
+const closed=new Set(UI.closed),opened=new Set(UI.open);
+
+const isDone=v=>!!(FEITO[v.vid]||[...v.ids.scale.map(i=>'s:'+i),...v.ids.jp.map(i=>'j:'+i)].some(k=>FEITO[k]));
+function setDone(v,on){
+  if(on)FEITO[v.vid]=Date.now();
+  else{delete FEITO[v.vid];v.ids.scale.forEach(i=>delete FEITO['s:'+i]);v.ids.jp.forEach(i=>delete FEITO['j:'+i]);}
+  lsSet(K.feito,FEITO);
+}
+
+function weeks(){
+  const out=[];const n=diffDays(UI.b,UI.a)+1;
+  for(let s=0;s<n;s+=7){const a=addDays(UI.a,s),b=addDays(UI.a,Math.min(s+6,n-1));out.push({k:String(out.length+1),a,b});}
+  return out;
+}
+function inRange(p){
+  if(p.date<UI.a||p.date>UI.b)return false;
+  if(UI.week==='all')return true;
+  const w=weeks()[+UI.week-1];return !!w&&p.date>=w.a&&p.date<=w.b;
+}
+/* posts de um vídeo que contam na aba e nos filtros de data */
+function postsIn(v,perfil){return v.posts.filter(p=>(!perfil||p.perfil===perfil)&&inRange(p));}
+function visible(perfil,loc){
+  return VIDEOS.filter(v=>postsIn(v,perfil).length&&(loc==='all'||SETUP_BY[setupOf(v)].local===loc));
+}
+const tabPerfil=t=>t==='gravacao'?null:t;
+
+/* =====================================================================
+   6. Render
+   ===================================================================== */
+function renderHead(){
+  const ws=VIDEOS.filter(v=>v.posts.some(p=>p.date>=UI.a&&p.date<=UI.b));
+  const ps=POSTS.filter(p=>p.date>=UI.a&&p.date<=UI.b);
+  const nS=ps.filter(p=>p.perfil==='scale').length,nJ=ps.length-nS;
+  const inWin=p=>p.date>=UI.a&&p.date<=UI.b;
+  const dup=ws.filter(v=>v.posts.some(p=>p.perfil==='scale'&&inWin(p))&&v.posts.some(p=>p.perfil==='jp'&&inWin(p))).length;
+  const depois=ws.filter(v=>v.both).length-dup;
+  $('h1').textContent='Reels de '+rangeLabel(UI.a,UI.b);
+  $('sub').textContent=ps.length
+    ?ps.length+' posts de Reel ('+nS+' Scale + '+nJ+' JP) = '+ws.length+' vídeos'+
+      (dup?' · '+dup+' vão nos dois perfis nestas datas':'')+(depois?(dup?' e ':' · ')+depois+' voltam no outro perfil em outra data':'')
+    :'Nenhum Reel no Calendário de Posts nestas datas.';
+  $('dA').value=UI.a;$('dB').value=UI.b;
+  const d=defaultWindow();$('reset').hidden=(UI.a===d.a&&UI.b===d.b);
+}
+function renderTabs(){
+  const perTab={gravacao:visible(null,UI.loc).length,
+    jp:POSTS.filter(p=>p.perfil==='jp'&&inRange(p)&&(UI.loc==='all'||SETUP_BY[setupOf(byVid.get(p.vid))].local===UI.loc)).length,
+    scale:POSTS.filter(p=>p.perfil==='scale'&&inRange(p)&&(UI.loc==='all'||SETUP_BY[setupOf(byVid.get(p.vid))].local===UI.loc)).length};
+  const T=[['gravacao','Plano de gravação','vídeos'],['jp','JP','posts'],['scale','Scale','posts']];
+  $('tabs').innerHTML=T.map(([k,n,u])=>`<button class="tab" type="button" role="tab" id="tab-${k}" aria-controls="out" aria-selected="${UI.tab===k}" data-tab="${k}">${n}<span class="n" aria-label="${perTab[k]} ${u}">${perTab[k]}</span></button>`).join('');
+}
+function renderChips(){
+  const W=weeks();
+  let h='';
+  if(W.length>1){
+    h=`<button type="button" data-week="all" aria-pressed="${UI.week==='all'}"><b>${W.length===2?'Duas semanas':'Todas'}</b><small>${shortRange(UI.a,UI.b)}</small></button>`+
+      W.map(w=>`<button type="button" data-week="${w.k}" aria-pressed="${UI.week===w.k}"><b>Semana ${w.k}</b><small>${shortRange(w.a,w.b)}</small></button>`).join('');
+  }
+  $('fw').innerHTML=h;$('fw').hidden=!h;
+  const perfil=tabPerfil(UI.tab);
+  const cnt=k=>visible(perfil,k).length;
+  $('fl').innerHTML=`<button class="chip" type="button" data-loc="all" aria-pressed="${UI.loc==='all'}">Todos <span class="c">${cnt('all')}</span></button>`+
+    LOCAIS.map(l=>`<button class="chip" type="button" data-loc="${l.k}" aria-pressed="${UI.loc===l.k}"><span class="d" style="background:${l.cor}"></span>${l.curto} <span class="c">${cnt(l.k)}</span></button>`).join('');
+}
+function postTag(p,withPerfil,outOfRange){
+  const t=(withPerfil?PERFIS[p.perfil]+' · ':'')+dow(p.date)+' '+dm(p.date)+' · '+(p.hora==='extra'?'extra':p.hora)+' · '+FUNIL[p.funil];
+  return `<span class="tag ${outOfRange?'out':p.funil}" title="${outOfRange?'Fora das datas escolhidas':''}"><i></i>${esc(t)}</span>`;
+}
+function item(v,perfil){
+  const done=isDone(v),open=opened.has(v.vid);
+  const mine=v.posts.filter(p=>!perfil||p.perfil===perfil);
+  const other=perfil?v.posts.filter(p=>p.perfil!==perfil):[];
+  const first=postsIn(v,perfil)[0]||mine[0];
+  const src=(perfil&&v.src[perfil])||v.src.jp||v.src.scale||{};
+  let tags=mine.map(p=>postTag(p,!perfil,!inRange(p))).join('');
+  if(perfil&&other.length)tags+=`<span class="tag both">Também no ${PERFIS[other[0].perfil]} · ${esc(other.map(p=>dm(p.date)).join(', '))}</span>`;
+  else if(!perfil&&v.both)tags+=`<span class="tag both">JP + Scale: grava uma vez</span>`;
+  if(v.fin&&(!perfil||other.length))tags+=`<span class="tag diff">${v.fin.fim?'Final':'Trecho'} diferente em cada perfil</span>`;
+  if(v.dur)tags+=`<span class="tag dur">${esc(v.dur)}</span>`;
+  tags+=`<span class="tag code">${esc(v.code)}</span>`;
+  /* copiar roteiro: o do perfil da aba; no plano, um botão por perfil quando o texto muda */
+  let copy;
+  if(perfil)copy=src.roteiro?`<button class="btn" type="button" data-copy="${perfil}" data-v="${esc(v.vid)}">${ICON.copy}Copiar roteiro</button>`:'';
+  else if(v.fin)copy=`<span class="split" role="group" aria-label="Copiar roteiro"><span class="sl">${ICON.copy}Copiar roteiro</span>`+
+    ['scale','jp'].map(p=>`<button type="button" data-copy="${p}" data-v="${esc(v.vid)}" aria-label="Copiar roteiro do ${PERFIS[p]}">${PERFIS[p]}</button>`).join('')+'</span>';
+  else{const p=v.src.scale?'scale':'jp';copy=v.src[p]&&v.src[p].roteiro?`<button class="btn" type="button" data-copy="${p}" data-v="${esc(v.vid)}">${ICON.copy}Copiar roteiro</button>`:'';}
+  const st=setupOf(v),manual=!!MANUAL[v.vid]&&MANUAL[v.vid]!==v.auto;
+  const opts=LOCAIS.map(l=>`<optgroup label="${esc(l.nome)}">`+SETUPS.filter(s=>s.local===l.k).map(s=>`<option value="${s.k}"${s.k===st?' selected':''}>${esc(s.nome)}${s.k===v.auto?' (padrão)':''}</option>`).join('')+'</optgroup>').join('');
+  const dirFull=(perfil&&v.src[perfil]&&v.src[perfil].direcao)||v.dir;
+  let fin='';
+  if(v.fin&&(!perfil||other.length)){
+    fin=`<div class="lb">${v.fin.fim?'Final de cada perfil':'O que muda entre os perfis'}</div><div class="fin">`+
+      `<p><b>Scale</b>${esc(v.fin.scale||'(sem esse trecho)').replace(/\n/g,'<br>')}</p><p><b>JP</b>${esc(v.fin.jp||'(sem esse trecho)').replace(/\n/g,'<br>')}</p></div>`+
+      `<p class="hint">Grave ${v.fin.fim?'os dois finais':'as duas versões desse trecho'} na mesma sessão.</p>`;
+  }
+  const more=`<div class="more" id="m-${esc(v.vid)}"${open?'':' hidden'}>
+      <div class="lb">Gancho</div><p class="hook">${esc(hookOf(src.hook)||'—')}</p>
+      <div class="lb">Cenário</div><p>${esc(resumo(dirFull)||'Sem direção na Central.')}</p>
+      ${fin}
+      ${dirFull?`<details><summary>Direção completa</summary><pre>${esc(dirFull)}</pre></details>`:''}
+      <div class="lb">Setup de gravação</div>
+      <div class="setsel"><select data-setup="${esc(v.vid)}" aria-label="Setup de gravação de ${esc(first.titulo)}">${opts}</select>${manual?'<span class="manual">escolhido à mão</span>':''}</div>
+      <p class="hint">Padrão: ${esc(SETUP_BY[v.auto].nome)}. Motivo: ${esc(v.why)}.${manual?' A escolha à mão fica salva neste aparelho.':''}</p>
+    </div>`;
+  return `<li class="item${done?' done':''}" data-v="${esc(v.vid)}">
+    <label class="ck"><input type="checkbox" data-ck="${esc(v.vid)}"${done?' checked':''} aria-label="Gravado: ${esc(first.titulo)}"><span></span></label>
+    <div class="body">
+      <div class="tt">${esc(first.titulo)}</div>
+      <div class="meta">${tags}</div>
+      <div class="acts"><button class="btn tog" type="button" data-tog="${esc(v.vid)}" aria-expanded="${open}" aria-controls="m-${esc(v.vid)}"><span>${open?'Fechar':'Ver gancho e cenário'}</span>${ICON.down}</button>${copy}</div>
+      ${more}
+    </div></li>`;
+}
+let byVid=new Map();
+function render(){
+  byVid=new Map(VIDEOS.map(v=>[v.vid,v]));
+  if(!weeks()[+UI.week-1])UI.week='all';
+  renderHead();renderTabs();renderChips();
+  const perfil=tabPerfil(UI.tab);
+  const vids=visible(perfil,UI.loc);
+  const firstKey=v=>{const p=postsIn(v,perfil)[0];return p.date+' '+p.hora;};
+  vids.sort((a,b)=>firstKey(a)<firstKey(b)?-1:firstKey(a)>firstKey(b)?1:0);
+  $('intro').textContent={
+    gravacao:'Cada vídeo aparece uma vez, agrupado pelo cenário que precisa ser montado. Os marcados em roxo vão nos dois perfis: grava uma vez e posta no JP e no Scale.',
+    jp:'Só os Reels que vão no perfil do JP. Os marcados em roxo também vão no Scale: é o mesmo vídeo, e o “gravado” vale para os dois.',
+    scale:'Só os Reels que vão no perfil da Scale. Os marcados em roxo também vão no JP: é o mesmo vídeo, e o “gravado” vale para os dois.'
+  }[UI.tab];
+  let h='';
+  LOCAIS.forEach(l=>{
+    let zh='',zn=0,zok=0;
+    SETUPS.filter(s=>s.local===l.k).forEach(s=>{
+      const vs=vids.filter(v=>setupOf(v)===s.k);if(!vs.length)return;
+      const ok=vs.filter(isDone).length,isClosed=closed.has(s.k);zn+=vs.length;zok+=ok;
+      zh+=`<section class="setup${isClosed?' closed':''}${ok===vs.length?' full':''}" style="--c:${l.cor}">
+        <button class="sh" type="button" data-sh="${s.k}" aria-expanded="${!isClosed}">
+          <span class="t"><h3>${esc(s.nome)}</h3><p>${esc(s.dica)}</p></span>
+          <span class="cnt"><b>${ok}<small> / ${vs.length}</small></b><span class="mb"><i style="width:${Math.round(ok/vs.length*100)}%"></i></span></span>${ICON.chev}
+        </button>
+        <ul class="list">${vs.map(v=>item(v,perfil)).join('')}</ul></section>`;
+    });
+    if(zh)h+=`<div class="zone"><h2><span class="d" style="background:${l.cor}"></span>${esc(l.nome)}<small>${zok} de ${zn} gravados</small></h2>${zh}</div>`;
+  });
+  if(!h){
+    const doPerfil=POSTS.filter(p=>!perfil||p.perfil===perfil),de=perfil?'do '+PERFIS[perfil]+' ':'';
+    const naJanela=doPerfil.some(p=>p.date>=UI.a&&p.date<=UI.b);
+    h=`<div class="empty">${naJanela?'Nenhum Reel com esses filtros.':
+      `O Calendário de Posts não tem Reel ${de}entre ${dm(UI.a)} e ${dm(UI.b)}.`+
+      (doPerfil.length?` Os Reels ${de}vão de ${dm(doPerfil[0].date)} a ${dm(doPerfil[doPerfil.length-1].date)}.`:'')}</div>`;
+  }
+  $('out').innerHTML=h;
+  renderProgress(vids);
+  renderDiverg(perfil);
+  renderFoot();
+  saveUI();
+}
+function renderProgress(vids){
+  vids=vids||visible(tabPerfil(UI.tab),UI.loc);
+  const ok=vids.filter(isDone).length,n=vids.length,pct=n?Math.round(ok/n*100):0;
+  $('pg').textContent=ok;$('pt').textContent=n;$('pb').style.width=pct+'%';$('tb').style.width=pct+'%';
+}
+
+/* ---------- datas que não batem: campo cal da Central × Calendário de Posts ---------- */
+function renderDiverg(perfil){
+  const rows=[];
+  POSTS.forEach(p=>{
+    if(perfil&&p.perfil!==perfil)return;
+    if(p.date<UI.a||p.date>UI.b)return;
+    const s=srcOf(p.perfil,p.id),c=s&&s.cal;
+    if(!c||!isDate(c.d)||c.d===p.date)return;
+    rows.push({p,c,off:diffDays(c.d,p.date)});
+  });
+  const el=$('divg');
+  if(!rows.length){el.hidden=true;el.innerHTML='';return;}
+  const wasOpen=el.open;
+  const freq={};rows.forEach(r=>{freq[r.off]=(freq[r.off]||0)+1;});
+  const top=Object.keys(freq).sort((a,b)=>freq[b]-freq[a])[0],topN=freq[top];
+  let resumoTxt='';
+  if(topN>=rows.length/2&&Math.abs(+top)%7===0&&+top!==0){
+    const sem=Math.abs(+top)/7;
+    resumoTxt=`<p>${topN} deles estão exatamente ${sem===1?'uma semana':sem+' semanas'} ${+top<0?'antes':'depois'} na Central, como se a estreia fosse ${dm(addDays(LAUNCH,+top))} e não ${dm(LAUNCH)}.</p>`;
+  }
+  const grp=['jp','scale'].filter(k=>rows.some(r=>r.p.perfil===k)).map(k=>{
+    const rs=rows.filter(r=>r.p.perfil===k);
+    return `<h4>${k==='jp'?'Central do JP':'Central Scale'} · ${rs.length}</h4><ul>`+rs.map(r=>
+      `<li><b><code>${esc(r.p.id)}</code> ${esc(r.p.titulo)}</b><span>Calendário: ${dow(r.p.date)} ${dm(r.p.date)} ${esc(r.p.hora)} · Central: ${dow(r.c.d)} ${dm(r.c.d)}${r.c.t?' '+esc(r.c.t):''}</span></li>`).join('')+'</ul>';
+  }).join('');
+  el.innerHTML=`<summary><b>${rows.length} ${rows.length===1?'Reel tem':'Reels têm'} data diferente na Central e no Calendário de Posts.</b> Este plano usa a data do Calendário.</summary>
+    <div class="in"><p>A data que aparece no card da Central (campo “cal”) não é a mesma do Calendário de Posts. Na hora de postar, vale o Calendário.</p>${resumoTxt}${grp}</div>`;
+  el.open=wasOpen;el.hidden=false;
+}
+function renderFoot(){
+  const {cfg}=calState();
+  const nd=['scale','jp'].reduce((n,p)=>n+Object.keys((cfg['disc_'+p]&&cfg['disc_'+p].ids)||{}).filter(k=>C.ITEMS[k]&&C.ITEMS[k].k==='Reel').length,0);
+  $('foot').innerHTML=`<p>Datas e horários: Calendário de Posts (estreia em ${dm(LAUNCH)}${nd?`, com ${nd} Reel${nd>1?'s':''} descartado${nd>1?'s':''} neste aparelho`:''}). Gancho, direção e roteiro: Central Scale e Central do JP.</p>`+
+    `<p>O “gravado” e as trocas de setup ficam salvos neste aparelho.${origem==='modulos'?' Os dados foram lidos direto dos módulos porque a pasta dados/ ainda não foi publicada.':''}</p>`;
+}
+
+/* =====================================================================
+   7. Interações
+   ===================================================================== */
+function setWindow(a,b){
+  if(!isDate(a)||!isDate(b))return;
+  if(a>b){const t=a;a=b;b=t;}
+  if(diffDays(b,a)>90)b=addDays(a,90);
+  UI.a=a;UI.b=b;UI.week='all';render();
+}
+async function copyText(t){
+  try{await navigator.clipboard.writeText(t);return true;}catch(e){
+    const ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(ta);ta.select();
+    let ok=false;try{ok=document.execCommand('copy');}catch(e2){}ta.remove();return ok;
+  }
+}
+document.addEventListener('click',async e=>{
+  const t=e.target.closest('[data-tab],[data-week],[data-loc],[data-shift],[data-sh],[data-tog],[data-copy],#reset');
+  if(!t)return;
+  if(t.dataset.tab){UI.tab=t.dataset.tab;render();return;}
+  if(t.dataset.week){UI.week=t.dataset.week;render();return;}
+  if(t.dataset.loc){UI.loc=t.dataset.loc;render();return;}
+  if(t.dataset.shift){const n=+t.dataset.shift;setWindow(addDays(UI.a,n),addDays(UI.b,n));return;}
+  if(t.id==='reset'){const d=defaultWindow();setWindow(d.a,d.b);return;}
+  if(t.dataset.sh){const k=t.dataset.sh,sec=t.closest('.setup');const c=!sec.classList.contains('closed');sec.classList.toggle('closed',c);t.setAttribute('aria-expanded',String(!c));if(c)closed.add(k);else closed.delete(k);UI.closed=[...closed];saveUI();return;}
+  if(t.dataset.tog){
+    const id=t.dataset.tog,m=document.getElementById('m-'+id);const o=m.hidden;m.hidden=!o;
+    t.setAttribute('aria-expanded',String(o));t.querySelector('span').textContent=o?'Fechar':'Ver gancho e cenário';
+    if(o)opened.add(id);else opened.delete(id);UI.open=[...opened];saveUI();return;
+  }
+  if(t.dataset.copy){
+    const v=byVid.get(t.dataset.v),s=v&&v.src[t.dataset.copy];
+    if(!s||!s.roteiro){toast('Esse vídeo não tem roteiro na Central.');return;}
+    toast(await copyText(s.roteiro)?'Roteiro '+PERFIS[t.dataset.copy]+' copiado':'Não deu pra copiar. Tente de novo.');
+  }
+});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.dataset.ck){
+    const v=byVid.get(t.dataset.ck);if(!v)return;
+    setDone(v,t.checked);
+    /* atualiza só o card, os contadores do setup e o topo: a lista não pula */
+    const li=t.closest('.item');li.classList.toggle('done',t.checked);
+    const sec=t.closest('.setup');
+    if(sec){
+      const vs=[...sec.querySelectorAll('.item')].map(x=>byVid.get(x.dataset.v)),ok=vs.filter(isDone).length;
+      sec.querySelector('.cnt b').innerHTML=ok+'<small> / '+vs.length+'</small>';
+      sec.querySelector('.cnt .mb i').style.width=Math.round(ok/vs.length*100)+'%';
+      sec.classList.toggle('full',ok===vs.length);
+      const z=sec.closest('.zone'),zv=[...z.querySelectorAll('.item')].map(x=>byVid.get(x.dataset.v));
+      z.querySelector('h2 small').textContent=zv.filter(isDone).length+' de '+zv.length+' gravados';
+    }
+    renderProgress();
+    return;
+  }
+  if(t.dataset.setup){
+    const v=byVid.get(t.dataset.setup);if(!v)return;
+    if(t.value===v.auto)delete MANUAL[v.vid];else MANUAL[v.vid]=t.value;
+    lsSet(K.setup,MANUAL);opened.add(v.vid);UI.open=[...opened];
+    closed.delete(t.value);UI.closed=[...closed];
+    render();
+    toast('Movido para '+SETUP_BY[t.value].nome);
+    const li=document.querySelector('.item[data-v="'+CSS.escape(v.vid)+'"]');
+    if(li)li.scrollIntoView({block:'center',behavior:'smooth'});
+    return;
+  }
+  if(t.id==='dA'){if(!isDate(t.value))return;const span=diffDays(UI.b,UI.a);setWindow(t.value,addDays(t.value,span));return;}
+  if(t.id==='dB'){if(!isDate(t.value))return;setWindow(UI.a,t.value);return;}
+});
+/* no computador, clicar em qualquer parte do campo abre o calendário do navegador
+   (no celular o toque já abre o seletor nativo) */
+document.querySelectorAll('.dt').forEach(l=>l.addEventListener('click',()=>{
+  const i=l.querySelector('input');
+  if(i.showPicker&&window.matchMedia('(pointer:fine)').matches){try{i.showPicker();}catch(e){}}
+}));
+/* outra aba ou o Calendário (aberto ao lado, na Central) mudou algo: refaz */
+window.addEventListener('storage',e=>{
+  if(!C)return;
+  if(e.key===K.feito){FEITO=lsGet(K.feito,{});render();}
+  else if(e.key===K.setup){MANUAL=lsGet(K.setup,{});render();}
+  else if(e.key==='cal-cfg'||e.key==='cal-docs'){buildPosts();buildVideos();render();}
+});
+
+/* =====================================================================
+   8. Início
+   ===================================================================== */
+async function init(){
+  try{
+    const d=await loadAll();
+    C=d.calendario;SC=d.scale;JP=d.jp;
+    IDX={scale:new Map(SC.map(x=>[x.id,x])),jp:new Map(JP.map(x=>[x.id,x]))};
+    buildPosts();buildVideos();render();
+  }catch(err){
+    console.error(err);
+    $('sub').textContent='Não deu pra carregar os dados.';
+    $('out').innerHTML=`<div class="err"><b>Não carreguei os Reels.</b><br>Confira a conexão e se a pasta dados/ (ou os módulos Calendário de Posts, Central Scale e Central do JP) estão publicados.<br><small>${esc(err.message||err)}</small><br><button class="btn" type="button" onclick="location.reload()">Tentar de novo</button></div>`;
+  }
+}
+init();
+})();
+</script>
+</body>
+</html>
