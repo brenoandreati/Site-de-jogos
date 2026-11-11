@@ -39,8 +39,10 @@ for k in range(1,len(clipes)):
         a=max([w[1] for w in palavras if w[1]<=(p["fim"]+c["ini"])/2+0.05] or [c["ini"]]);b=min([w[0] for w in palavras if w[0]>=a-0.01] or [p["fim"]])
         m=round((a+b)/2,3) if b>a else round((p["fim"]+c["ini"])/2,3)
         p["fim"]=m;c["ini"]=m
+# duração de cada clipe em quadros inteiros (30 fps): som e imagem com a mesma duração
 t=0
-for c in clipes:c["out"]=round(t,3);t+=c["fim"]-c["ini"]
+for c in clipes:
+    q=max(1,round((c["fim"]-c["ini"])*30));c["quadros"]=q;c["fim"]=round(c["ini"]+q/30,4);c["out"]=round(t,4);t+=q/30
 json.dump({"clipes":clipes,"total":round(t,3)},open(sys.argv[3],"w"),indent=1)
 print(f"{len(clipes)} clipes, {t:.1f} s")
 for c in clipes:print(f"  {c['bloco']!s:9} {c['papel']:9} {c['ini']:6.2f}-{c['fim']:6.2f}")
