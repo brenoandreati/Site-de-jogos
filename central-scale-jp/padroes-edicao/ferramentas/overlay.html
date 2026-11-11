@@ -1,0 +1,61 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=block">
+<style>
+:root{--navy:22,41,74;--off:#F4F1EA;--gold:#E0B84F}
+html,body{margin:0;width:1080px;height:1920px;background:transparent;overflow:hidden;font-family:Montserrat,sans-serif}
+.el{position:absolute;left:0;right:0;will-change:transform,opacity}
+#abre{top:205px;left:92px;right:92px;color:var(--off)}
+#abre .m{overflow:hidden;display:block}
+#abre .rot{display:flex;align-items:center;gap:18px;font-weight:800;font-size:36px;letter-spacing:.2em;color:var(--gold)}
+#abre .rot::before{content:"";width:76px;height:4px;background:var(--gold)}
+#abre .tema{display:block;font-weight:800;font-size:124px;line-height:1.02;margin-top:14px;letter-spacing:-.01em;text-shadow:0 6px 30px rgba(0,0,0,.35)}
+#card{top:172px;left:76px;right:76px;padding:46px 52px 54px;border-radius:44px;background:rgba(var(--navy),.9);color:var(--off);text-align:center;box-shadow:0 18px 50px rgba(0,0,0,.25)}
+.ops{display:flex;align-items:center;justify-content:center;gap:34px;font-weight:800;font-size:66px;line-height:1.1}
+.ops.pilha{flex-direction:column;gap:14px}
+.op{position:relative;display:inline-block;white-space:nowrap}
+.op i{position:absolute;left:0;right:0;bottom:-16px;height:9px;border-radius:5px;background:var(--gold);transform-origin:left}
+.ou{font-weight:700;font-size:38px;color:var(--gold)}
+.fecho .arroba{font-weight:700;font-size:38px;color:var(--gold);margin-bottom:16px}
+.fecho .cta{font-weight:800;font-size:60px;line-height:1.15}
+#leg{top:1330px;left:90px;right:90px;text-align:center;color:var(--off);font-weight:700;font-size:60px;line-height:1.28;text-shadow:0 3px 18px rgba(0,0,0,.6),0 1px 3px rgba(0,0,0,.5)}
+#leg b{color:var(--gold);font-weight:800}
+</style></head><body>
+<div id="abre" class="el"><span class="m"><span class="rot" id="rot"></span></span><span class="m"><span class="tema" id="tema"></span></span></div>
+<div id="card" class="el"></div>
+<div id="leg" class="el"></div>
+<script>
+let E=null;const $=id=>document.getElementById(id);
+const ease=x=>1-Math.pow(1-Math.min(Math.max(x,0),1),3);
+const cl=x=>Math.min(Math.max(x,0),1);
+function setup(ev){E=ev;$('rot').textContent=ev.formato;$('tema').textContent=ev.tema;}
+let cardKey='';
+function card(html,key){if(cardKey!==key){$('card').innerHTML=html;cardKey=key;}}
+function render(t){
+  const a=E.abertura;let key=[];
+  // título
+  const pi=ease((t-0.1)/0.55),po=cl((t-(a.fim-0.3))/0.3);
+  document.querySelectorAll('#abre .m>span').forEach((s,i)=>{const p=ease((t-0.1-i*0.12)/0.55);s.style.display='inline-block';s.style.transform=`translateY(${(1-p)*110}%)`;});
+  $('abre').style.opacity=t<a.fim?1-po:0;key.push(Math.round(pi*60),Math.round(po*30),t<a.fim);
+  // cartão
+  let shown=false;
+  for(const b of E.blocos){
+    if(t<b.ini||t>=b.fim)continue;shown=true;
+    const pin=ease((t-b.ini)/0.35),pout=cl((t-(b.fim-0.25))/0.25);
+    if(b.tipo==='fecho'){card(`<div class="fecho"><div class="arroba">${E.fecho.arroba}</div><div class="cta">${E.fecho.texto}</div></div>`,'fecho');}
+    else{
+      const pilha=Math.max(b.ops[0].length,b.ops[1].length)>11||(b.ops[0]+b.ops[1]).length>18;
+      card(`<div class="ops${pilha?' pilha':''}"><span class="op">${b.ops[0]}<i></i></span><span class="ou">ou</span><span class="op">${b.ops[1]}<i></i></span></div>`,'q'+b.i);
+      const pm=ease((t-b.marca)/0.3),ops=document.querySelectorAll('#card .op');
+      ops.forEach((o,k)=>{const esc=b.r==='ambos'||b.r===k;o.querySelector('i').style.transform=`scaleX(${esc&&t>=b.marca?pm:0})`;o.style.opacity=(!esc&&t>=b.marca)?(1-0.6*pm):1;});
+      key.push(Math.round(pm*30));
+    }
+    $('card').style.opacity=pin*(1-pout);$('card').style.transform=`translateY(${(1-pin)*14}px)`;key.push(b.i,Math.round(pin*30),Math.round(pout*30));
+  }
+  if(!shown){$('card').style.opacity=0;key.push('-');}
+  // legenda
+  let lg=null;for(const g of E.legendas){if(t>=g.ini&&t<g.fim)lg=g;}
+  if(lg){$('leg').innerHTML=lg.txt;const p=ease((t-lg.ini)/0.25),q=cl((t-(lg.fim-0.2))/0.2);$('leg').style.opacity=p*(1-q);$('leg').style.transform=`translateY(${(1-p)*10}px)`;key.push(lg.txt,Math.round(p*20),Math.round(q*20));}
+  else{$('leg').style.opacity=0;key.push('-');}
+  return key.join('|');
+}
+</script></body></html>

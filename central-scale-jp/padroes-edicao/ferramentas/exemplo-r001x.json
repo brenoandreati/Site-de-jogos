@@ -1,0 +1,208 @@
+{
+ "id": "R001x",
+ "src": "IMG_3414",
+ "formato": "ISSO OU AQUILO",
+ "tema": "MARKETING",
+ "abertura": [
+  1.2,
+  5.12
+ ],
+ "perguntas": [
+  {
+   "q": [
+    5.28,
+    6.25
+   ],
+   "a": [
+    6.42,
+    7.1
+   ],
+   "ops": [
+    "Seguidor",
+    "Cliente"
+   ],
+   "r": 1
+  },
+  {
+   "q": [
+    7.22,
+    8.06
+   ],
+   "a": [
+    8.4,
+    10.82
+   ],
+   "ops": [
+    "Reels",
+    "Carrossel"
+   ],
+   "r": "ambos",
+   "leg": [
+    [
+     "Reels pra ser achado,",
+     8.44
+    ],
+    [
+     "carrossel pra ser <b>salvo</b>.",
+     9.56
+    ]
+   ]
+  },
+  {
+   "q": [
+    10.95,
+    12.84
+   ],
+   "a": [
+    12.86,
+    13.92
+   ],
+   "ops": [
+    "Postar todo dia",
+    "Postar perfeito"
+   ],
+   "r": 0
+  },
+  {
+   "q": [
+    14.16,
+    15.72
+   ],
+   "a": [
+    15.86,
+    19.26
+   ],
+   "ops": [
+    "Tráfego pago",
+    "Orgânico"
+   ],
+   "r": "ambos",
+   "leg": [
+    [
+     "Os dois.",
+     15.88
+    ],
+    [
+     "Mas no tráfego pago,",
+     16.54
+    ],
+    [
+     "você precisa entender as suas <b>métricas</b>.",
+     17.46
+    ]
+   ]
+  },
+  {
+   "q": [
+    19.44,
+    21.34
+   ],
+   "a": [
+    21.86,
+    22.76
+   ],
+   "ops": [
+    "Agência de tráfego",
+    "Aprender primeiro"
+   ],
+   "r": 1
+  },
+  {
+   "q": [
+    23.14,
+    24.38
+   ],
+   "a": [
+    24.92,
+    25.97
+   ],
+   "ops": [
+    "Viralizar",
+    "Vender"
+   ],
+   "r": 1
+  },
+  {
+   "q": [
+    26.0,
+    28.86
+   ],
+   "a": [
+    36.4,
+    37.0
+   ],
+   "ops": [
+    "Curtida",
+    "Salvamento"
+   ],
+   "r": 1
+  },
+  {
+   "q": [
+    37.24,
+    38.8
+   ],
+   "a": [
+    39.22,
+    40.26
+   ],
+   "ops": [
+    "Rosto do dono",
+    "Só a logo"
+   ],
+   "r": 0
+  },
+  {
+   "q": [
+    40.44,
+    42.4
+   ],
+   "a": [
+    42.56,
+    43.46
+   ],
+   "ops": [
+    "Logo bonita",
+    "Oferta clara"
+   ],
+   "r": 1
+  },
+  {
+   "q": [
+    43.8,
+    46.8
+   ],
+   "a": [
+    47.34,
+    50.1
+   ],
+   "ops": [
+    "Copiar o concorrente",
+    "Fazer o seu"
+   ],
+   "r": 1,
+   "leg": [
+    [
+     "Fazer o seu.",
+     47.38
+    ],
+    [
+     "Copiar o concorrente",
+     48.14
+    ],
+    [
+     "é sempre chegar em <b>segundo</b>.",
+     49.02
+    ]
+   ]
+  }
+ ],
+ "cta": [
+  68.16,
+  73.46
+ ],
+ "fecho": {
+  "arroba": "@jp.andradesilva",
+  "texto": "Segue pra ver o próximo"
+ }
+}
