@@ -1,22 +1,18 @@
 {
-  "padrao": "pergunta-resposta",
-  "versao": 1,
-  "atualizado": "2026-11-11",
+  "padrao": "pergunta-resposta", "versao": 2, "atualizado": "2026-11-11",
   "formatos": ["Isso ou aquilo", "Mito ou verdade", "Bate-bola"],
   "saida": { "largura": 1080, "altura": 1920, "fps": 30, "codec": "h264", "duracaoAlvo": [35, 40], "duracaoMax": 45 },
-  "cores": {
-    "jp": { "fundo": "#16294A", "texto": "#F4F1EA", "destaque": "#E0B84F" },
-    "scale": { "fundo": "#0B2A8A", "texto": "#FBF1DA", "destaque": "#C9A24D" }
-  },
-  "fonte": { "familia": "Montserrat", "peso": 800 },
-  "abertura": { "duracao": 2, "rotuloFormato": true, "cortarNo": "Valendo" },
-  "pergunta": { "manterVozDeQuemFilma": true, "respiroMaxAntesDaResposta": 0.15, "pilulas": { "altura": [18, 30], "entrada": "pop", "escolhida": "destaque", "outraOpacidade": 0.35 }, "contador": "topo-direita" },
-  "mitoOuVerdade": { "carimbo": true, "mito": "texto-sobre-fundo", "verdade": "destaque", "zoom": [1.1, 1.0, 0.2] },
-  "legenda": { "estilo": "av", "alturaLegenda": 70, "palavrasPorBloco": 3, "caixaAlta": true, "minPalavrasParaLegendar": 4, "enfase": "destaque" },
-  "ultima": { "rotulo": "ÚLTIMA", "respiroExtra": 0.5, "zoomSuave": true },
-  "fecho": { "duracao": [1.5, 2], "chamadaUnica": true },
-  "cortes": { "pausaMaxima": 0.35, "margemCorte": 0.08, "alternarZoom": [1.0, 1.12], "focoZoom": 38, "punchMax": 2, "punch": 1.15 },
-  "som": { "whooshPilula": true, "popEscolha": true, "dingCarimbo": true, "volumeEfeitosMax": 0.4, "musicaNoArquivo": false },
-  "takes": { "referencia": "roteiro", "preferir": "ultimo-completo", "aceitarPalavrasDiferentes": true, "reordenarPeloRoteiro": true, "cortarSePassar": "perguntas-do-meio", "manterSempre": ["primeira", "ultima"] },
-  "capa": { "fotoDoJP": true, "rotuloPequeno": true, "temaEmDestaque": true }
+  "cores": { "jp": { "fundo": "#16294A", "texto": "#F4F1EA", "destaque": "#E0B84F" }, "scale": { "fundo": "#0B2A8A", "texto": "#FBF1DA", "destaque": "#C9A24D" } },
+  "fonte": { "familia": "Montserrat", "texto": 700, "titulo": 800 },
+  "abertura": { "duracao": 2, "entrada": { "tipo": "mascara-sobe", "duracao": 0.5, "easing": "outCubic" }, "saida": { "tipo": "fade", "duracao": 0.3 }, "cortarNo": "Valendo" },
+  "cartao": { "altura": [16, 30], "opacidadeFundo": 0.85, "desfoque": 24, "raio": 28, "entrada": { "sobe": 12, "duracao": 0.35, "easing": "outCubic" }, "saida": { "fade": 0.25 } },
+  "resposta": { "sublinhado": { "duracao": 0.3 }, "outraOpacidade": 0.4, "mitoOuVerdade": { "etiqueta": true, "escala": [0.96, 1], "duracao": 0.3 } },
+  "legenda": { "minPalavras": 5, "linhasMax": 2, "caixaAlta": false, "altura": 72, "entrada": "frase-fade", "enfase": "destaque" },
+  "fecho": { "duracao": [1.5, 2], "mostrarArroba": true, "chamadaUnica": true },
+  "camera": { "alternarZoom": [1.0, 1.08], "aproximacaoLenta": [1.0, 1.04], "focoRosto": 38, "punch": false },
+  "cortes": { "respiroMaxAntesDaResposta": 0.15, "pausaMaxima": 0.35, "margemCorte": 0.08 },
+  "som": { "tickNaResposta": 0.2, "outrosEfeitos": false, "musicaNoArquivo": false },
+  "cor": { "contraste": 1.06, "temperatura": "levemente-quente", "saturacao": 1.0 },
+  "removido": ["contador", "pilulas", "emoji", "legenda-palavra-por-palavra", "punch", "whoosh"],
+  "takes": { "referencia": "roteiro", "preferir": "ultimo-completo", "aceitarPalavrasDiferentes": true, "reordenarPeloRoteiro": true, "cortarSePassar": "perguntas-do-meio", "manterSempre": ["primeira", "ultima"] }
 }
