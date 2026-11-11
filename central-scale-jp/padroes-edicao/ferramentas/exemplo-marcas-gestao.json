@@ -1,0 +1,14 @@
+{"id":"R003x","formato":"ISSO OU AQUILO","tema":"GESTÃO E CAIXA","cta":"Se",
+ "fecho":{"arroba":"@jp.andradesilva","texto":"Segue pra ver o próximo"},
+ "perguntas":[
+  {"q":"Faturamento","a":"Lucro","ops":["Faturamento","Lucro"],"r":1},
+  {"q":"Planilha","a":"Planilha","ops":["Planilha","Guardar na cabeça"],"r":0,"leg":[["Planilha.","Planilha"],["Na cabeça só <b>cabelo</b>.","na"]]},
+  {"q":"Conta","a":"Separada","ops":["Junto com a do dono","Separada"],"r":1},
+  {"q":"Retirada","a":"Fixa","ops":["Retirada fixa","Tirar quando sobrar"],"r":0},
+  {"q":"Olhar","a":"Toda","ops":["Todo dia","Todo mês"],"r":{"outra":"Toda semana"}},
+  {"q":"Reserva","a":"Reserva","ops":["Reserva","Reinvestir tudo"],"r":0,"leg":[["Reserva primeiro,","Reserva"],["reinvestir <b>depois</b>.","reinvestir"]]},
+  {"q":"Crescer","a":"Com","ops":["Crescer rápido","Crescer com caixa"],"r":1},
+  {"q":"Contador","a":"Contador","ops":["Contador","Eu mesmo"],"r":0,"leg":[["Contador.","Contador"],["Mas tem que ser o contador <b>gerencial</b>,","mas"],["não aquele que só emite imposto.","não"]]},
+  {"q":"Meta","a":"Da","ops":["Meta do ano","Meta da semana"],"r":"ambos","leg":[["Da semana, do mês <b>e do ano</b>.","Da"]]},
+  {"q":"Última","a":"Primeiro","ops":["Cortar custo","Aumentar o preço"],"r":{"outra":"Entender a margem"},"leg":[["Primeiro entender a <b>margem</b>.","Primeiro"],["Sem isso, os dois vira <b>chute</b>.","Sem"]]}
+ ]}

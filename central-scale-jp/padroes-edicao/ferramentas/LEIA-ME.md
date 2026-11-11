@@ -8,7 +8,7 @@ Primeiro vídeo feito assim: R001x (Isso ou aquilo: MARKETING), em 11/11/2026.
 4. `python3 base.py cortes.json bruto.MOV base.mov` faz 1080x1920 a 30 fps. Cada pergunta alterna o zoom entre 100% e 108%, com aproximação lenta de 4% e leve correção de cor.
 5. `python3 eventos.py plano.json cortes.json eventos.json` gera os tempos dos elementos no vídeo final.
 6. `node quadros.js overlay.html eventos.json quadros/` desenha título, cartão, sublinhado, legenda e fecho, quadro a quadro, com fundo transparente.
-7. Montagem com FFmpeg: a base, os quadros por cima, um tick baixo em cada resposta e o áudio a -14 LUFS.
+7. `python3 montar.py nome saida.mp4` monta a base, os quadros por cima, um tick baixo em cada resposta e o áudio a -14 LUFS.
 
 ## Vídeo que já chega cortado (pasta EDITADOS)
 
@@ -22,3 +22,10 @@ Os cortes ficam como estão. Só entram o padrão visual e o som.
    - a primeira palavra do CTA.
 3. `python3 plano_editado.py marcas.json transcricao.json duração cortes.json plano.json` divide o vídeo em blocos contínuos nas trocas de pergunta, em quadros exatos, sem tirar nada.
 4. Seguir do passo 4 da edição normal (base, eventos, quadros, montagem).
+
+## Resposta fora das opções
+
+No plano, `"r"` indica a resposta. Há três formas:
+- **Número da opção** (`0` ou `1`): ela fica sublinhada e a outra apaga.
+- **`"ambos"`**: as duas ficam sublinhadas.
+- **`{"outra":"Toda semana"}`**: as duas apagam e o texto entra em dourado no lugar do "ou". Exemplo em `exemplo-marcas-gestao.json`.

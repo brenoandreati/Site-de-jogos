@@ -14,7 +14,9 @@ html,body{margin:0;width:1080px;height:1920px;background:transparent;overflow:hi
 .ops.pilha{flex-direction:column;gap:14px}
 .op{position:relative;display:inline-block;white-space:nowrap}
 .op i{position:absolute;left:0;right:0;bottom:-16px;height:9px;border-radius:5px;background:var(--gold);transform-origin:left}
-.ou{font-weight:700;font-size:38px;color:var(--gold)}
+.ou{font-weight:700;font-size:38px;color:var(--gold);position:relative;display:inline-block}
+.ou.outra{font-weight:800;font-size:54px;white-space:nowrap}
+.ou.outra i{position:absolute;left:0;right:0;bottom:-14px;height:8px;border-radius:5px;background:var(--gold);transform-origin:left}
 .fecho .arroba{font-weight:700;font-size:38px;color:var(--gold);margin-bottom:16px}
 .fecho .cta{font-weight:800;font-size:60px;line-height:1.15}
 #leg{top:1330px;left:90px;right:90px;text-align:center;color:var(--off);font-weight:700;font-size:60px;line-height:1.28;text-shadow:0 3px 18px rgba(0,0,0,.6),0 1px 3px rgba(0,0,0,.5)}
@@ -45,8 +47,11 @@ function render(t){
     else{
       const pilha=Math.max(b.ops[0].length,b.ops[1].length)>11||(b.ops[0]+b.ops[1]).length>18;
       card(`<div class="ops${pilha?' pilha':''}"><span class="op">${b.ops[0]}<i></i></span><span class="ou">ou</span><span class="op">${b.ops[1]}<i></i></span></div>`,'q'+b.i);
-      const pm=ease((t-b.marca)/0.3),ops=document.querySelectorAll('#card .op');
-      ops.forEach((o,k)=>{const esc=b.r==='ambos'||b.r===k;o.querySelector('i').style.transform=`scaleX(${esc&&t>=b.marca?pm:0})`;o.style.opacity=(!esc&&t>=b.marca)?(1-0.6*pm):1;});
+      const pm=ease((t-b.marca)/0.3),ops=document.querySelectorAll('#card .op'),ou=document.querySelector('#card .ou');
+      const outra=b.r&&typeof b.r==='object'?b.r.outra:null;
+      ops.forEach((o,k)=>{const esc=!outra&&(b.r==='ambos'||b.r===k);o.querySelector('i').style.transform=`scaleX(${esc&&t>=b.marca?pm:0})`;o.style.opacity=(!esc&&t>=b.marca)?(1-0.6*pm):1;});
+      if(outra){if(t>=b.marca){if(!ou.classList.contains('outra')){ou.classList.add('outra');ou.innerHTML=outra+'<i></i>';}ou.style.opacity=pm;ou.style.transform=`scale(${0.96+0.04*pm})`;ou.querySelector('i').style.transform=`scaleX(${pm})`;}
+        else if(ou.classList.contains('outra')){ou.classList.remove('outra');ou.textContent='ou';ou.style.opacity=1;ou.style.transform='none';}}
       key.push(Math.round(pm*30));
     }
     $('card').style.opacity=pin*(1-pout);$('card').style.transform=`translateY(${(1-pin)*14}px)`;key.push(b.i,Math.round(pin*30),Math.round(pout*30));
