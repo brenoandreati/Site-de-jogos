@@ -1,0 +1,14 @@
+{"id":"R002x","formato":"ISSO OU AQUILO","tema":"VENDAS","cta":"Se",
+ "fecho":{"arroba":"@jp.andradesilva","texto":"Segue pra ver o próximo"},
+ "perguntas":[
+  {"q":"Indicação","a":"Processo","ops":["Indicação","Processo de vendas"],"r":1},
+  {"q":"Desconto","a":"Bônus","ops":["Desconto","Bônus"],"r":1,"leg":[["Bônus.","Bônus"],["Não diminui sua <b>margem</b> de lucro.","não"]]},
+  {"q":"Ligar","a":"Ligar","ops":["Ligar","Mandar áudio"],"r":0},
+  {"q":"Vender","a":"Para","ops":["Pra muitos","Pros certos"],"r":1},
+  {"q":"Falar","a":"Depois","ops":["Preço logo de cara","Depois"],"r":1,"leg":[["Depois de mostrar o <b>valor</b>.","Depois"]]},
+  {"q":"Cliente","a":"Cliente","ops":["Cliente novo","Cliente antigo"],"r":1,"leg":[["Cliente antigo.","Cliente"],["Vender para o mesmo cliente custa <b>menos</b>.","vender"]]},
+  {"q":"Script","a":"Script","ops":["Script","Improviso"],"r":0,"leg":[["Script.","Script"],["Improviso não <b>escala</b>.","improviso"]]},
+  {"q":"Follow","a":"Follow","ops":["Follow-up","Esperar o cliente voltar"],"r":0},
+  {"q":"Vendedor","a":"Processo","ops":["Vendedor bom","Processo bom"],"r":1},
+  {"q":"Última","a":"Perguntar","ops":["Desistir","Perguntar o porquê"],"r":1,"leg":[["Perguntar o porquê.","Perguntar"],["O não te ensina mais do que o <b>sim</b>.","não"]]}
+ ]}

@@ -9,3 +9,16 @@ Primeiro vídeo feito assim: R001x (Isso ou aquilo: MARKETING), em 11/11/2026.
 5. `python3 eventos.py plano.json cortes.json eventos.json` gera os tempos dos elementos no vídeo final.
 6. `node quadros.js overlay.html eventos.json quadros/` desenha título, cartão, sublinhado, legenda e fecho, quadro a quadro, com fundo transparente.
 7. Montagem com FFmpeg: a base, os quadros por cima, um tick baixo em cada resposta e o áudio a -14 LUFS.
+
+## Vídeo que já chega cortado (pasta EDITADOS)
+
+Os cortes ficam como estão. Só entram o padrão visual e o som.
+
+1. Transcrever o vídeo cortado.
+2. Escrever as marcas (`exemplo-marcas-vendas.json`):
+   - a primeira palavra de cada pergunta e da resposta;
+   - as opções e qual foi escolhida;
+   - os trechos de legenda, cada um com a palavra onde começa;
+   - a primeira palavra do CTA.
+3. `python3 plano_editado.py marcas.json transcricao.json duração cortes.json plano.json` divide o vídeo em blocos contínuos nas trocas de pergunta, em quadros exatos, sem tirar nada.
+4. Seguir do passo 4 da edição normal (base, eventos, quadros, montagem).
