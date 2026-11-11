@@ -200,6 +200,13 @@ main{padding-top:16px;padding-bottom:calc(56px + env(safe-area-inset-bottom,0px)
 .btn.tog svg{transition:transform .2s}
 .btn.tog[aria-expanded="true"] svg{transform:rotate(180deg)}
 .btn svg{width:15px;height:15px;flex:none}
+.rot{margin-top:10px}
+.rot .lb2{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.rot .rst{font-size:11.5px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--gold-ink)}
+.rot .lnk{margin-left:auto;border:0;background:none;padding:4px 0;color:var(--accent);font-size:12.5px;font-weight:600;letter-spacing:0;text-transform:none;text-decoration:underline;text-underline-offset:3px}
+.rtx{display:block;width:100%;min-height:96px;resize:vertical;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--ink);padding:10px 12px;font:14.5px/1.55 var(--f-ui);overflow:hidden}
+.rtx:focus{outline:none;border-color:var(--gold);background:var(--surface)}
+.item.done .rtx{color:var(--muted)}
 .split{display:inline-flex;align-items:stretch;border:1px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden;min-height:38px}
 .split .sl{display:inline-flex;align-items:center;gap:6px;padding:0 10px;font-size:13px;font-weight:600;color:var(--muted)}
 .split .sl svg{width:15px;height:15px}
@@ -420,6 +427,28 @@ async function loadAll(){
 let C=null,SC=null,JP=null,IDX={scale:new Map(),jp:new Map()};
 /* Releituras: o post indicado ganha outro conteúdo e deixa de ser o mesmo vídeo do outro perfil */
 let REL=new Map(),SEPARA=new Set();
+/* Roteiros editados: no Cloudflare (/api/roteiros) quando existe; senão, neste aparelho. */
+let ORIG={},EDIT={},REMOTO=false;const salvarT={};
+function guardarOriginais(){ORIG={};['scale','jp'].forEach(p=>IDX[p].forEach((x,id)=>{ORIG[p+':'+id]=x.roteiro||'';}));}
+function aplicarEdicoes(){Object.keys(EDIT).forEach(k=>{const [p,id]=k.split(':');const x=IDX[p]&&IDX[p].get(id);if(x)x.roteiro=EDIT[k].texto;});}
+async function carregarEdicoes(){
+  try{const r=await fetch('/api/roteiros',{cache:'no-store'});if(r.ok&&/json/.test(r.headers.get('content-type')||'')){EDIT=await r.json();REMOTO=true;return;}}catch(e){}
+  EDIT=lsGet('pg:roteiros',{});REMOTO=false;
+}
+function mudarRoteiro(k,texto){
+  const [p,id]=k.split(':');const x=IDX[p]&&IDX[p].get(id);if(x)x.roteiro=texto;
+  const original=texto===ORIG[k];if(original)delete EDIT[k];else EDIT[k]={texto,em:Date.now()};
+  const st=document.querySelector('.rst[data-rs="'+CSS.escape(k)+'"]');if(st)st.textContent='Salvando…';
+  clearTimeout(salvarT[k]);salvarT[k]=setTimeout(async()=>{
+    let ok=true;
+    if(REMOTO){try{const r=await fetch('/api/roteiros',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({chave:k,texto:original?'':texto})});ok=r.ok;}catch(e){ok=false;}}
+    else lsSet('pg:roteiros',EDIT);
+    const s2=document.querySelector('.rst[data-rs="'+CSS.escape(k)+'"]');
+    if(s2)s2.textContent=!ok?'Não salvou. Confira a internet.':original?'':(REMOTO?'Editado · salvo':'Editado · salvo neste aparelho');
+    if(!ok)toast('Não deu pra salvar o roteiro. Confira a internet e tente de novo.');
+  },900);
+}
+function ajustarAltura(t){t.style.height='auto';t.style.height=(t.scrollHeight+2)+'px';}
 function aplicarReleituras(R){
   REL=new Map();SEPARA=new Set();
   if(!R||!Array.isArray(R.itens))return;
@@ -666,6 +695,10 @@ function item(v,perfil){
   else if(v.fin)copy=`<span class="split" role="group" aria-label="Copiar roteiro"><span class="sl">${ICON.copy}Copiar roteiro</span>`+
     ['scale','jp'].map(p=>`<button type="button" data-copy="${p}" data-v="${esc(v.vid)}" aria-label="Copiar roteiro do ${PERFIS[p]}">${PERFIS[p]}</button>`).join('')+'</span>';
   else{const p=v.src.scale?'scale':'jp';copy=v.src[p]&&v.src[p].roteiro?`<button class="btn" type="button" data-copy="${p}" data-v="${esc(v.vid)}">${ICON.copy}Copiar roteiro</button>`:'';}
+  const rp=perfil||(v.src.jp?'jp':'scale'),rid=(v.ids[rp]&&v.ids[rp][0])||(rp==='scale'&&/^[sr]:/.test(v.vid)?v.vid.slice(2):null);
+  const rk=rid?rp+':'+rid:null,rtxt=rid&&IDX[rp].get(rid)?IDX[rp].get(rid).roteiro:'';
+  const roteiro=rk&&rtxt?`<div class="rot"><div class="lb2"><span>Roteiro${!perfil&&v.both?' do '+PERFIS[rp]:''}</span><span class="rst" data-rs="${esc(rk)}">${EDIT[rk]?'Editado':''}</span>${EDIT[rk]?`<button class="lnk" type="button" data-rest="${esc(rk)}">Voltar ao original</button>`:''}</div>`+
+    `<textarea class="rtx" data-rot="${esc(rk)}" spellcheck="true" aria-label="Roteiro de ${esc(first.titulo)}">${esc(rtxt)}</textarea></div>`:'';
   const st=setupOf(v),manual=!!MANUAL[v.vid]&&MANUAL[v.vid]!==v.auto;
   const opts=LOCAIS.map(l=>`<optgroup label="${esc(l.nome)}">`+SETUPS.filter(s=>s.local===l.k).map(s=>`<option value="${s.k}"${s.k===st?' selected':''}>${esc(s.nome)}${s.k===v.auto?' (padrão)':''}</option>`).join('')+'</optgroup>').join('');
   const dirFull=(perfil&&v.src[perfil]&&v.src[perfil].direcao)||v.dir;
@@ -690,6 +723,7 @@ function item(v,perfil){
     <div class="body">
       <div class="tt">${esc(first.titulo)}</div>
       <div class="meta">${tags}</div>
+      ${roteiro}
       <div class="acts"><button class="btn tog" type="button" data-tog="${esc(v.vid)}" aria-expanded="${open}" aria-controls="m-${esc(v.vid)}"><span>${open?'Fechar':'Ver gancho e cenário'}</span>${ICON.down}</button>${copy}</div>
       ${more}
     </div></li>`;
@@ -731,6 +765,7 @@ function render(){
       (doPerfil.length?` Os Reels ${de}vão de ${dm(doPerfil[0].date)} a ${dm(doPerfil[doPerfil.length-1].date)}.`:'')}</div>`;
   }
   $('out').innerHTML=h;
+  document.querySelectorAll('.rtx').forEach(ajustarAltura);
   renderProgress(vids);
   renderDiverg(perfil);
   renderFoot();
@@ -813,6 +848,14 @@ document.addEventListener('click',async e=>{
     toast(await copyText(s.roteiro)?'Roteiro '+PERFIS[t.dataset.copy]+' copiado':'Não deu pra copiar. Tente de novo.');
   }
 });
+document.addEventListener('input',e=>{
+  const t=e.target;if(!t.dataset||!t.dataset.rot)return;ajustarAltura(t);mudarRoteiro(t.dataset.rot,t.value);
+});
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-rest]');if(!b)return;const k=b.dataset.rest;
+  const t=document.querySelector('.rtx[data-rot="'+CSS.escape(k)+'"]');if(t){t.value=ORIG[k]||'';ajustarAltura(t);}
+  mudarRoteiro(k,ORIG[k]||'');b.remove();toast('Roteiro voltou ao original da Central');
+});
 document.addEventListener('change',e=>{
   const t=e.target;
   if(t.dataset.ck){
@@ -869,6 +912,7 @@ async function init(){
     C=d.calendario;SC=d.scale;JP=d.jp;
     IDX={scale:new Map(SC.map(x=>[x.id,x])),jp:new Map(JP.map(x=>[x.id,x]))};
     aplicarReleituras(d.releituras);
+    guardarOriginais();await carregarEdicoes();aplicarEdicoes();
     buildPosts();buildVideos();render();
   }catch(err){
     console.error(err);

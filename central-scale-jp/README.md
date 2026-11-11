@@ -140,6 +140,7 @@ O mesmo sistema também está publicado sozinho no Cloudflare, na conta pessoal:
 - `/releituras` mostra as releituras do Scale ao lado do original do JP, com roteiro, direção e legenda para copiar.
 - `/dados/releituras.js` são os roteiros das releituras, lidos pelo sistema.
 - As páginas compartilham as marcações de gravado.
+- O roteiro aparece aberto em cada card e pode ser editado. A edição salva sozinha num Durable Object do Worker (`/api/roteiros`), então todo mundo vê na hora. "Copiar roteiro" copia o texto editado, e "Voltar ao original" volta ao texto da Central. Sem esse endereço, como na própria Central, a edição fica só no aparelho.
 - O Worker (`src/index.js`) busca ao vivo, na Central publicada, o Calendário de Posts, a Central Scale e a Central do JP, com 60 segundos de cache. Nenhum roteiro fica copiado no Worker. Quando a Central muda, o planejamento muda junto, sem publicar de novo.
 - Descartes e horários editados no Calendário ficam salvos no navegador, no endereço da Central, e não chegam neste endereço. Aqui vale o plano padrão do Calendário.
 

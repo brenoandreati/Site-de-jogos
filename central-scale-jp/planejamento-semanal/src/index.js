@@ -17,9 +17,40 @@ const FONTES = {
   '/dados/central-jp.js': '/dados/central-jp.js',
 };
 
+/* Roteiros editados no painel: um registro por peça ("jp:R001x", "scale:RJ06"), guardados num
+   Durable Object (gravou, todo mundo vê na hora). GET devolve todos; PUT grava um
+   (texto vazio volta ao original da Central). */
+const CHAVE = /^(jp|scale):[A-Za-z0-9_-]{1,24}$/;
+const json = (d, s = 200) => new Response(JSON.stringify(d), { status: s, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
+
+export class Roteiros {
+  constructor(state) { this.storage = state.storage; }
+  async fetch(request) {
+    if (request.method === 'GET') {
+      const out = {};
+      (await this.storage.list()).forEach((v, k) => { out[k] = v; });
+      return json(out);
+    }
+    if (request.method === 'PUT') {
+      let b;
+      try { b = await request.json(); } catch (e) { return json({ erro: 'Corpo inválido.' }, 400); }
+      const chave = String(b && b.chave || ''), texto = String(b && b.texto || '');
+      if (!CHAVE.test(chave)) return json({ erro: 'Chave inválida.' }, 400);
+      if (texto.length > 20000) return json({ erro: 'Roteiro grande demais.' }, 413);
+      if (!texto.trim()) { await this.storage.delete(chave); return json({ ok: true, original: true }); }
+      const reg = { texto, em: Date.now() };
+      await this.storage.put(chave, reg);
+      return json({ ok: true, em: reg.em });
+    }
+    return json({ erro: 'Método não permitido.' }, 405);
+  }
+}
+const roteiros = (request, env) => env.ROTEIROS.get(env.ROTEIROS.idFromName('todos')).fetch(request);
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname === '/api/roteiros') return roteiros(request, env);
     const caminho = FONTES[url.pathname];
     if (!caminho) return env.ASSETS.fetch(request);
     if (request.method !== 'GET' && request.method !== 'HEAD') {
