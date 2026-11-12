@@ -1,0 +1,9 @@
+{"id":"MITO-IA","formato":"MITO OU VERDADE","tema":"IA NO NEGÓCIO","cta":"Salve",
+ "fecho":{"arroba":"@jp.andradesilva","texto":"Salva e manda pra quem precisa"},
+ "perguntas":[
+  {"q":"E","a":"Mito","frase":"IA é coisa de empresa grande","r":"mito","leg":[["Quem mais ganha tempo é o <b>pequeno</b>,","Quem"],["que tem time menor fazendo <b>muita coisa</b>.","Que"]]},
+  {"q":"Precisa","a":"Mito","frase":"Precisa saber programar","r":"mito","leg":[["Se sabe <b>explicar</b> o que precisa,","Se"],["já consegue <b>começar</b>.","já"]]},
+  {"q":"A","a":"Mito","frase":"A IA resolve sozinha, sem você dizer o que quer","r":"mito","leg":[["Depende do que <b>você pede</b>.","Ela"],["Pedido claro, <b>resposta certa</b>.","Pedido"]]},
+  {"q":"Dá","a":"Verdade","frase":"Dá pra começar com uma tarefa só","r":"verdade","leg":[["Começa pelas mais <b>repetitivas</b>","Começa"],["e vai pras mais <b>complexas</b>.","e"]]},
+  {"q":"Preciso","a":"Verdade","frase":"Preciso conferir o que a IA entrega","r":"verdade","leg":[["É uma boa <b>assistente</b>,","Ela"],["mas a decisão continua <b>sendo sua</b>.","mas"]]}
+ ]}

@@ -19,6 +19,9 @@ html,body{margin:0;width:1080px;height:1920px;background:transparent;overflow:hi
 .ou.outra i{position:absolute;left:0;right:0;bottom:-14px;height:8px;border-radius:5px;background:var(--gold);transform-origin:left}
 .fecho .arroba{font-weight:700;font-size:38px;color:var(--gold);margin-bottom:16px}
 .fecho .cta{font-weight:800;font-size:60px;line-height:1.15}
+.frase{font-weight:700;font-size:60px;line-height:1.22}
+.etq{display:inline-block;margin-top:34px;padding:14px 38px;border-radius:99px;font-weight:800;font-size:40px;letter-spacing:.14em;color:rgb(var(--navy));opacity:0}
+.etq.mito{background:var(--off)}.etq.verdade{background:var(--gold)}
 #leg{top:1330px;left:90px;right:90px;text-align:center;color:var(--off);font-weight:700;font-size:60px;line-height:1.28;text-shadow:0 3px 18px rgba(0,0,0,.6),0 1px 3px rgba(0,0,0,.5)}
 #leg b{color:var(--gold);font-weight:800}
 </style></head><body>
@@ -44,8 +47,13 @@ function render(t){
     if(t<b.ini||t>=b.fim)continue;shown=true;
     const pin=ease((t-b.ini)/0.35),pout=cl((t-(b.fim-0.25))/0.25);
     if(b.tipo==='fecho'){card(`<div class="fecho"><div class="arroba">${E.fecho.arroba}</div><div class="cta">${E.fecho.texto}</div></div>`,'fecho');}
+    else if(b.tipo==='mv'){
+      card(`<div class="frase">${b.frase}</div><span class="etq ${b.r}">${b.r.toUpperCase()}</span>`,'q'+b.i);
+      const pm=t>=b.marca?ease((t-b.marca)/0.3):0,e=document.querySelector('#card .etq');
+      e.style.opacity=pm;e.style.transform=`scale(${0.96+0.04*pm})`;key.push(Math.round(pm*30));
+    }
     else{
-      const pilha=Math.max(b.ops[0].length,b.ops[1].length)>11||(b.ops[0]+b.ops[1]).length>18;
+      const pilha=Math.max(b.ops[0].length,b.ops[1].length)>11||(b.ops[0]+b.ops[1]).length>18||(b.r&&typeof b.r==='object'&&(b.ops[0]+b.ops[1]+b.r.outra).length>26);
       card(`<div class="ops${pilha?' pilha':''}"><span class="op">${b.ops[0]}<i></i></span><span class="ou">ou</span><span class="op">${b.ops[1]}<i></i></span></div>`,'q'+b.i);
       const pm=ease((t-b.marca)/0.3),ops=document.querySelectorAll('#card .op'),ou=document.querySelector('#card .ou');
       const outra=b.r&&typeof b.r==='object'?b.r.outra:null;

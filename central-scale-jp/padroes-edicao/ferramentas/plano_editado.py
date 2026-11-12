@@ -2,7 +2,9 @@
 (sem tirar nada) divididos nas trocas de pergunta, e o plano completo com tempos de legenda.
 Uso: plano_editado.py marcas.json transcricao.json duracao cortes.json plano.json"""
 import json,sys
-M=json.load(open(sys.argv[1]));T=json.load(open(sys.argv[2]));dur=float(sys.argv[3]);W=[w for s in T for w in s['palavras']]
+M=json.load(open(sys.argv[1]));T=json.load(open(sys.argv[2]));dur=float(sys.argv[3]);PULAR=[tuple(x) for x in M.get('pular',[])]
+dentro=lambda t:any(a<=t<=b for a,b in PULAR)
+W=[w for s in T for w in s['palavras'] if not dentro(w[0])]
 norm=lambda s:s.lower().strip('.,?!:;')
 def w_at(txt,depois=0):
     for w in W:
@@ -15,7 +17,7 @@ for p in M['perguntas']:
     leg=[];d=wa[0]
     for txt,ancora in p.get('leg',[]):
         w=w_at(ancora,d);leg.append([txt,w[0]]);d=w[0]+0.01
-    perg.append({'ops':p['ops'],'r':p['r'],**({'leg':leg} if leg else {})})
+    perg.append({'ops':p.get('ops'),'r':p['r'],**({'frase':p['frase']} if p.get('frase') else {}),**({'leg':leg} if leg else {})})
 cta=w_at(M['cta'],marcas[-1][1][1])
 fim_ant=lambda w:max([x[1] for x in W if x[1]<=w[0]+0.01] or [0])
 corte=lambda w:F((fim_ant(w)+w[0])/2)
@@ -23,10 +25,21 @@ pts=[0.0];papeis=[('abertura','abertura')]
 for i,(wq,wa) in enumerate(marcas):
     pts.append(corte(wq));papeis.append((i,'pergunta'));pts.append(corte(wa));papeis.append((i,'resposta'))
 pts.append(corte(cta));papeis.append(('cta','cta'));pts.append(F(dur-0.02))
-clipes=[]
+clipes=[];o=0.0
 for k,(b,p) in enumerate(papeis):
-    q=round((pts[k+1]-pts[k])*30);clipes.append({'ini':pts[k],'fim':round(pts[k]+q/30,4),'bloco':b,'papel':p,'quadros':q,'out':pts[k]})
+    pedacos=[(pts[k],pts[k+1])]
+    for a,z in PULAR:  # trecho repetido que fica fora (ex.: pergunta gravada duas vezes)
+        novo=[]
+        for x,y in pedacos:
+            if z<=x or a>=y:novo.append((x,y));continue
+            if a>x:novo.append((x,F(a)))
+            if z<y:novo.append((F(z),y))
+        pedacos=novo
+    for x,y in pedacos:
+        q=round((y-x)*30)
+        if q<=0:continue
+        clipes.append({'ini':x,'fim':round(x+q/30,4),'bloco':b,'papel':p,'quadros':q,'out':round(o,4)});o+=q/30
 json.dump({'clipes':clipes,'total':round(sum(c['quadros'] for c in clipes)/30,4)},open(sys.argv[4],'w'),indent=1)
 json.dump({'id':M['id'],'formato':M['formato'],'tema':M['tema'],'perguntas':perg,'fecho':M['fecho']},open(sys.argv[5],'w'),ensure_ascii=False,indent=1)
 print('clipes',len(clipes),'total',round(sum(c['quadros'] for c in clipes)/30,2))
-for (wq,wa),p in zip(marcas,M['perguntas']):print(f"  {wq[0]:6.2f} {p['ops']} -> resposta {wa[0]:.2f} ({wa[2]})")
+for (wq,wa),p in zip(marcas,M['perguntas']):print(f"  {wq[0]:6.2f} {p.get('ops') or p.get('frase')} -> resposta {wa[0]:.2f} ({wa[2]})")

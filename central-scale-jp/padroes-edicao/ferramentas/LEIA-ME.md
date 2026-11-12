@@ -29,3 +29,13 @@ No plano, `"r"` indica a resposta. Há três formas:
 - **Número da opção** (`0` ou `1`): ela fica sublinhada e a outra apaga.
 - **`"ambos"`**: as duas ficam sublinhadas.
 - **`{"outra":"Toda semana"}`**: as duas apagam e o texto entra em dourado no lugar do "ou". Exemplo em `exemplo-marcas-gestao.json`.
+
+## Mito ou verdade
+
+Em vez de `ops`, cada item tem `"frase"` (a afirmação, que aparece no cartão) e `"r":"mito"` ou `"r":"verdade"`. Na resposta entra a etiqueta: MITO em off-white, VERDADE em dourado. Exemplo em `exemplo-marcas-mito.json`.
+
+## Pergunta gravada duas vezes
+
+Se o vídeo cortado ainda tem uma pergunta repetida, `"pular":[[início, fim]]` nas marcas tira esse trecho (em segundos do vídeo cortado, no meio das pausas). O resto continua sem mexer. Exemplos em `exemplo-marcas-ia.json` e `exemplo-marcas-equipe.json`.
+
+Quando as opções são longas, o cartão empilha uma embaixo da outra. Com resposta fora das opções, empilha se as três juntas passarem de 26 letras.

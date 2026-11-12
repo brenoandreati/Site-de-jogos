@@ -1,0 +1,13 @@
+{"id":"IA","formato":"ISSO OU AQUILO","tema":"IA NO NEGÓCIO","cta":"Se","pular":[[36.30,39.24]],
+ "fecho":{"arroba":"@jp.andradesilva","texto":"Segue pra ver o próximo"},
+ "perguntas":[
+  {"q":"Aprender","a":"Aprender","ops":["Aprender agora","Esperar"],"r":0},
+  {"q":"IA","a":"Para","ops":["Escrever","Pensar"],"r":1,"leg":[["Pra pensar e <b>executar</b>.","Para"]]},
+  {"q":"IA","a":"Estagiário","ops":["IA","Estagiário"],"r":{"outra":"Estagiário usando IA"}},
+  {"q":"Prompto","a":"Prompto","ops":["Prompt curto","Prompt longo"],"r":1,"leg":[["Prompt <b>detalhado</b>.","Prompto"]]},
+  {"q":"IA","a":"IA","ops":["Pro negócio","Tirar dúvida"],"r":0},
+  {"q":"Ferramenta","a":"Começar","ops":["Ferramenta paga","Começar grátis"],"r":1},
+  {"q":"Atendimento","a":"Atendimento","ops":["Automático","Humano"],"r":"ambos","leg":[["Automático pra demanda <b>repetida</b>,","Atendimento"],["humano pra <b>vendas</b>.","e"]]},
+  {"q":"Equipe","a":"Equipe","ops":["Equipe maior","Equipe com IA"],"r":1},
+  {"q":"Última","a":"Não","ops":["Substitui","Não substitui"],"r":1,"leg":[["A IA substitui a <b>tarefa</b>.","IA"],["Quem decide continua sendo <b>o dono</b>.","Mas"]]}
+ ]}

@@ -13,7 +13,7 @@ ps=pl['perguntas']
 for i,p in enumerate(ps):
     cs=bloco(i);ini=cs[0]['out'];nxt=bloco(i+1) if i+1<len(ps) else bloco('cta');fim=nxt[0]['out']
     resp=[c for c in cs if c['papel']=='resposta'][0];marca=resp['out']+0.06
-    blocos.append({'i':i,'tipo':'q','ini':ini,'fim':fim,'ops':p['ops'],'r':p['r'],'marca':marca});ticks.append(marca)
+    blocos.append({'i':i,'tipo':'mv' if p.get('frase') else 'q','ini':ini,'fim':fim,'ops':p.get('ops'),'frase':p.get('frase'),'r':p['r'],'marca':marca});ticks.append(marca)
     if p.get('leg'):
         L=p['leg']
         for k,(txt,ts) in enumerate(L):

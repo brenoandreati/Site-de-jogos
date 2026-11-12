@@ -1,0 +1,14 @@
+{"id":"ROTINA","formato":"ISSO OU AQUILO","tema":"ROTINA DO DONO","cta":"Se",
+ "fecho":{"arroba":"@jp.andradesilva","texto":"Segue pra ver o próximo"},
+ "perguntas":[
+  {"q":"Acordar","a":"Acordar","ops":["Acordar cedo","Dormir mais"],"r":0},
+  {"q":"Aida","a":"No","ops":["No papel","No celular"],"r":1},
+  {"q":"Reunião","a":"15","ops":["1 hora","15 minutos"],"r":1},
+  {"q":"Respondeu","a":"Tarefas","ops":["WhatsApp cedo","Tarefas importantes"],"r":1},
+  {"q":"Celular","a":"Tarefas","ops":["Na mesa","Longe"],"r":1},
+  {"q":"Trabalhar","a":"Depende","ops":["Trabalhar","Desligar"],"r":{"outra":"Depende do momento"}},
+  {"q":"Café","a":"Café","ops":["Café","Água"],"r":"ambos","leg":[["Café pela <b>manhã</b>,","Café"],["água no <b>decorrer do dia</b>.","água"]]},
+  {"q":"Planejar","a":"No","ops":["No domingo","Na segunda"],"r":0},
+  {"q":"Dizer","a":"Aprender","ops":["Sim pra tudo","Aprender a dizer não"],"r":1},
+  {"q":"Última","a":"Disciplina","ops":["Disciplina","Motivação"],"r":0,"leg":[["Disciplina no café, no almoço <b>e no jantar</b>.","Disciplina"],["Motivação vai embora <b>na terça-feira</b>.","Motivação"]]}
+ ]}

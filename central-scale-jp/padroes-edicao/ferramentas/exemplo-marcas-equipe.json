@@ -1,0 +1,14 @@
+{"id":"EQUIPE","formato":"ISSO OU AQUILO","tema":"EQUIPE E LIDERANÇA","cta":"Se","pular":[[35.04,36.93]],
+ "fecho":{"arroba":"@jp.andradesilva","texto":"Segue pra ver o próximo"},
+ "perguntas":[
+  {"q":"Contratar","a":"Contratar","ops":["Contratar rápido","Contratar certo"],"r":1},
+  {"q":"Currículo","a":"Atitude","ops":["Currículo","Atitude"],"r":1},
+  {"q":"Feedback","a":"Feedback","ops":["Na hora","No fim do mês"],"r":0},
+  {"q":"Chefe","a":"Chefe","ops":["Chefe amigo","Chefe justo"],"r":1},
+  {"q":"Delegar","a":"Delegar","ops":["A tarefa","O resultado"],"r":1},
+  {"q":"Reunião","a":"Não","ops":["Reunião","Processo escrito"],"r":1,"leg":[["Não só escrito: processo <b>claro</b>.","Não"]]},
+  {"q":"Elogiar","a":"Elogiar","ops":["Em público","No privado"],"r":"ambos","leg":[["Elogiar em <b>público</b>,","Elogiar"],["corrigir no <b>privado</b>.","corrigir"]]},
+  {"q":"Funcionário","a":"Melhor","ops":["Igual a você","Melhor que você"],"r":1,"leg":[["Ninguém cresce com gente <b>ruim</b> do lado.","ninguém"]]},
+  {"q":"Fazer","a":"Fazer","ops":["Fazer junto","Mandar fazer"],"r":0,"leg":[["Junto na <b>primeira vez</b>,","Fazer"],["depois <b>autonomia</b>.","dar"]]},
+  {"q":"Última","a":"Quase","ops":["Time ruim","Líder ruim"],"r":1,"leg":[["Quase sempre o <b>líder</b>.","Quase"],["Time ruim é sintoma, líder ruim é <b>a causa</b>.","Time"]]}
+ ]}
