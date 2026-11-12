@@ -94,6 +94,8 @@ button{cursor:pointer}
 .tab .n{font-size:11.5px;font-weight:700;background:rgba(255,255,255,.12);color:var(--head-ink);padding:2px 7px;border-radius:99px;font-variant-numeric:tabular-nums}
 .tab[aria-selected="true"]{color:var(--head-ink);border-bottom-color:var(--gold)}
 .tab[aria-selected="true"] .n{background:var(--gold);color:#1B1505}
+.tab .sm{display:none}
+@media (max-width:440px){.tab .lg{display:none}.tab .sm{display:inline}.tab{gap:5px;font-size:13.5px}}
 .tabs .tbar{height:3px;background:rgba(255,255,255,.06)}
 .tabs .tbar i{display:block;height:100%;width:0;background:var(--ok-bar);transition:width .35s ease}
 
@@ -191,6 +193,15 @@ main{padding-top:16px;padding-bottom:calc(56px + env(safe-area-inset-bottom,0px)
 .tag.code{background:transparent;color:var(--faint);font:600 11.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;padding-inline:2px}
 .tag.diff{background:var(--warn-bg);color:var(--warn-fg)}
 .tag.rel{background:var(--meio-soft);color:var(--meio-ink)}
+/* aba Agenda: horário de cada vídeo no dia de gravação */
+.hr{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:3px;font-size:12.5px;color:var(--muted)}
+.hr b{font-size:15px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.hr .res{font-size:11.5px;font-weight:700;padding:2px 7px;border-radius:99px;background:var(--soft);color:var(--muted)}
+.hr .urg{font-size:11.5px;font-weight:700;padding:2px 7px;border-radius:99px;background:var(--warn-bg);color:var(--warn-fg)}
+.obs{margin:6px 0 2px;font-size:13px;line-height:1.5;color:var(--ink)}
+.parada .sh h3 .quando{display:block;font-size:12.5px;font-weight:700;color:var(--gold-ink);font-variant-numeric:tabular-nums;margin-bottom:2px}
+.takes{margin:0;padding:10px 16px 12px;border-top:1px solid var(--line);font-size:13px;line-height:1.5;color:var(--muted)}
+.takes b{color:var(--ink)}
 .difr{margin:0;padding:8px 10px;border-radius:8px;background:var(--meio-soft);color:var(--meio-ink);font-size:13.5px}
 .acts{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:9px}
 .btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 10px;min-height:38px;font-size:13px;font-weight:600;color:var(--ink);display:inline-flex;align-items:center;gap:5px}
@@ -408,7 +419,7 @@ async function fromModule(f){
   return JSON.parse(data);
 }
 async function loadAll(){
-  await Promise.all([...FONTES.map(f=>loadScript(f.js)),loadScript('../dados/releituras.js')]);
+  await Promise.all([...FONTES.map(f=>loadScript(f.js)),loadScript('../dados/releituras.js'),loadScript('../dados/agenda.js')]);
   const D=window.CENTRAL_DADOS||{};const out={};
   for(const f of FONTES){
     if(D[f.chave]){out[f.chave]=D[f.chave];continue;}
@@ -416,6 +427,7 @@ async function loadAll(){
     out[f.chave]=await fromModule(f);
   }
   out.releituras=D.releituras||null;
+  out.agenda=D.agenda||null;
   return out;
 }
 
@@ -460,7 +472,7 @@ function aplicarReleituras(R){
     if(r.original&&r.original.id)SEPARA.add(r.original.id);
   });
 }
-let VIDEOS=[],POSTS=[],LAUNCH='';
+let VIDEOS=[],POSTS=[],LAUNCH='',AGENDA=null;
 
 function calState(){
   let cfg={},docs={};
@@ -631,7 +643,7 @@ function postsIn(v,perfil){return v.posts.filter(p=>(!perfil||p.perfil===perfil)
 function visible(perfil,loc){
   return VIDEOS.filter(v=>postsIn(v,perfil).length&&(loc==='all'||SETUP_BY[setupOf(v)].local===loc));
 }
-const tabPerfil=t=>t==='gravacao'?null:t;
+const tabPerfil=t=>t==='gravacao'||t==='agenda'?null:t;
 
 /* =====================================================================
    6. Render
@@ -655,7 +667,8 @@ function renderTabs(){
   const perTab={gravacao:visible(null,UI.loc).length,
     jp:POSTS.filter(p=>p.perfil==='jp'&&inRange(p)&&(UI.loc==='all'||SETUP_BY[setupOf(byVid.get(p.vid))].local===UI.loc)).length,
     scale:POSTS.filter(p=>p.perfil==='scale'&&inRange(p)&&(UI.loc==='all'||SETUP_BY[setupOf(byVid.get(p.vid))].local===UI.loc)).length};
-  const T=[['gravacao','Plano de gravação','vídeos'],['jp','JP','posts'],['scale','Scale','posts']];
+  const T=[['gravacao','<span class="lg">Plano de gravação</span><span class="sm">Plano</span>','vídeos'],['jp','JP','posts'],['scale','Scale','posts']];
+  if(AGENDA){T.unshift(['agenda','Agenda','vídeos']);perTab.agenda=agendaVideos().length;}
   $('tabs').innerHTML=T.map(([k,n,u])=>`<button class="tab" type="button" role="tab" id="tab-${k}" aria-controls="out" aria-selected="${UI.tab===k}" data-tab="${k}">${n}<span class="n" aria-label="${perTab[k]} ${u}">${perTab[k]}</span></button>`).join('');
 }
 function renderChips(){
@@ -675,13 +688,13 @@ function postTag(p,withPerfil,outOfRange){
   const t=(withPerfil?PERFIS[p.perfil]+' · ':'')+dow(p.date)+' '+dm(p.date)+' · '+(p.hora==='extra'?'extra':p.hora)+' · '+FUNIL[p.funil];
   return `<span class="tag ${outOfRange?'out':p.funil}" title="${outOfRange?'Fora das datas escolhidas':''}"><i></i>${esc(t)}</span>`;
 }
-function item(v,perfil){
+function item(v,perfil,ag){
   const done=isDone(v),open=opened.has(v.vid);
   const mine=v.posts.filter(p=>!perfil||p.perfil===perfil);
   const other=perfil?v.posts.filter(p=>p.perfil!==perfil):[];
   const first=postsIn(v,perfil)[0]||mine[0];
   const src=(perfil&&v.src[perfil])||v.src.jp||v.src.scale||{};
-  let tags=mine.map(p=>postTag(p,!perfil,!inRange(p))).join('');
+  let tags=mine.map(p=>postTag(p,!perfil,!ag&&!inRange(p))).join('');
   if(perfil&&other.length)tags+=`<span class="tag both">Também no ${PERFIS[other[0].perfil]} · ${esc(other.map(p=>dm(p.date)).join(', '))}</span>`;
   else if(!perfil&&v.both)tags+=`<span class="tag both">JP + Scale: grava uma vez</span>`;
   if(v.rel)tags+=`<span class="tag rel">Releitura · o original fica no JP</span>`;
@@ -721,7 +734,7 @@ function item(v,perfil){
   return `<li class="item${done?' done':''}" data-v="${esc(v.vid)}">
     <label class="ck"><input type="checkbox" data-ck="${esc(v.vid)}"${done?' checked':''} aria-label="Gravado: ${esc(first.titulo)}"><span></span></label>
     <div class="body">
-      <div class="tt">${esc(first.titulo)}</div>
+      ${ag?ag.topo:''}<div class="tt">${esc(first.titulo)}</div>${ag&&ag.obs?`<p class="obs">${esc(ag.obs)}</p>`:''}
       <div class="meta">${tags}</div>
       ${roteiro}
       <div class="acts"><button class="btn tog" type="button" data-tog="${esc(v.vid)}" aria-expanded="${open}" aria-controls="m-${esc(v.vid)}"><span>${open?'Fechar':'Ver gancho e cenário'}</span>${ICON.down}</button>${copy}</div>
@@ -732,7 +745,11 @@ let byVid=new Map();
 function render(){
   byVid=new Map(VIDEOS.map(v=>[v.vid,v]));
   if(!weeks()[+UI.week-1])UI.week='all';
-  renderHead();renderTabs();renderChips();
+  if(UI.tab==='agenda'&&!AGENDA)UI.tab='gravacao';
+  renderHead();renderTabs();
+  document.querySelector('.ctl').hidden=UI.tab==='agenda';
+  if(UI.tab==='agenda'){renderAgenda();return;}
+  renderChips();
   const perfil=tabPerfil(UI.tab);
   const vids=visible(perfil,UI.loc);
   const firstKey=v=>{const p=postsIn(v,perfil)[0];return p.date+' '+p.hora;};
@@ -771,8 +788,49 @@ function render(){
   renderFoot();
   saveUI();
 }
+/* ---------- aba Agenda: o dia de gravação, parada por parada, com horário ---------- */
+function acharVideo(it){
+  const p=it.perfil==='scale'?'scale':'jp';
+  return VIDEOS.find(v=>v.ids[p].indexOf(it.id)>=0)||byVid.get((p==='scale'?'s:':'j:')+it.id)||byVid.get('r:'+it.id)||null;
+}
+function agendaVideos(){
+  const out=[];
+  AGENDA.paradas.forEach(pa=>(pa.itens||[]).forEach(it=>{const v=acharVideo(it);if(v&&out.indexOf(v)<0)out.push(v);}));
+  return out;
+}
+const minutos=h=>{const m=/^(\d{1,2}):(\d{2})$/.exec(h||'');return m?+m[1]*60+ +m[2]:null;};
+const hhmm=n=>pad(Math.floor(n/60)%24)+':'+pad(n%60);
+function renderAgenda(){
+  const A=AGENDA,vids=agendaVideos(),urg=A.urgenteAte||'';
+  $('h1').textContent='Agenda de gravação';$('sub').textContent=(A.titulo||'')+' · '+vids.length+' vídeos em '+A.paradas.length+' paradas';
+  $('intro').textContent=A.intro||'Os vídeos na ordem em que dá pra gravar, com o horário de cada um. Marque como gravado: vale para todas as abas.';
+  $('divg').hidden=true;
+  let h='',zok=0,zn=0;
+  A.paradas.forEach((pa,n)=>{
+    let t=minutos(pa.inicio);const ini=t;
+    const lis=(pa.itens||[]).map(it=>{
+      const v=acharVideo(it),dur=+it.min||5,hora=t!=null?hhmm(t):'';if(t!=null)t+=dur;
+      if(!v)return `<li class="item"><div class="body"><div class="hr"><b>${hora}</b>${dur} min</div><div class="tt">${esc(it.titulo||it.id)}</div><p class="obs">Esse vídeo não está no Calendário de Posts agora.</p></div></li>`;
+      const prox=v.posts.map(p=>p.date).sort()[0]||'';
+      const topo=`<div class="hr"><b>${hora}</b><span>${dur} min</span>${it.reserva?'<span class="res">Se der tempo</span>':''}${!it.reserva&&urg&&prox&&prox<=urg?'<span class="urg">Vai ao ar até '+dm(urg)+'</span>':''}</div>`;
+      return item(v,null,{topo,obs:it.obs||''});
+    }).join('');
+    const fim=pa.fim||(t!=null?hhmm(t):'');
+    const vs=(pa.itens||[]).map(acharVideo).filter(Boolean),ok=vs.filter(isDone).length;zn+=vs.length;zok+=ok;
+    const k='ag'+n,isClosed=closed.has(k);
+    h+=`<section class="setup parada${isClosed?' closed':''}${vs.length&&ok===vs.length?' full':''}" style="--c:${esc(pa.cor||'var(--gold)')}">
+      <button class="sh" type="button" data-sh="${k}" aria-expanded="${!isClosed}">
+        <span class="t"><h3><span class="quando">${ini!=null?hhmm(ini):''}${fim?' às '+fim:''}</span>${esc(pa.nome)}</h3><p>${esc(pa.dica||'')}</p></span>
+        <span class="cnt"><b>${ok}<small> / ${vs.length}</small></b><span class="mb"><i style="width:${vs.length?Math.round(ok/vs.length*100):0}%"></i></span></span>${ICON.chev}
+      </button>
+      <ul class="list">${lis}</ul>${pa.takes?`<p class="takes"><b>Takes extras:</b> ${esc(pa.takes)}</p>`:''}</section>`;
+  });
+  $('out').innerHTML=`<div class="zone"><h2><span class="d" style="background:var(--gold)"></span>${esc(A.titulo||'Agenda')}<small>${zok} de ${zn} gravados</small></h2>${h}</div>`;
+  document.querySelectorAll('.rtx').forEach(ajustarAltura);
+  renderProgress(vids);renderFoot();saveUI();
+}
 function renderProgress(vids){
-  vids=vids||visible(tabPerfil(UI.tab),UI.loc);
+  vids=vids||(UI.tab==='agenda'&&AGENDA?agendaVideos():visible(tabPerfil(UI.tab),UI.loc));
   const ok=vids.filter(isDone).length,n=vids.length,pct=n?Math.round(ok/n*100):0;
   $('pg').textContent=ok;$('pt').textContent=n;$('pb').style.width=pct+'%';$('tb').style.width=pct+'%';
 }
@@ -911,7 +969,7 @@ async function init(){
     const d=await loadAll();
     C=d.calendario;SC=d.scale;JP=d.jp;
     IDX={scale:new Map(SC.map(x=>[x.id,x])),jp:new Map(JP.map(x=>[x.id,x]))};
-    aplicarReleituras(d.releituras);
+    aplicarReleituras(d.releituras);AGENDA=d.agenda&&Array.isArray(d.agenda.paradas)?d.agenda:null;
     guardarOriginais();await carregarEdicoes();aplicarEdicoes();
     buildPosts();buildVideos();render();
   }catch(err){
