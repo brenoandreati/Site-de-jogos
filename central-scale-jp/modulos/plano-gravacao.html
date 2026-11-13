@@ -853,38 +853,37 @@ function diasDaJanela(){
 }
 function renderDias(){
   const dias=diasDaJanela(),hoje=today();
-  $('intro').textContent='Cada dia com tudo o que vai ser postado, no JP e no Scale, na ordem do horário. Os Reels aparecem destacados com o “gravado”, que vale para todas as abas. Os outros formatos ficam junto para dar a visão do dia.';
+  $('intro').textContent='Cada dia com os Reels que vão ser postados, no JP e no Scale, na ordem do horário, com o roteiro de cada um (dá pra editar). Marque cada um quando estiver gravado: vale para todas as abas.';
   const reelsDe=d=>POSTS.filter(p=>p.date===d);
+  /* cada Reel com o card completo: horário, gravado e o roteiro do perfil (editável) */
   const linha=p=>{
-    const fmt=p.fmt||'Reel',v=p.fmt?null:byVid.get(p.vid);
-    const tags=`<span class="tag ${p.funil}"><i></i>${esc(fmt+' · '+(FUNIL[p.funil]||''))}</span>`;
-    if(!v)return `<li class="post"><span class="h">${esc(p.hora==='extra'?'extra':p.hora)}</span><div class="b"><div class="t2">${esc(p.titulo)}</div><div class="m2">${tags}</div></div></li>`;
-    const ok=isDone(v),st=SETUP_BY[setupOf(v)];
-    return `<li class="post reel item${ok?' done':''}" data-v="${esc(v.vid)}"><span class="h">${esc(p.hora==='extra'?'extra':p.hora)}</span>`+
-      `<div class="b"><div class="t2">${esc(p.titulo)}</div><div class="m2">${tags}<span class="st">${ok?'Gravado':'Falta gravar'}</span><span class="tag dur">${esc(st?st.nome:'')}</span>${v.rel?'<span class="tag rel">Releitura</span>':''}</div></div>`+
-      `<label class="ck"><input type="checkbox" data-ck="${esc(v.vid)}"${ok?' checked':''} aria-label="Gravado: ${esc(p.titulo)}"><span></span></label></li>`;
+    const v=byVid.get(p.vid);if(!v)return '';
+    const st=SETUP_BY[setupOf(v)];
+    const topo=`<div class="hr"><b>${esc(p.hora==='extra'?'extra':p.hora)}</b><span>${esc(st?st.nome:'')}</span></div>`;
+    return item(v,p.perfil,{topo,obs:''});
   };
   let h='';const W=weeks();
   W.forEach(w=>{
     const ds=dias.filter(d=>d>=w.a&&d<=w.b);if(!ds.length)return;
     let zh='',zn=0,zok=0;
     ds.forEach(d=>{
-      const rs=reelsDe(d),os=OUTROS.filter(p=>p.date===d);
+      const rs=reelsDe(d),os=[];
       const vs=[...new Set(rs.map(p=>byVid.get(p.vid)).filter(Boolean))],ok=vs.filter(isDone).length;zn+=vs.length;zok+=ok;
       const k='dia'+d,aberto=opened.has(k)||(!UI.diasMexeu&&d===dias.find(x=>x>=hoje));
       const porPerfil=['jp','scale'].map(pf=>{
         const l=[...rs,...os].filter(p=>p.perfil===pf).sort((a,b)=>(a.hora==='extra')-(b.hora==='extra')||(a.hora<b.hora?-1:a.hora>b.hora?1:0));
-        return l.length?`<div class="pf">${PERFIS[pf]} · ${l.length} posts</div><ul class="list">${l.map(linha).join('')}</ul>`:'';
+        return l.length?`<div class="pf">${PERFIS[pf]} · ${l.length} Reel${l.length>1?'s':''}</div><ul class="list">${l.map(linha).join('')}</ul>`:'';
       }).join('');
       zh+=`<section class="setup dia${aberto?'':' closed'}${vs.length&&ok===vs.length?' full':''}" style="--c:var(--gold)">
         <button class="sh" type="button" data-dia="${k}" aria-expanded="${aberto}">
-          <span class="t"><h3><span class="quando">${dm(d)}${d===hoje?' · hoje':''}</span>${DOWL[parse(d).getUTCDay()]}</h3><p>${rs.length+os.length} posts · ${rs.length} Reels${vs.length?' ('+ok+' de '+vs.length+' gravados)':''}</p></span>
+          <span class="t"><h3><span class="quando">${dm(d)}${d===hoje?' · hoje':''}</span>${DOWL[parse(d).getUTCDay()]}</h3><p>${rs.length} Reel${rs.length===1?'':'s'}${vs.length<rs.length?' ('+vs.length+' vídeos: '+(rs.length-vs.length)+' vai nos dois perfis)':''} · ${ok} de ${vs.length} gravados</p></span>
           <span class="cnt"><b>${ok}<small> / ${vs.length}</small></b><span class="mb"><i style="width:${vs.length?Math.round(ok/vs.length*100):0}%"></i></span></span>${ICON.chev}
-        </button>${porPerfil||'<p class="takes">Nada no Calendário de Posts neste dia.</p>'}</section>`;
+        </button>${porPerfil||'<p class="takes">Nenhum Reel neste dia.</p>'}</section>`;
     });
     h+=`<div class="zone"><h2><span class="d" style="background:var(--gold)"></span>Semana ${w.k} · ${shortRange(w.a,w.b)}<small>${zok} de ${zn} Reels gravados</small></h2>${zh}</div>`;
   });
   $('out').innerHTML=h||'<div class="empty">Nenhum dia nesse intervalo.</div>';
+  document.querySelectorAll('.rtx').forEach(ajustarAltura);
   renderProgress(diasVideos(dias));renderDiverg(null);renderFoot();saveUI();
 }
 function diasVideos(dias){return [...new Set(POSTS.filter(p=>dias.indexOf(p.date)>=0).map(p=>byVid.get(p.vid)).filter(Boolean))];}
@@ -956,7 +955,7 @@ document.addEventListener('click',async e=>{
   if(t.id==='reset'){const d=defaultWindow();setWindow(d.a,d.b);return;}
   if(t.dataset.sh){const k=t.dataset.sh,sec=t.closest('.setup');const c=!sec.classList.contains('closed');sec.classList.toggle('closed',c);t.setAttribute('aria-expanded',String(!c));if(c)closed.add(k);else closed.delete(k);UI.closed=[...closed];saveUI();return;}
   if(t.dataset.tog){
-    const id=t.dataset.tog,m=document.getElementById('m-'+id);const o=m.hidden;m.hidden=!o;
+    const id=t.dataset.tog,m=(t.closest('.item')&&t.closest('.item').querySelector('.more'))||document.getElementById('m-'+id);const o=m.hidden;m.hidden=!o;
     t.setAttribute('aria-expanded',String(o));t.querySelector('span').textContent=o?'Fechar':'Ver gancho e cenário';
     if(o)opened.add(id);else opened.delete(id);UI.open=[...opened];saveUI();return;
   }
