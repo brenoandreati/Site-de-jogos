@@ -447,7 +447,7 @@ async function fromModule(f){
   return JSON.parse(data);
 }
 async function loadAll(){
-  await Promise.all([...FONTES.map(f=>loadScript(f.js)),loadScript('../dados/releituras.js'),loadScript('../dados/agenda.js'),loadScript('../dados/videos.js')]);
+  await Promise.all([...FONTES.map(f=>loadScript(f.js)),loadScript('../dados/releituras.js'),loadScript('../dados/agenda.js'),loadScript('../dados/videos.js'),loadScript('../dados/trocas.js')]);
   const D=window.CENTRAL_DADOS||{};const out={};
   for(const f of FONTES){
     if(D[f.chave]){out[f.chave]=D[f.chave];continue;}
@@ -457,6 +457,7 @@ async function loadAll(){
   out.releituras=D.releituras||null;
   out.agenda=D.agenda||null;
   out.videos=D.videos||null;
+  out.trocas=D.trocas||null;
   return out;
 }
 
@@ -501,7 +502,7 @@ function aplicarReleituras(R){
     if(r.original&&r.original.id)SEPARA.add(r.original.id);
   });
 }
-let VIDEOS=[],POSTS=[],OUTROS=[],LAUNCH='',AGENDA=null,ARQ=null;
+let VIDEOS=[],POSTS=[],OUTROS=[],LAUNCH='',AGENDA=null,ARQ=null,TROCAS=[];
 
 function calState(){
   let cfg={},docs={};
@@ -529,6 +530,12 @@ function buildPosts(){
       const cat=it.k+'|'+it.f;(cats[cat]=cats[cat]||[]).push({d,i,k});
     }));
     Object.keys(cats).forEach(c=>{const R=cats[c],q=R.map(x=>x.k).filter(k=>!disc[k]&&!taken[k]);R.forEach((x,n)=>{eff[x.d].s[x.i]=n<q.length?q[n]:null;});});
+    /* trocas combinadas (dados/trocas.js): dois posts do mesmo perfil trocam de dia e horário */
+    TROCAS.filter(t=>t.perfil===p).forEach(t=>{
+      let pa=null,pb=null;
+      dates.forEach(d=>eff[d].s.forEach((k,i)=>{if(k===t.a)pa=[d,i];if(k===t.b)pb=[d,i];}));
+      if(pa&&pb){eff[pa[0]].s[pa[1]]=t.b;eff[pb[0]].s[pb[1]]=t.a;}
+    });
     dates.forEach(d=>{
       const add=(k,hora,i)=>{const it=ITEMS[k];if(it&&it.k!=='Reel'){outros.push({perfil:p,date:d,hora,key:k,id:k.slice(2),titulo:it.t,funil:it.f,fmt:it.k});return;}if(!it)return;posts.push({perfil:p,date:d,hora,i,key:k,id:k.slice(2),titulo:it.t,funil:it.f});};
       sl.forEach((s,i)=>{const k=eff[d].s[i];if(k)add(k,s.t||'',i);});
@@ -1085,7 +1092,7 @@ async function init(){
     const d=await loadAll();
     C=d.calendario;SC=d.scale;JP=d.jp;
     IDX={scale:new Map(SC.map(x=>[x.id,x])),jp:new Map(JP.map(x=>[x.id,x]))};
-    aplicarReleituras(d.releituras);AGENDA=d.agenda&&Array.isArray(d.agenda.paradas)?d.agenda:null;ARQ=d.videos&&d.videos.itens?d.videos:null;
+    aplicarReleituras(d.releituras);AGENDA=d.agenda&&Array.isArray(d.agenda.paradas)?d.agenda:null;ARQ=d.videos&&d.videos.itens?d.videos:null;TROCAS=(d.trocas&&Array.isArray(d.trocas.itens))?d.trocas.itens:[];
     guardarOriginais();await carregarEdicoes();aplicarEdicoes();
     buildPosts();buildVideos();render();
   }catch(err){
