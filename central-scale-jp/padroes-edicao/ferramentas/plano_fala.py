@@ -60,7 +60,15 @@ for c in M.get('cartoes',[]):
     if c['tipo'] in ('cta',):ticks.append(ini)
     if c['tipo']=='tela':  # tela dividida: conversa com a IA em cima, o JP embaixo
         split.append([ini,e['fim']]);ms=[];dm_=w0[0]
-        for m in c['msgs']:
+        if c.get('planilha'):
+            P=dict(c['planilha']);hs=[]
+            for h_,anc in P['colunas']:
+                wh=w_at(anc,dm_);dm_=max(wh[1],wh[0]+0.03);hs.append({'t':h_,'ini':out(wh[0]-0.05)});ticks.append(hs[-1]['ini'])
+            P['colunas']=hs
+            wr=w_at(P['linhas_em'],dm_);dm_=wr[1];P['linhas_ini']=out(wr[0]-0.05)
+            wv=w_at(P['alerta_em'],dm_);dm_=wv[1];P['alerta_ini']=out(wv[0]-0.05);ticks.append(P['alerta_ini'])
+            e['planilha']=P
+        for m in c.get('msgs',[]):
             x={'quem':m['quem']}
             if m['quem']=='ia':
                 ls=[]

@@ -1,0 +1,111 @@
+{
+ "abertura": {
+  "rotulo": "FLUXO DE CAIXA",
+  "titulo": "O seu caixa aguenta 13 semanas?",
+  "ate": "agora."
+ },
+ "blocos": [
+  "O",
+  "Na",
+  "Nós",
+  "Pronto,",
+  "No",
+  "Quer"
+ ],
+ "trocas": {
+  "Bia": "bio"
+ },
+ "destaques": [
+  "13 semanas",
+  "cor vermelha",
+  "antes mesmo dele acontecer",
+  "Scale Business",
+  "na hora",
+  "link da bio",
+  "15 vagas"
+ ],
+ "cartoes": [
+  {
+   "tipo": "tela",
+   "de": "Na",
+   "ate": "No",
+   "rotulo": "Como funciona",
+   "janela": "Fluxo de caixa · próximas 13 semanas",
+   "planilha": {
+    "primeira": "Semana",
+    "colunas": [
+     [
+      "Entra",
+      "quanto"
+     ],
+     [
+      "Sai",
+      "quanto"
+     ],
+     [
+      "Sobra",
+      "quanto"
+     ]
+    ],
+    "linhas_em": "Preencha",
+    "alerta_em": "vermelha",
+    "alerta": 3,
+    "alerta_txt": "vai faltar",
+    "linhas": [
+     [
+      "Sem. 1",
+      "18.000",
+      "15.200",
+      "2.800"
+     ],
+     [
+      "Sem. 2",
+      "16.500",
+      "17.100",
+      "2.200"
+     ],
+     [
+      "Sem. 3",
+      "15.800",
+      "16.900",
+      "1.100"
+     ],
+     [
+      "Sem. 4",
+      "14.200",
+      "16.000",
+      "-700"
+     ],
+     [
+      "Sem. 5",
+      "19.000",
+      "15.500",
+      "2.800"
+     ],
+     [
+      "Sem. 6",
+      "17.300",
+      "16.200",
+      "3.900"
+     ]
+    ]
+   }
+  },
+  {
+   "tipo": "cta",
+   "de": "No",
+   "rotulo": "Scale Business · Aula 2",
+   "titulo": "O jogo do dinheiro",
+   "texto": "Você monta o fluxo de caixa com os seus números, na hora",
+   "ate": "Quer"
+  },
+  {
+   "tipo": "cta",
+   "de": "Quer",
+   "rotulo": "Turma de janeiro",
+   "palavra": "15 VAGAS",
+   "texto": "Clica no link da bio e saiba mais",
+   "ate": "fim"
+  }
+ ]
+}

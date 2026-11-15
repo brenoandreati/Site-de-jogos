@@ -50,6 +50,16 @@ html,body{margin:0;width:1080px;height:1920px;background:transparent;overflow:hi
 .ms .st{color:#E0B84F}.ms .st0{color:#CFC6B2}
 .ms .no{visibility:hidden}
 .ms .car{display:inline-block;width:3px;height:1em;background:#E0B84F;vertical-align:-0.12em;margin-left:2px}
+.pl{width:100%;border-collapse:separate;border-spacing:0 10px;font-variant-numeric:tabular-nums}
+.pl th{font-weight:800;font-size:30px;color:#7A8091;text-align:right;padding:4px 14px 8px;position:relative}
+.pl th:first-child{text-align:left}
+.pl th.on{color:#16294A}
+.pl th i{position:absolute;left:14px;right:14px;bottom:0;height:5px;border-radius:3px;background:#E0B84F;transform-origin:left}
+.pl td{font-weight:700;font-size:34px;color:#16294A;text-align:right;padding:14px;background:#FFFFFF}
+.pl td:first-child{text-align:left;border-radius:16px 0 0 16px;font-weight:800}
+.pl td:last-child{border-radius:0 16px 16px 0}
+.pl tr.rd td{background:#FBE3E1;color:#B3261E}
+.pl .tag{display:inline-block;margin-left:10px;font-size:22px;font-weight:800;color:#fff;background:#B3261E;border-radius:99px;padding:4px 12px;vertical-align:4px}
 #leg.split{top:1650px;font-size:50px;left:70px;right:70px}
 #leg{top:1330px;left:90px;right:90px;text-align:center;color:var(--off);font-weight:700;font-size:60px;line-height:1.28;text-shadow:0 3px 18px rgba(0,0,0,.6),0 1px 3px rgba(0,0,0,.5)}
 #leg b{color:var(--gold);font-weight:800}
@@ -79,7 +89,23 @@ function montar(c,k){
   $('card').innerHTML=h;
 }
 let telaKey='';
+function renderPlanilha(c,t,key){
+  const P=c.planilha;
+  if(!$('msgs').querySelector('.pl'))$('msgs').innerHTML=`<table class="pl"><thead><tr><th>${esc(P.primeira||'Semana')}</th>${P.colunas.map(h=>`<th>${esc(h.t)}<i></i></th>`).join('')}</tr></thead><tbody>`+
+    P.linhas.map(l=>`<tr><td>${esc(l[0])}</td>${l.slice(1).map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join('')+'</tbody></table>';
+  $('msgs').style.justifyContent='flex-start';
+  [...$('msgs').querySelectorAll('th')].slice(1).forEach((th,i)=>{const h=P.colunas[i],p=ease((t-h.ini)/0.35);th.classList.toggle('on',t>=h.ini);th.querySelector('i').style.transform=`scaleX(${p})`;key.push(Math.round(p*20));});
+  [...$('msgs').querySelectorAll('tbody tr')].forEach((tr,i)=>{const a=P.linhas_ini+i*0.28,p=ease((t-a)/0.35);tr.style.opacity=p;tr.style.transform=`translateY(${(1-p)*12}px)`;
+    const rd=i===P.alerta&&t>=P.alerta_ini;tr.classList.toggle('rd',rd);const last=tr.lastElementChild;
+    if(rd&&!last.querySelector('.tag'))last.insertAdjacentHTML('beforeend','<span class="tag">'+esc(P.alerta_txt||'falta')+'</span>');if(!rd){const g=last.querySelector('.tag');if(g)g.remove();}
+    key.push(Math.round(p*20),rd);});
+}
 function renderTela(c,ci,t,key){
+  if(c.planilha){
+    if(telaKey!=='t'+ci){telaKey='t'+ci;$('tl').textContent=c.rotulo||'Como funciona';$('msgs').innerHTML='';document.querySelector('#tela .bar').innerHTML='<span class="av">R$</span>'+esc(c.janela||'Fluxo de caixa')+'<small>exemplo fictício</small>';}
+    const pin=ease((t-c.ini)/0.45),pout=cl((t-(c.fim-0.4))/0.4),pe=pin*(1-ease(pout));
+    $('tela').style.opacity=1;$('tela').style.transform=`translateY(${(pe-1)*100}%)`;key.push('P',Math.round(pe*40));renderPlanilha(c,t,key);return;
+  }
   if(telaKey!=='t'+ci){telaKey='t'+ci;$('tl').textContent=c.rotulo||'Como fazer';
     $('msgs').innerHTML=c.msgs.map(m=>m.quem==='ia'?`<div class="ms ia">${m.linhas.map(()=>'<span class="ln"><span class="si"></span><span class="no"></span></span>').join('')}</div>`:
       m.quem==='nota'?`<div class="ms nota">${esc(m.texto).replace(/★/g,'<span class="st">★</span>').replace(/☆/g,'<span class="st0">★</span>')}</div>`:

@@ -21,6 +21,7 @@ html,body{margin:0;width:1080px;height:1920px;background:transparent;overflow:hi
 .fecho .cta{font-weight:800;font-size:60px;line-height:1.15}
 .frase{font-weight:700;font-size:60px;line-height:1.22}
 .etq{display:inline-block;margin-top:34px;padding:14px 38px;border-radius:99px;font-weight:800;font-size:40px;letter-spacing:.14em;color:rgb(var(--navy));opacity:0}
+.etq.resp{letter-spacing:0;font-size:44px;line-height:1.2;padding:16px 34px;border-radius:26px}
 .etq.mito{background:var(--off)}.etq.verdade{background:var(--gold)}
 #leg{top:1330px;left:90px;right:90px;text-align:center;color:var(--off);font-weight:700;font-size:60px;line-height:1.28;text-shadow:0 3px 18px rgba(0,0,0,.6),0 1px 3px rgba(0,0,0,.5)}
 #leg b{color:var(--gold);font-weight:800}
@@ -48,7 +49,7 @@ function render(t){
     const pin=ease((t-b.ini)/0.35),pout=cl((t-(b.fim-0.25))/0.25);
     if(b.tipo==='fecho'){card(`<div class="fecho"><div class="arroba">${E.fecho.arroba}</div><div class="cta">${E.fecho.texto}</div></div>`,'fecho');}
     else if(b.tipo==='mv'){
-      card(`<div class="frase">${b.frase}</div><span class="etq ${b.r}">${b.r.toUpperCase()}</span>`,'q'+b.i);
+      const aberta=typeof b.r==='object';card(`<div class="frase">${b.frase}</div><span class="etq ${aberta?'verdade resp':b.r}">${aberta?b.r.resposta:b.r.toUpperCase()}</span>`,'q'+b.i);
       const pm=t>=b.marca?ease((t-b.marca)/0.3):0,e=document.querySelector('#card .etq');
       e.style.opacity=pm;e.style.transform=`scale(${0.96+0.04*pm})`;key.push(Math.round(pm*30));
     }

@@ -1,0 +1,145 @@
+{
+ "id": "R007x",
+ "formato": "ISSO OU AQUILO",
+ "tema": "JIU-JITSU",
+ "cta": "Se",
+ "fecho": {
+  "arroba": "@jp.andradesilva",
+  "texto": "Segue pra ver o próximo"
+ },
+ "perguntas": [
+  {
+   "q": "Treinar",
+   "a": "Treinar",
+   "ops": [
+    "Treinar cansado",
+    "Faltar"
+   ],
+   "r": 0
+  },
+  {
+   "q": "Técnica",
+   "a": "Os",
+   "ops": [
+    "Técnica",
+    "Força"
+   ],
+   "r": "ambos",
+   "leg": [
+    [
+     "Os dois. <b>Depende do momento</b>.",
+     "Os"
+    ]
+   ]
+  },
+  {
+   "q": "Faixa",
+   "a": "Tempo",
+   "ops": [
+    "Faixa",
+    "Tempo de tatame"
+   ],
+   "r": 1
+  },
+  {
+   "q": "Perdendo",
+   "a": "Perdendo",
+   "ops": [
+    "Perder no treino",
+    "Não treinar"
+   ],
+   "r": 0
+  },
+  {
+   "q": "Finalizar",
+   "a": "Finalizar",
+   "ops": [
+    "Finalizar",
+    "Pontuar"
+   ],
+   "r": "ambos",
+   "leg": [
+    [
+     "Finalizar <b>sempre</b>,",
+     "Finalizar"
+    ],
+    [
+     "pontuar no <b>momento certo</b>.",
+     "e"
+    ]
+   ]
+  },
+  {
+   "q": "Treino",
+   "a": "Os",
+   "ops": [
+    "De manhã",
+    "À noite"
+   ],
+   "r": "ambos",
+   "leg": [
+    [
+     "Os dois, <b>quando der</b>.",
+     "Os"
+    ]
+   ]
+  },
+  {
+   "q": "Professor",
+   "a": "Professor",
+   "ops": [
+    "Professor duro",
+    "Professor legal"
+   ],
+   "r": "ambos",
+   "leg": [
+    [
+     "Duro no <b>momento certo</b>,",
+     "Professor"
+    ],
+    [
+     "e legal quando tem que ser.",
+     "e"
+    ]
+   ]
+  },
+  {
+   "q": "Paciência",
+   "a": "Paciência",
+   "ops": [
+    "Paciência",
+    "Pressa"
+   ],
+   "r": 0
+  },
+  {
+   "q": "Ego",
+   "a": "Aprender",
+   "ops": [
+    "Ego",
+    "Aprender"
+   ],
+   "r": 1,
+   "leg": [
+    [
+     "O ego te <b>finaliza</b>.",
+     "Ego"
+    ]
+   ]
+  },
+  {
+   "q": "Última",
+   "a": "Ninguém",
+   "frase": "O que o tatame ensina pro negócio?",
+   "r": {
+    "resposta": "Ninguém pega faixa preta pulando aula"
+   },
+   "leg": [
+    [
+     "Nos negócios <b>também não</b>.",
+     "Nos"
+    ]
+   ]
+  }
+ ]
+}
