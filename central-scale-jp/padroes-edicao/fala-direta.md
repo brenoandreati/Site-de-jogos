@@ -31,3 +31,10 @@ Todo vídeo termina com 2,2 s da logo da Scale: SCALE em azul brilhante com a fl
 3. `python3 aplicar_final.py video.mp4 saida.mp4 outro_scale.mov` em cada vídeo.
 
 Cartão `"compacto": true`: letras menores, para quando o JP está enquadrado mais alto e o cartão cobriria o rosto.
+
+## Cartão longe do rosto
+
+Antes de entregar, `python3 rosto.py nome [nome...]` (precisa de `opencv-python-headless` 4.x) mede, a cada 0,5 s, se algum cartão fica na frente do rosto (da testa ao queixo). Onde fica:
+- `"compacto": true` quando o cartão só encosta na cabeça;
+- `"baixo": true` (no cartão, ou na pergunta do Isso ou aquilo) desce o cartão para a parte de baixo e a legenda vai logo abaixo dele;
+- se o JP se mexe muito no trecho, divide o cartão em dois (um em cima, outro embaixo), trocando no momento em que o rosto muda de altura.

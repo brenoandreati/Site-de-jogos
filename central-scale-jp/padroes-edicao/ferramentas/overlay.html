@@ -23,6 +23,8 @@ html,body{margin:0;width:1080px;height:1920px;background:transparent;overflow:hi
 .etq{display:inline-block;margin-top:34px;padding:14px 38px;border-radius:99px;font-weight:800;font-size:40px;letter-spacing:.14em;color:rgb(var(--navy));opacity:0}
 .etq.resp{letter-spacing:0;font-size:44px;line-height:1.2;padding:16px 34px;border-radius:26px}
 .etq.mito{background:var(--off)}.etq.verdade{background:var(--gold)}
+#card.baixo{top:1060px}
+#leg.abaixo{top:1570px}
 #leg{top:1330px;left:90px;right:90px;text-align:center;color:var(--off);font-weight:700;font-size:60px;line-height:1.28;text-shadow:0 3px 18px rgba(0,0,0,.6),0 1px 3px rgba(0,0,0,.5)}
 #leg b{color:var(--gold);font-weight:800}
 </style></head><body>
@@ -66,6 +68,7 @@ function render(t){
     $('card').style.opacity=pin*(1-pout);$('card').style.transform=`translateY(${(1-pin)*14}px)`;key.push(b.i,Math.round(pin*30),Math.round(pout*30));
   }
   if(!shown){$('card').style.opacity=0;key.push('-');}
+  const bx=E.blocos.some(b=>b.baixo&&t>=b.ini&&t<b.fim);$('card').classList.toggle('baixo',bx);$('leg').classList.toggle('abaixo',bx);key.push(bx);
   // legenda
   let lg=null;for(const g of E.legendas){if(t>=g.ini&&t<g.fim)lg=g;}
   if(lg){$('leg').innerHTML=lg.txt;const p=ease((t-lg.ini)/0.25),q=cl((t-(lg.fim-0.2))/0.2);$('leg').style.opacity=p*(1-q);$('leg').style.transform=`translateY(${(1-p)*10}px)`;key.push(lg.txt,Math.round(p*20),Math.round(q*20));}

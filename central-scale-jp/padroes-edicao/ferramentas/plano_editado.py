@@ -17,7 +17,7 @@ for p in M['perguntas']:
     leg=[];d=wa[0]
     for txt,ancora in p.get('leg',[]):
         w=w_at(ancora,d);leg.append([txt,w[0]]);d=w[0]+0.01
-    perg.append({'ops':p.get('ops'),'r':p['r'],**({'frase':p['frase']} if p.get('frase') else {}),**({'leg':leg} if leg else {})})
+    perg.append({'ops':p.get('ops'),'r':p['r'],**({'frase':p['frase']} if p.get('frase') else {}),**({'baixo':True} if p.get('baixo') else {}),**({'leg':leg} if leg else {})})
 cta=w_at(M['cta'],marcas[-1][1][1])
 fim_ant=lambda w:max([x[1] for x in W if x[1]<=w[0]+0.01] or [0])
 corte=lambda w:F((fim_ant(w)+w[0])/2)

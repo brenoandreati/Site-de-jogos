@@ -62,6 +62,8 @@ html,body{margin:0;width:1080px;height:1920px;background:transparent;overflow:hi
 .pl .tag{display:inline-block;margin-left:10px;font-size:22px;font-weight:800;color:#fff;background:#B3261E;border-radius:99px;padding:4px 12px;vertical-align:4px}
 #leg.split{top:1650px;font-size:50px;left:70px;right:70px}
 #card.compacto{padding:30px 40px 32px}#card.compacto .lbl{margin-bottom:14px;font-size:26px}#card.compacto .its{gap:12px}#card.compacto .it .tx{font-size:38px}#card.compacto .it .sb{font-size:28px;margin-top:3px}#card.compacto .it .n{width:48px;height:48px;font-size:27px}#card.compacto .rod{margin-top:16px;font-size:34px}
+#card.baixo{top:1060px}
+#leg.abaixo{top:1570px}
 #leg{top:1330px;left:90px;right:90px;text-align:center;color:var(--off);font-weight:700;font-size:60px;line-height:1.28;text-shadow:0 3px 18px rgba(0,0,0,.6),0 1px 3px rgba(0,0,0,.5)}
 #leg b{color:var(--gold);font-weight:800}
 </style></head><body>
@@ -87,7 +89,7 @@ function montar(c,k){
   }else if(c.tipo==='cta'){
     h=`<div class="cta">${c.rotulo?`<div class="lbl">${esc(c.rotulo)}</div>`:''}${c.palavra?`<div><span class="pal">${esc(c.palavra)}</span></div>`:''}${c.titulo?`<div class="ttl">${esc(c.titulo)}</div>`:''}${c.texto?`<div class="txt">${esc(c.texto)}</div>`:''}${c.pill?`<span class="pill">${esc(c.pill.t)}</span>`:''}</div>`;
   }
-  $('card').innerHTML=h;$('card').classList.toggle('compacto',!!c.compacto);
+  $('card').innerHTML=h;$('card').classList.toggle('compacto',!!c.compacto);$('card').classList.toggle('baixo',!!c.baixo);
 }
 let telaKey='';
 function renderPlanilha(c,t,key){
@@ -133,6 +135,7 @@ function render(t){
   if(c&&c.tipo==='tela'){renderTela(c,ci,t,key);$('card').style.opacity=0;}
   else{$('tela').style.opacity=0;key.push('-t');}
   $('leg').classList.toggle('split',emSplit);key.push(emSplit);
+  const embaixo=!!(c&&c.baixo);$('leg').classList.toggle('abaixo',embaixo);key.push(embaixo);
   if(c&&c.tipo!=='tela'){
     montar(c,'c'+ci);
     const pin=ease((t-c.ini)/0.35),pout=cl((t-(c.fim-0.25))/0.25);
