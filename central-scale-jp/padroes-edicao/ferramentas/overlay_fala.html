@@ -1,0 +1,86 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=block">
+<style>
+/* Padrão fala direta: mesmas cores e tipografia do Isso ou aquilo (v2). Elementos só quando somam ao que ele fala. */
+:root{--navy:22,41,74;--off:#F4F1EA;--gold:#E0B84F}
+html,body{margin:0;width:1080px;height:1920px;background:transparent;overflow:hidden;font-family:Montserrat,sans-serif}
+.el{position:absolute;left:0;right:0;will-change:transform,opacity}
+#abre{top:205px;left:92px;right:92px;color:var(--off)}
+#abre .m{overflow:hidden;display:block;padding-bottom:.14em;margin-bottom:-.14em}
+#abre .rot{display:flex;align-items:center;gap:18px;font-weight:800;font-size:36px;letter-spacing:.2em;color:var(--gold)}
+#abre .rot::before{content:"";width:76px;height:4px;background:var(--gold)}
+#abre .tema{display:block;font-weight:800;font-size:112px;line-height:1.02;margin-top:14px;letter-spacing:-.01em;text-shadow:0 6px 30px rgba(0,0,0,.35)}
+#abre .tema.longo{font-size:92px}
+#card{top:172px;left:76px;right:76px;padding:42px 48px 46px;border-radius:44px;background:rgba(var(--navy),.9);color:var(--off);box-shadow:0 18px 50px rgba(0,0,0,.25)}
+.lbl{display:flex;align-items:center;gap:14px;font-weight:800;font-size:30px;letter-spacing:.16em;color:var(--gold);text-transform:uppercase;margin-bottom:22px}
+.lbl::before{content:"";width:48px;height:4px;background:var(--gold);flex:none}
+.ttl{font-weight:800;font-size:54px;line-height:1.1;margin:-6px 0 22px}
+.its{display:grid;gap:20px}
+.it{display:flex;gap:22px;align-items:flex-start;opacity:0}
+.it .n{flex:none;width:58px;height:58px;border-radius:50%;background:var(--gold);color:rgb(var(--navy));font-weight:800;font-size:32px;display:flex;align-items:center;justify-content:center;margin-top:-2px}
+.it .dot{flex:none;width:16px;height:16px;border-radius:50%;background:var(--gold);margin-top:18px}
+.it .tx{font-weight:700;font-size:46px;line-height:1.18}
+.it .sb{display:block;font-weight:600;font-size:33px;line-height:1.25;opacity:.72;margin-top:6px}
+.rod{margin-top:26px;font-weight:800;font-size:40px;color:var(--gold);opacity:0;position:relative;display:inline-block}
+.rod i{position:absolute;left:0;right:0;bottom:-10px;height:6px;border-radius:4px;background:var(--gold);transform-origin:left}
+.pbox{background:rgba(255,255,255,.07);border-left:7px solid var(--gold);border-radius:18px;padding:26px 30px;font-weight:600;font-size:41px;line-height:1.36}
+.pbox .no{visibility:hidden}
+.car{display:inline-block;width:4px;height:1em;background:var(--gold);vertical-align:-0.12em;margin-left:3px}
+.cta{text-align:center}
+.cta .lbl{justify-content:center}.cta .lbl::before{display:none}
+.cta .pal{display:inline-block;background:var(--gold);color:rgb(var(--navy));font-weight:800;font-size:64px;letter-spacing:.04em;padding:10px 34px;border-radius:22px;margin:2px 0 18px}
+.cta .ttl{margin:0 0 14px}
+.cta .txt{font-weight:600;font-size:38px;line-height:1.3;opacity:.85}
+.cta .pill{display:inline-block;margin-top:26px;border:3px solid var(--gold);color:var(--gold);font-weight:800;font-size:36px;padding:10px 30px;border-radius:99px;opacity:0}
+#leg{top:1330px;left:90px;right:90px;text-align:center;color:var(--off);font-weight:700;font-size:60px;line-height:1.28;text-shadow:0 3px 18px rgba(0,0,0,.6),0 1px 3px rgba(0,0,0,.5)}
+#leg b{color:var(--gold);font-weight:800}
+</style></head><body>
+<div id="abre" class="el"><span class="m"><span class="rot" id="rot"></span></span><span class="m"><span class="tema" id="tema"></span></span></div>
+<div id="card" class="el"></div>
+<div id="leg" class="el"></div>
+<script>
+let E=null;const $=id=>document.getElementById(id);
+const ease=x=>1-Math.pow(1-Math.min(Math.max(x,0),1),3);
+const cl=x=>Math.min(Math.max(x,0),1);
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+function setup(ev){E=ev;$('rot').textContent=ev.abertura.rotulo;$('tema').textContent=ev.abertura.titulo;if(ev.abertura.titulo.length>16)$('tema').classList.add('longo');}
+let cardKey='';
+function montar(c,k){
+  if(cardKey===k)return;cardKey=k;let h='';
+  if(c.tipo==='lista'||c.tipo==='passos'){
+    h=`<div class="lbl">${esc(c.rotulo||'')}</div>${c.titulo?`<div class="ttl">${esc(c.titulo)}</div>`:''}<div class="its">`+
+      (c.itens||[]).map((it,i)=>`<div class="it">${c.tipo==='passos'?`<span class="n">${i+1}</span>`:'<span class="dot"></span>'}<span class="tx">${esc(it.t)}${it.sub?`<span class="sb">${esc(it.sub)}</span>`:''}</span></div>`).join('')+'</div>'+
+      (c.rodape?`<div class="rod">${esc(c.rodape.t)}<i></i></div>`:'');
+  }else if(c.tipo==='prompt'){
+    h=`<div class="lbl">${esc(c.rotulo||'Prompt')}</div><div class="pbox"><span class="si"></span><span class="car"></span><span class="no"></span></div>`;
+  }else if(c.tipo==='cta'){
+    h=`<div class="cta">${c.rotulo?`<div class="lbl">${esc(c.rotulo)}</div>`:''}${c.palavra?`<div><span class="pal">${esc(c.palavra)}</span></div>`:''}${c.titulo?`<div class="ttl">${esc(c.titulo)}</div>`:''}${c.texto?`<div class="txt">${esc(c.texto)}</div>`:''}${c.pill?`<span class="pill">${esc(c.pill.t)}</span>`:''}</div>`;
+  }
+  $('card').innerHTML=h;
+}
+function render(t){
+  const a=E.abertura;let key=[];
+  document.querySelectorAll('#abre .m>span').forEach((s,i)=>{const p=ease((t-0.1-i*0.12)/0.55);s.style.display='inline-block';s.style.transform=`translateY(${(1-p)*110}%)`;key.push(Math.round(p*60));});
+  const po=cl((t-(a.fim-0.3))/0.3);$('abre').style.opacity=t<a.fim?1-po:0;key.push(Math.round(po*30),t<a.fim);
+  // cartão: só um por vez; entra depois que o título sai
+  let c=null,ci=-1;E.cartoes.forEach((x,i)=>{if(t>=x.ini&&t<x.fim){c=x;ci=i;}});
+  if(c){
+    montar(c,'c'+ci);
+    const pin=ease((t-c.ini)/0.35),pout=cl((t-(c.fim-0.25))/0.25);
+    $('card').style.opacity=pin*(1-pout);$('card').style.transform=`translateY(${(1-pin)*14}px)`;key.push(ci,Math.round(pin*30),Math.round(pout*30));
+    document.querySelectorAll('#card .it').forEach((el,i)=>{const it=c.itens[i];const p=ease((t-it.ini)/0.35);el.style.opacity=p;el.style.transform=`translateX(${(1-p)*-18}px)`;key.push(Math.round(p*30));});
+    const rod=document.querySelector('#card .rod');if(rod&&c.rodape){const p=ease((t-c.rodape.ini)/0.35);rod.style.opacity=p;rod.querySelector('i').style.transform=`scaleX(${ease((t-c.rodape.ini-0.15)/0.35)})`;key.push(Math.round(p*30),Math.round(ease((t-c.rodape.ini-0.15)/0.35)*30));}
+    const pill=document.querySelector('#card .pill');if(pill&&c.pill){const p=ease((t-c.pill.ini)/0.35);pill.style.opacity=p;pill.style.transform=`scale(${0.96+0.04*p})`;key.push(Math.round(p*30));}
+    if(c.tipo==='prompt'){
+      const tx=c.texto,n=Math.round(tx.length*cl((t-c.dig_ini)/Math.max(0.5,c.dig_fim-c.dig_ini)));
+      document.querySelector('#card .si').textContent=tx.slice(0,n);document.querySelector('#card .no').textContent=tx.slice(n);
+      const pisca=n<tx.length?1:(Math.floor(t*2)%2===0?1:0);document.querySelector('#card .car').style.opacity=pisca;key.push(n,pisca);
+    }
+  }else{$('card').style.opacity=0;key.push('-');}
+  // legenda
+  let lg=null;for(const g of E.legendas){if(t>=g.ini&&t<g.fim)lg=g;}
+  if(lg){$('leg').innerHTML=lg.txt;const p=ease((t-lg.ini)/0.2),q=cl((t-(lg.fim-0.12))/0.12);$('leg').style.opacity=p*(1-q);$('leg').style.transform=`translateY(${(1-p)*8}px)`;key.push(lg.txt,Math.round(p*20),Math.round(q*20));}
+  else{$('leg').style.opacity=0;key.push('-');}
+  return key.join('|');
+}
+</script></body></html>

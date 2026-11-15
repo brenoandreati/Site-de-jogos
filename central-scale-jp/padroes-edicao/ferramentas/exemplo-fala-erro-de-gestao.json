@@ -1,0 +1,12 @@
+{"abertura":{"rotulo":"ERRO DE GESTÃO #11","titulo":"Não cobrar quem atrasa","ate":"dele."},
+ "blocos":["Cliente","Imagine","Muito","Então","Quem","E"],
+ "trocas":{"porra":"p*rra"},
+ "destaques":["o seu caixa","30 dias","foi você","vergonha","medo","sem constrangimento","caixa sólido"],
+ "cartoes":[
+  {"tipo":"lista","de":"Imagine","rotulo":"30 dias de atraso","titulo":"Quem pagou nesse tempo?",
+   "itens":[["Funcionários","funcionários,"],["Fornecedores","fornecedores"],["Aluguel","aluguel"]],
+   "rodape":["Você. No limite ou do seu bolso.","E"],"ate":"Muito"},
+  {"tipo":"passos","de":"Então,","rotulo":"Como cobrar sem constranger","ocultar_legenda":true,
+   "itens":[["Data de vencimento no contrato","combine","antes de entregar"],["Lembrete 1 dia antes","manda"],["Lembrete 1 dia depois","manda","se o cliente não pagar"]],"ate":"Quem"},
+  {"tipo":"cta","de":"salve","rotulo":"Salve este vídeo","titulo":"E manda pra quem precisa ver isso","ate":"fim"}
+ ]}

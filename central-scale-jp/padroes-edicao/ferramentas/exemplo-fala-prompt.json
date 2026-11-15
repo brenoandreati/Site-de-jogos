@@ -1,0 +1,8 @@
+{"abertura":{"rotulo":"IA NA PRÁTICA","titulo":"Avaliação ruim no Google","ate":"cabeça."},
+ "blocos":["Recebeu","Cola","Depois","Quem","Salve"],
+ "destaques":["sem perder a cabeça","nunca publique sem ler","todo mundo","comprar ou não"],
+ "cartoes":[
+  {"tipo":"prompt","de":"Escreva","rotulo":"Cola a avaliação na IA e pede","ocultar_legenda":true,
+   "texto":"Escreva uma resposta curta e educada, que reconheça o problema do cliente e convide a pessoa para resolver no privado.","digita_ate":"privado.","ate":"Depois"},
+  {"tipo":"cta","de":"Salve","rotulo":"Salve este vídeo","titulo":"Pra responder as próximas avaliações","ate":"fim"}
+ ]}

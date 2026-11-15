@@ -1,0 +1,10 @@
+{"abertura":{"rotulo":"PLACAR DO NEGÓCIO","titulo":"Os 5 números da semana","ate":"fechado."},
+ "blocos":["Se","Esses","Quem","No","Então"],
+ "trocas":{"Bill":"bio"},
+ "destaques":["olho fechado","placar","antes de perder o jogo","Scale Business","meta semanal","link da bio"],
+ "cartoes":[
+  {"tipo":"lista","de":"Esses","rotulo":"Os 5 números","ocultar_legenda":true,
+   "itens":[["Quanto vendeu","Quanto"],["Quanto sobrou","quanto"],["Clientes novos","quantos"],["Contatos que viraram clientes","quantos"],["Quanto tem em caixa","e"]],
+   "rodape":["Toda segunda-feira","toda"],"ate":"Quem"},
+  {"tipo":"cta","de":"No","rotulo":"Scale Business · Aula 3","titulo":"O placar do negócio","texto":"A meta do ano vira meta da semana","pill":["Link na bio","link"],"ate":"fim"}
+ ]}
