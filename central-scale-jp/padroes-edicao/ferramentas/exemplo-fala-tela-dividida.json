@@ -1,0 +1,72 @@
+{
+ "abertura": {
+  "rotulo": "IA NA PRÁTICA",
+  "titulo": "O orçamento que vende",
+  "ate": "vende."
+ },
+ "blocos": [
+  "Orçamento",
+  "Passa",
+  "1.",
+  "3.",
+  "Sempre",
+  "E",
+  "Comenta"
+ ],
+ "trocas": {
+  "RAIO": "Raio"
+ },
+ "destaques": [
+  "perde venda",
+  "quatro partes",
+  "para de escolher",
+  "quem assina",
+  "é você",
+  "Raio-X de preço e venda"
+ ],
+ "cartoes": [
+  {
+   "tipo": "tela",
+   "de": "Passa",
+   "ate": "Sempre",
+   "rotulo": "Como fazer",
+   "msgs": [
+    {
+     "quem": "voce",
+     "em": "Passa",
+     "digita_ate": "partes.",
+     "texto": "O cliente pediu um site pra loja dele, com catálogo e WhatsApp. Monte uma proposta em 4 partes."
+    },
+    {
+     "quem": "ia",
+     "linhas": [
+      [
+       "1. O problema: “quero vender pelo celular sem depender só do Instagram”.",
+       "1."
+      ],
+      [
+       "2. A entrega: site com catálogo e botão de WhatsApp, pronto em 15 dias.",
+       "2."
+      ],
+      [
+       "3. Essencial R$ 1.900 · Completo R$ 2.900",
+       "3."
+      ],
+      [
+       "4. Proposta válida até sexta-feira.",
+       "4."
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "tipo": "cta",
+   "de": "Comenta",
+   "rotulo": "Comenta",
+   "palavra": "PROPOSTA",
+   "texto": "e receba grátis no direct o Raio-X de Preço e Vendas",
+   "ate": "fim"
+  }
+ ]
+}

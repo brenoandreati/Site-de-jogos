@@ -11,6 +11,7 @@ Para Reels em que o JP fala direto para a câmera, sem perguntas: dicas, IA na p
   - **passos**: mesmo cartão, com número dourado em cada item e uma linha de apoio menor;
   - **prompt**: o texto que ele manda falar pra IA vai sendo digitado enquanto ele fala, com cursor dourado;
   - **cta**: palavra para comentar em destaque dourado (PROPOSTA, TREINO), "Salve este vídeo" ou o produto (Scale Business · Aula 3), com um selo "Link na bio".
+- **Tela dividida (série IA na prática)**: quando ele explica como fazer, a metade de cima vira uma conversa com a IA (exemplo fictício): a pergunta é digitada no ritmo da fala e a resposta aparece linha por linha quando ele cita cada parte. O JP desce para a metade de baixo, inteiro (recorte de 480 a 1440 da altura), e a legenda fica mais baixa. Monta com `montar_split.py nome saida.mp4 480`. Exemplo: `exemplo-fala-tela-dividida.json`.
 - Enquanto um cartão de lista, passos ou prompt mostra o que ele está falando, a legenda some (não repete a informação).
 - Zoom alternando 100% e 108% a cada parte do vídeo, com aproximação lenta, a mesma cor e o mesmo tick baixo quando cada item aparece.
 

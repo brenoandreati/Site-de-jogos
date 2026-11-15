@@ -41,7 +41,7 @@ def out(ts):
 ab=M['abertura'];tf=out(w_at(ab['ate'])[1]+0.3) if ab.get('ate') else 2.8
 abertura={'rotulo':ab['rotulo'],'titulo':ab['titulo'],'fim':tf}
 # ---- cartões
-cards=[];ticks=[];ocultos=[];d=0
+cards=[];ticks=[];ocultos=[];split=[];d=0
 for c in M.get('cartoes',[]):
     w0=w_at(c['de'],d);d=max(w0[1],w0[0]+0.03);ini=out(max(0,w0[0]-0.1));e=dict(c);e['ini']=ini;dd=w0[0]
     its=[]
@@ -58,6 +58,22 @@ for c in M.get('cartoes',[]):
         wz=w_at(c['digita_ate'],dd) if c.get('digita_ate') else None
         e['dig_ini']=ini+0.35;e['dig_fim']=out(wz[1]) if wz else e['fim']-0.6
     if c['tipo'] in ('cta',):ticks.append(ini)
+    if c['tipo']=='tela':  # tela dividida: conversa com a IA em cima, o JP embaixo
+        split.append([ini,e['fim']]);ms=[];dm_=w0[0]
+        for m in c['msgs']:
+            x={'quem':m['quem']}
+            if m['quem']=='ia':
+                ls=[]
+                for tx,anc in m['linhas']:
+                    wl=w_at(anc,dm_);dm_=max(wl[1],wl[0]+0.03);a=out(max(0,wl[0]-0.05));ls.append({'t':tx,'ini':a,'dur':round(min(1.6,max(0.5,len(tx)/45)),2)});ticks.append(a)
+                x['linhas']=ls;x['ini']=ls[0]['ini']
+            else:
+                wm=w_at(m['em'],dm_);dm_=max(wm[1],wm[0]+0.03);x['ini']=out(max(0,wm[0]-0.05));x['texto']=m['texto']
+                if m['quem']=='voce' and m.get('digita_ate'):
+                    wz=w_at(m['digita_ate'],dm_);x['dig_ini']=x['ini']+0.15;x['dig_fim']=out(wz[1]);ocultos.append((x['ini'],x['dig_fim']+0.25))
+                else:ticks.append(x['ini'])
+            ms.append(x)
+        e['msgs']=ms
     if c.get('ocultar_legenda'):ocultos.append((ini,e['fim']))
     for k in ('de','ate','digita_ate'):e.pop(k,None)
     cards.append(e)
@@ -108,7 +124,7 @@ for k,ch in enumerate(chunks):
         if i>=0 and '<b>' not in html[max(0,i-3):i+len(p)]:html=html[:i]+'<b>'+html[i:i+len(p)]+'</b>'+html[i+len(p):]
     legs.append({'txt':html,'ini':a,'fim':round(b,3)})
 json.dump({'clipes':clipes,'total':total},open(sys.argv[4],'w'),indent=1)
-ev={'abertura':abertura,'cartoes':cards,'legendas':legs,'ticks':sorted(set(round(t,3) for t in ticks)),'total':total}
+ev={'split':split,'abertura':abertura,'cartoes':cards,'legendas':legs,'ticks':sorted(set(round(t,3) for t in ticks)),'total':total}
 json.dump(ev,open(sys.argv[5],'w'),ensure_ascii=False,indent=1)
 print('clipes',len(clipes),'total',total,'cartões',len(cards),'legendas',len(legs))
 for c in cards:print(f"  {c['tipo']:7s} {c['ini']:6.2f}-{min(c['fim'],total):6.2f} {c.get('titulo','')} {[i['t'] for i in c.get('itens',[])]}")
