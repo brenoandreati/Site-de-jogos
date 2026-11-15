@@ -140,6 +140,7 @@ O mesmo sistema também está publicado sozinho no Cloudflare, na conta pessoal:
 - `/releituras` mostra as releituras do Scale ao lado do original do JP, com roteiro, direção e legenda para copiar.
 - `/dados/releituras.js` são os roteiros das releituras, lidos pelo sistema.
 - A aba **Dias** mostra cada dia da janela (segunda, terça...) com os Reels que vão ser postados no JP e no Scale, por horário, cada um com o local de gravação, a caixa de "gravado" (a mesma das outras abas) e o roteiro do perfil, editável como nas outras abas. O seletor de semana vale para ela.
+- A aba **Vídeos** (aparece quando existe `/dados/videos.js`) lista os vídeos editados dia por dia, do primeiro ao último horário, com JP e Scale juntos. Cada um tem "Assistir" (toca na página) e "Baixar". Os Reels sem vídeo aparecem em cinza. A data e a hora vêm do Calendário ao vivo; o arquivo só liga cada post (`perfil:id`) ao nome do vídeo. Os vídeos ficam no R2 (bucket `planejamento-videos`) e o Worker entrega em `/videos/<arquivo>` (com Range; `?baixar=1` baixa). Para subir um vídeo: `npx wrangler@4.153.0 r2 object put planejamento-videos/<arquivo> --file <arquivo> --content-type video/mp4 --remote`.
 - `/dados/agenda.js` é a agenda de um dia de gravação. Com ele, o sistema ganha a aba **Agenda** ("prioridade de agenda"): as paradas do dia (por exemplo carro, academia, trajeto, cafeteria e shopping), cada uma com horário de início, e os vídeos em ordem com o horário de cada um (`min` minutos por vídeo). Os que vão ao ar até `urgenteAte` ganham selo amarelo, e os `reserva` aparecem como "Se der tempo". O "gravado" é o mesmo das outras abas. Sem o arquivo, a aba não aparece. Ele tem títulos e observações de conteúdo, então fica fora do repositório.
 - As páginas compartilham as marcações de gravado.
 - O roteiro aparece aberto em cada card e pode ser editado. A edição salva sozinha num Durable Object do Worker (`/api/roteiros`), então todo mundo vê na hora. "Copiar roteiro" copia o texto editado, e "Voltar ao original" volta ao texto da Central. Sem esse endereço, como na própria Central, a edição fica só no aparelho.
@@ -149,7 +150,7 @@ O mesmo sistema também está publicado sozinho no Cloudflare, na conta pessoal:
 Para publicar de novo (por exemplo, depois de mudar o módulo), dentro de `planejamento-semanal/`, com `CLOUDFLARE_API_TOKEN` definido:
 
 ```bash
-node build.mjs --mapa mapa-gravacao.html --pagina-releituras releituras-scale.html --releituras releituras.js --agenda agenda.js
+node build.mjs --mapa mapa-gravacao.html --pagina-releituras releituras-scale.html --releituras releituras.js --agenda agenda.js --videos videos.js
 ```
 
 ```bash

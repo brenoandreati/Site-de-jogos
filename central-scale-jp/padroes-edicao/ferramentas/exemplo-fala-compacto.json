@@ -1,0 +1,55 @@
+{
+ "abertura": {
+  "rotulo": "GESTÃO",
+  "titulo": "Antes de contratar um sistema",
+  "ate": "assinar."
+ },
+ "blocos": [
+  "Vai",
+  "Primeira,",
+  "Segunda,",
+  "Terceira,",
+  "E",
+  "Então"
+ ],
+ "destaques": [
+  "três perguntas",
+  "vale a pena",
+  "começa pelo simples",
+  "antes de contratar"
+ ],
+ "cartoes": [
+  {
+   "tipo": "passos",
+   "de": "Primeira,",
+   "rotulo": "Responda antes de assinar",
+   "ocultar_legenda": true,
+   "itens": [
+    [
+     "Quais números eu preciso olhar toda semana?",
+     "Primeira,",
+     "se não sabe: muita tela e nenhuma resposta"
+    ],
+    [
+     "Quem vai alimentar isso todo dia?",
+     "Segunda,",
+     "sem dado atualizado, é só mais uma mensalidade"
+    ],
+    [
+     "Que decisão ele vai me ajudar a tomar?",
+     "Terceira,",
+     "comprar, contratar, cortar ou cobrar"
+    ]
+   ],
+   "ate": "E",
+   "compacto": true
+  },
+  {
+   "tipo": "cta",
+   "de": "salve",
+   "rotulo": "Salve este vídeo",
+   "titulo": "Pra ver antes de contratar qualquer sistema",
+   "ate": "fim"
+  }
+ ]
+}

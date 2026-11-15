@@ -96,6 +96,7 @@ button{cursor:pointer}
 .tab[aria-selected="true"] .n{background:var(--gold);color:#1B1505}
 .tab .sm{display:none}
 @media (max-width:440px){.tab .lg{display:none}.tab .sm{display:inline}.tab{gap:5px;font-size:13.5px}}
+@media (max-width:560px){.tabs .wrap{overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain}.tabs .wrap::-webkit-scrollbar{display:none}.tab{flex:0 0 auto;padding-inline:12px}}
 .tabs .tbar{height:3px;background:rgba(255,255,255,.06)}
 .tabs .tbar i{display:block;height:100%;width:0;background:var(--ok-bar);transition:width .35s ease}
 
@@ -214,6 +215,19 @@ main{padding-top:16px;padding-bottom:calc(56px + env(safe-area-inset-bottom,0px)
 .post .ck{margin:-2px 0 0 -6px}
 .st{font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:7px;background:var(--warn-bg);color:var(--warn-fg)}
 .post.done .st{background:transparent;color:var(--ok);border:1px solid var(--ok)}
+.vd{display:flex;gap:10px;align-items:flex-start;padding:11px 14px 11px 16px;border-top:1px solid var(--line-2)}
+.list .vd:first-child{border-top:0}
+.vd .h{flex:0 0 48px;font-size:13.5px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;padding-top:2px}
+.vd .b{flex:1;min-width:0}
+.vd .t2{font-size:14.5px;font-weight:600;line-height:1.35;color:var(--ink)}
+.vd .m2{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+.vd.falta .t2{font-weight:500;color:var(--muted)}
+.vd.falta .h{color:var(--faint)}
+.vbt{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px}
+.vbt a,.vbt button{font:600 13px/1 inherit;font-family:inherit;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink);text-decoration:none;cursor:pointer}
+.vbt a.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.vbt .vr{font-size:12px;color:var(--muted);font-weight:600;align-self:center}
+.vplay{margin-top:10px;width:100%;max-width:300px;aspect-ratio:9/16;border-radius:12px;background:#000;display:block}
 .takes{margin:0;padding:10px 16px 12px;border-top:1px solid var(--line);font-size:13px;line-height:1.5;color:var(--muted)}
 .takes b{color:var(--ink)}
 .difr{margin:0;padding:8px 10px;border-radius:8px;background:var(--meio-soft);color:var(--meio-ink);font-size:13.5px}
@@ -280,7 +294,7 @@ main{padding-top:16px;padding-bottom:calc(56px + env(safe-area-inset-bottom,0px)
       <p class="sub" id="sub">Carregando o Calendário de Posts…</p>
     </div>
     <div class="prog" aria-live="polite">
-      <div class="num"><b id="pg">0</b> de <span id="pt">0</span> vídeos gravados</div>
+      <div class="num"><b id="pg">0</b> de <span id="pt">0</span> <i id="pl" style="font-style:normal">vídeos gravados</i></div>
       <div class="bar"><i id="pb"></i></div>
     </div>
   </div>
@@ -433,7 +447,7 @@ async function fromModule(f){
   return JSON.parse(data);
 }
 async function loadAll(){
-  await Promise.all([...FONTES.map(f=>loadScript(f.js)),loadScript('../dados/releituras.js'),loadScript('../dados/agenda.js')]);
+  await Promise.all([...FONTES.map(f=>loadScript(f.js)),loadScript('../dados/releituras.js'),loadScript('../dados/agenda.js'),loadScript('../dados/videos.js')]);
   const D=window.CENTRAL_DADOS||{};const out={};
   for(const f of FONTES){
     if(D[f.chave]){out[f.chave]=D[f.chave];continue;}
@@ -442,6 +456,7 @@ async function loadAll(){
   }
   out.releituras=D.releituras||null;
   out.agenda=D.agenda||null;
+  out.videos=D.videos||null;
   return out;
 }
 
@@ -486,7 +501,7 @@ function aplicarReleituras(R){
     if(r.original&&r.original.id)SEPARA.add(r.original.id);
   });
 }
-let VIDEOS=[],POSTS=[],OUTROS=[],LAUNCH='',AGENDA=null;
+let VIDEOS=[],POSTS=[],OUTROS=[],LAUNCH='',AGENDA=null,ARQ=null;
 
 function calState(){
   let cfg={},docs={};
@@ -657,7 +672,7 @@ function postsIn(v,perfil){return v.posts.filter(p=>(!perfil||p.perfil===perfil)
 function visible(perfil,loc){
   return VIDEOS.filter(v=>postsIn(v,perfil).length&&(loc==='all'||SETUP_BY[setupOf(v)].local===loc));
 }
-const tabPerfil=t=>t==='gravacao'||t==='agenda'||t==='dias'?null:t;
+const tabPerfil=t=>t==='gravacao'||t==='agenda'||t==='dias'||t==='videos'?null:t;
 
 /* =====================================================================
    6. Render
@@ -683,8 +698,10 @@ function renderTabs(){
     scale:POSTS.filter(p=>p.perfil==='scale'&&inRange(p)&&(UI.loc==='all'||SETUP_BY[setupOf(byVid.get(p.vid))].local===UI.loc)).length};
   const T=[['gravacao','<span class="lg">Plano de gravação</span><span class="sm">Plano</span>','vídeos'],['jp','JP','posts'],['scale','Scale','posts']];
   T.push(['dias','Dias','dias']);perTab.dias=diasDaJanela().length;
+  if(ARQ){T.push(['videos','Vídeos','vídeos prontos']);perTab.videos=POSTS.filter(p=>inRange(p)&&arquivosDe(p).length).length;}
   if(AGENDA){T.unshift(['agenda','Agenda','vídeos']);perTab.agenda=agendaVideos().length;}
   $('tabs').innerHTML=T.map(([k,n,u])=>`<button class="tab" type="button" role="tab" id="tab-${k}" aria-controls="out" aria-selected="${UI.tab===k}" data-tab="${k}">${n}<span class="n" aria-label="${perTab[k]} ${u}">${perTab[k]}</span></button>`).join('');
+  const ativa=document.getElementById('tab-'+UI.tab);if(ativa){const w=$('tabs');w.scrollLeft=Math.max(0,ativa.offsetLeft-(w.clientWidth-ativa.offsetWidth)/2);}
 }
 function renderChips(){
   const W=weeks();
@@ -765,8 +782,10 @@ function render(){
   document.querySelector('.ctl').hidden=UI.tab==='agenda';
   if(UI.tab==='agenda'){renderAgenda();return;}
   renderChips();
-  $('fl').hidden=UI.tab==='dias';
+  $('fl').hidden=UI.tab==='dias'||UI.tab==='videos';
+  if(UI.tab==='videos'&&!ARQ)UI.tab='gravacao';
   if(UI.tab==='dias'){renderDias();return;}
+  if(UI.tab==='videos'){renderVideos();return;}
   const perfil=tabPerfil(UI.tab);
   const vids=visible(perfil,UI.loc);
   const firstKey=v=>{const p=postsIn(v,perfil)[0];return p.date+' '+p.hora;};
@@ -886,9 +905,43 @@ function renderDias(){
   document.querySelectorAll('.rtx').forEach(ajustarAltura);
   renderProgress(diasVideos(dias));renderDiverg(null);renderFoot();saveUI();
 }
+/* ---------- aba Vídeos: os vídeos editados de cada dia, na ordem em que vão ao ar ---------- */
+function arquivosDe(p){return (ARQ&&ARQ.itens[p.perfil+':'+p.id])||[];}
+function renderVideos(){
+  const dias=diasDaJanela(),hoje=today(),base=ARQ.base||'/videos/';
+  $('intro').textContent='Os vídeos editados, dia por dia, na ordem em que vão ao ar (JP e Scale juntos). “Assistir” toca aqui mesmo; “Baixar” salva o arquivo no aparelho. Os Reels do dia que ainda não têm vídeo aparecem em cinza.';
+  $('divg').hidden=true;
+  let h='';
+  weeks().forEach(w=>{
+    const ds=dias.filter(d=>d>=w.a&&d<=w.b);if(!ds.length)return;let zh='',zn=0,zt=0;
+    ds.forEach(d=>{
+      const ps=POSTS.filter(p=>p.date===d).sort((a,b)=>(a.hora==='extra')-(b.hora==='extra')||(a.hora<b.hora?-1:a.hora>b.hora?1:0));
+      const prontos=ps.filter(p=>arquivosDe(p).length).length;zn+=prontos;zt+=ps.length;
+      const k='vid'+d,aberto=opened.has(k)||(!UI.vidMexeu&&d===dias.find(x=>x>=hoje));
+      const lis=ps.map(p=>{
+        const fs=arquivosDe(p),hr=esc(p.hora==='extra'?'extra':p.hora),tag=`<span class="tag ${p.funil}"><i></i>${esc(PERFIS[p.perfil]+' · '+(FUNIL[p.funil]||''))}</span>`;
+        if(!fs.length)return `<li class="vd falta"><span class="h">${hr}</span><div class="b"><div class="t2">${esc(p.titulo)}</div><div class="m2">${tag}<span class="tag dur">Ainda sem vídeo</span></div></div></li>`;
+        const bts=fs.map(a=>{const u=base+encodeURIComponent(a.arquivo);return `<div class="vbt">${a.rotulo?`<span class="vr">${esc(a.rotulo)}</span>`:''}<button type="button" data-assistir="${esc(u)}">▶ Assistir</button><a class="pri" href="${esc(u)}?baixar=1" download="${esc(a.arquivo)}">⬇ Baixar</a></div>`;}).join('');
+        return `<li class="vd"><span class="h">${hr}</span><div class="b"><div class="t2">${esc(p.titulo)}</div><div class="m2">${tag}</div>${bts}</div></li>`;
+      }).join('');
+      zh+=`<section class="setup dia${aberto?'':' closed'}${ps.length&&prontos===ps.length?' full':''}" style="--c:var(--gold)">
+        <button class="sh" type="button" data-vdia="${k}" aria-expanded="${aberto}">
+          <span class="t"><h3><span class="quando">${dm(d)}${d===hoje?' · hoje':''}</span>${DOWL[parse(d).getUTCDay()]}</h3><p>${prontos} de ${ps.length} Reels com vídeo pronto</p></span>
+          <span class="cnt"><b>${prontos}<small> / ${ps.length}</small></b><span class="mb"><i style="width:${ps.length?Math.round(prontos/ps.length*100):0}%"></i></span></span>${ICON.chev}
+        </button><ul class="list">${lis||'<li class="vd falta"><div class="b"><div class="t2">Nenhum Reel neste dia.</div></div></li>'}</ul></section>`;
+    });
+    h+=`<div class="zone"><h2><span class="d" style="background:var(--gold)"></span>Semana ${w.k} · ${shortRange(w.a,w.b)}<small>${zn} de ${zt} prontos</small></h2>${zh}</div>`;
+  });
+  $('out').innerHTML=h||'<div class="empty">Nenhum dia nesse intervalo.</div>';
+  const vs=POSTS.filter(p=>dias.indexOf(p.date)>=0),ok=vs.filter(p=>arquivosDe(p).length).length;
+  $('pg').textContent=ok;$('pt').textContent=vs.length;$('pb').style.width=(vs.length?Math.round(ok/vs.length*100):0)+'%';$('tb').style.width=$('pb').style.width;
+  $('pl').textContent='Reels com vídeo pronto';
+  renderFoot();saveUI();
+}
 function diasVideos(dias){return [...new Set(POSTS.filter(p=>dias.indexOf(p.date)>=0).map(p=>byVid.get(p.vid)).filter(Boolean))];}
 function renderProgress(vids){
   vids=vids||(UI.tab==='agenda'&&AGENDA?agendaVideos():UI.tab==='dias'?diasVideos(diasDaJanela()):visible(tabPerfil(UI.tab),UI.loc));
+  $('pl').textContent='vídeos gravados';
   const ok=vids.filter(isDone).length,n=vids.length,pct=n?Math.round(ok/n*100):0;
   $('pg').textContent=ok;$('pt').textContent=n;$('pb').style.width=pct+'%';$('tb').style.width=pct+'%';
 }
@@ -945,9 +998,12 @@ async function copyText(t){
   }
 }
 document.addEventListener('click',async e=>{
-  const t=e.target.closest('[data-tab],[data-dia],[data-week],[data-loc],[data-shift],[data-sh],[data-tog],[data-copy],#reset');
+  const t=e.target.closest('[data-tab],[data-vdia],[data-assistir],[data-dia],[data-week],[data-loc],[data-shift],[data-sh],[data-tog],[data-copy],#reset');
   if(!t)return;
   if(t.dataset.tab){UI.tab=t.dataset.tab;render();return;}
+  if(t.dataset.vdia){const k=t.dataset.vdia,sec=t.closest('.setup');const c=!sec.classList.contains('closed');sec.classList.toggle('closed',c);t.setAttribute('aria-expanded',String(!c));if(c)opened.delete(k);else opened.add(k);UI.open=[...opened];UI.vidMexeu=true;saveUI();return;}
+  if(t.dataset.assistir){const b=t.closest('.b');let v=b.querySelector('video');if(v){v.pause();v.remove();t.textContent='▶ Assistir';return;}
+    v=document.createElement('video');v.className='vplay';v.src=t.dataset.assistir;v.controls=true;v.playsInline=true;v.preload='metadata';b.appendChild(v);v.play().catch(()=>{});t.textContent='✕ Fechar';return;}
   if(t.dataset.dia){const k=t.dataset.dia,sec=t.closest('.setup');const c=!sec.classList.contains('closed');sec.classList.toggle('closed',c);t.setAttribute('aria-expanded',String(!c));if(c)opened.delete(k);else opened.add(k);UI.open=[...opened];UI.diasMexeu=true;saveUI();return;}
   if(t.dataset.week){UI.week=t.dataset.week;render();return;}
   if(t.dataset.loc){UI.loc=t.dataset.loc;render();return;}
@@ -1029,7 +1085,7 @@ async function init(){
     const d=await loadAll();
     C=d.calendario;SC=d.scale;JP=d.jp;
     IDX={scale:new Map(SC.map(x=>[x.id,x])),jp:new Map(JP.map(x=>[x.id,x]))};
-    aplicarReleituras(d.releituras);AGENDA=d.agenda&&Array.isArray(d.agenda.paradas)?d.agenda:null;
+    aplicarReleituras(d.releituras);AGENDA=d.agenda&&Array.isArray(d.agenda.paradas)?d.agenda:null;ARQ=d.videos&&d.videos.itens?d.videos:null;
     guardarOriginais();await carregarEdicoes();aplicarEdicoes();
     buildPosts();buildVideos();render();
   }catch(err){

@@ -6,6 +6,7 @@
   "compatibility_date": "2026-09-01",
   "workers_dev": true,
   "assets": { "directory": "./public", "binding": "ASSETS" },
+  "r2_buckets": [{ "binding": "VIDEOS", "bucket_name": "planejamento-videos" }],
   "durable_objects": { "bindings": [{ "name": "ROTEIROS", "class_name": "Roteiros" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Roteiros"] }]
 }

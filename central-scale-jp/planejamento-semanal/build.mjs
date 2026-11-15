@@ -8,6 +8,7 @@
      public/releituras.html       a página das releituras     (--pagina-releituras <arquivo>)
      public/dados/releituras.js   os roteiros das releituras  (--releituras <arquivo>)
      public/dados/agenda.js       a agenda do dia de gravação (--agenda <arquivo>, aba Agenda)
+     public/dados/videos.js       os vídeos editados de cada post (--videos <arquivo>, aba Vídeos)
    Uso: node build.mjs --mapa m.html --pagina-releituras r.html --releituras releituras.js
    ===================================================================== */
 import fs from 'node:fs';
@@ -18,7 +19,7 @@ const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(AQUI, 'public');
 const args = process.argv.slice(2);
 const opt = nome => (args.includes(nome) ? args[args.indexOf(nome) + 1] : null);
-const mapaArg = opt('--mapa'), relPagArg = opt('--pagina-releituras'), relDadosArg = opt('--releituras'), agendaArg = opt('--agenda');
+const mapaArg = opt('--mapa'), relPagArg = opt('--pagina-releituras'), relDadosArg = opt('--releituras'), agendaArg = opt('--agenda'), videosArg = opt('--videos');
 
 function troca(src, de, para, nome) {
   if (!src.includes(de)) throw new Error(`não achei ${nome}: o arquivo mudou? Ajuste build.mjs.`);
@@ -61,4 +62,5 @@ if (mapaArg) fs.writeFileSync(path.join(OUT, 'mapa.html'), documento(mapaArg, 'o
 if (relPagArg) fs.writeFileSync(path.join(OUT, 'releituras.html'), documento(relPagArg, 'a página das releituras'));
 if (relDadosArg) fs.copyFileSync(relDadosArg, path.join(OUT, 'dados', 'releituras.js'));
 if (agendaArg) fs.copyFileSync(agendaArg, path.join(OUT, 'dados', 'agenda.js'));
+if (videosArg) fs.copyFileSync(videosArg, path.join(OUT, 'dados', 'videos.js'));
 console.log('public/ pronto:', [...fs.readdirSync(OUT).filter(f => f !== 'dados'), ...fs.readdirSync(path.join(OUT, 'dados')).map(f => 'dados/' + f)].join(', '));

@@ -1,0 +1,58 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@700;800&display=block">
+<style>
+/* Finalização Scale: a logo (SCALE com a flecha subindo no A) redesenhada em alta, fundo azul com luz dourada */
+html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#020717}
+#bg{position:absolute;inset:0;background:radial-gradient(75% 40% at 50% 47%,#0E2A78 0%,#071647 45%,#020717 100%)}
+#raios{position:absolute;inset:-20%;background:repeating-linear-gradient(115deg,rgba(255,210,120,0) 0 120px,rgba(255,210,120,.035) 120px 190px,rgba(255,210,120,0) 190px 330px);mix-blend-mode:screen}
+#luz{position:absolute;left:50%;top:47%;width:1300px;height:900px;margin:-450px 0 0 -650px;background:radial-gradient(closest-side,rgba(255,190,70,.42),rgba(255,190,70,0));filter:blur(10px)}
+#logo{position:absolute;left:0;right:0;top:50%;height:380px;margin-top:-250px;display:flex;justify-content:center}
+#logo svg{overflow:visible}
+.l{font-family:Anton,Impact,sans-serif;font-size:380px;letter-spacing:8px}
+#linha{position:absolute;left:50%;top:50%;margin-top:170px;width:620px;margin-left:-310px;height:8px;border-radius:5px;background:linear-gradient(90deg,#B8862E,#F2C94C,#B8862E);transform-origin:center}
+#sub{position:absolute;left:0;right:0;top:50%;margin-top:190px;text-align:center;font-family:Montserrat,sans-serif;font-weight:800;font-size:40px;letter-spacing:.42em;color:#F2C94C;padding-left:.42em}
+</style></head><body>
+<div id="bg"></div><div id="raios"></div><div id="luz"></div>
+<div id="logo"><svg id="svg" width="1000" height="380" viewBox="-20 -60 1000 380">
+ <defs>
+  <linearGradient id="az" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C4DAFF"/><stop offset=".16" stop-color="#5C95FF"/><stop offset=".55" stop-color="#2867FF"/><stop offset="1" stop-color="#1144D6"/></linearGradient>
+  <linearGradient id="br" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".75"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  <clipPath id="clip"><text id="tx2" class="l" x="480" y="270" text-anchor="middle">SC<tspan>A</tspan>LE</text></clipPath>
+  <filter id="sh" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="14" stdDeviation="10" flood-color="#020818" flood-opacity=".75"/></filter>
+ </defs>
+ <g id="letras" filter="url(#sh)">
+  <text class="l" x="480" y="282" text-anchor="middle" fill="#0A2A8A">SCALE</text>
+  <text class="l" x="480" y="276" text-anchor="middle" fill="#0F3AB0">SCALE</text>
+  <text id="tx" class="l" x="480" y="270" text-anchor="middle" fill="url(#az)">SCALE</text>
+ </g>
+ <rect id="brilho" x="-300" y="0" width="220" height="300" fill="url(#br)" clip-path="url(#clip)" transform="skewX(-18)"/>
+ <g id="seta"><path id="sp" d="" fill="none" stroke="#020717" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+  <path id="sp2" d="" fill="none" stroke="url(#az)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+  <path id="cab" d="" fill="#5C95FF" stroke="#020717" stroke-width="7" stroke-linejoin="round"/></g>
+</svg></div>
+<div id="linha"></div>
+<script>
+const $=id=>document.getElementById(id);const ease=x=>1-Math.pow(1-Math.min(Math.max(x,0),1),3);const cl=x=>Math.min(Math.max(x,0),1);
+let A=null,L=0;
+function setup(){
+  // posição do A dentro do texto, pra desenhar a flecha subindo em zigue-zague por cima dele
+  const tx=$('tx'),n=tx.getNumberOfChars();const a=tx.getExtentOfChar(2);A=a;
+  const x0=a.x-a.width*0.15,y0=a.y+a.height*0.86,x1=a.x+a.width*0.42,y1=a.y+a.height*0.58,x2=a.x+a.width*0.6,y2=a.y+a.height*0.72,x3=a.x+a.width*1.18,y3=a.y+a.height*0.24;
+  const d=`M${x0},${y0} L${x1},${y1} L${x2},${y2} L${x3},${y3}`;$('sp').setAttribute('d',d);$('sp2').setAttribute('d',d);
+  const ang=Math.atan2(y3-y2,x3-x2),s=54,hx=x3+Math.cos(ang)*18,hy=y3+Math.sin(ang)*18;
+  const p=(r,o)=>[hx+Math.cos(ang+o)*r,hy+Math.sin(ang+o)*r];
+  const t1=p(s*1.25,0),t2=p(s*0.9,Math.PI*0.78),t3=p(s*0.9,-Math.PI*0.78);
+  $('cab').setAttribute('d',`M${t1} L${t2} L${t3} Z`);
+  L=$('sp2').getTotalLength();['sp','sp2'].forEach(i=>{$(i).style.strokeDasharray=L;});
+}
+function render(t){
+  const k=[];
+  const pf=ease(t/0.5);$('bg').style.opacity=pf;$('luz').style.opacity=pf*(0.75+0.25*Math.sin(t*2));$('raios').style.opacity=pf*0.9;$('raios').style.transform=`translateX(${-60+t*40}px)`;
+  const pl=ease((t-0.15)/0.6);$('letras').style.opacity=pl;$('letras').style.transform=`translateY(${(1-pl)*40}px) scale(${0.94+0.06*pl})`;$('letras').style.transformOrigin='480px 150px';
+  const ps=ease((t-0.55)/0.55);['sp','sp2'].forEach(i=>{$(i).style.strokeDashoffset=L*(1-ps);});$('cab').style.opacity=cl((t-1.0)/0.12);
+  $('cab').style.transform=`scale(${0.6+0.4*ease((t-1.0)/0.25)})`;$('cab').style.transformBox='fill-box';$('cab').style.transformOrigin='center';
+  const pb=cl((t-1.15)/0.6);$('brilho').setAttribute('x',-300+pb*1500);
+  const pli=ease((t-0.95)/0.45);$('linha').style.transform=`scaleX(${pli})`;
+  return 'x';
+}
+</script></body></html>

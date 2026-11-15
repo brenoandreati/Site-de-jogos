@@ -21,3 +21,13 @@ Para Reels em que o JP fala direto para a câmera, sem perguntas: dicas, IA na p
 2. Escrever as marcas (`ferramentas/exemplo-fala-*.json`): título, palavras onde troca o zoom (`blocos`), cartões com a palavra onde entram (`de`) e saem (`ate`), destaques, correções da transcrição (`trocas` por palavra, `trocas_texto` por trecho).
 3. `python3 plano_fala.py marcas.json transcricao.json duração cortes.json eventos.json`
 4. `python3 base.py cortes.json video.mp4 base.mov`, `node quadros.js overlay_fala.html eventos.json quadros/`, `python3 montar.py nome saida.mp4`.
+
+## Finalização Scale (todos os vídeos, desde 15/11/2026)
+
+Todo vídeo termina com 2,2 s da logo da Scale: SCALE em azul brilhante com a flecha subindo no A, desenhada em alta (a imagem original tem 150 px), sobre fundo azul-marinho com luz dourada e uma linha dourada embaixo. Entra com transição suave de 0,35 s e um som baixo.
+
+1. `node outro_quadros.js quadros_outro 2.2` desenha os quadros de `outro.html` (uma vez só).
+2. Junta com o som em `outro_scale.mov` (ver o comando no histórico da edição).
+3. `python3 aplicar_final.py video.mp4 saida.mp4 outro_scale.mov` em cada vídeo.
+
+Cartão `"compacto": true`: letras menores, para quando o JP está enquadrado mais alto e o cartão cobriria o rosto.
