@@ -705,7 +705,7 @@ function renderTabs(){
     scale:POSTS.filter(p=>p.perfil==='scale'&&inRange(p)&&(UI.loc==='all'||SETUP_BY[setupOf(byVid.get(p.vid))].local===UI.loc)).length};
   const T=[['gravacao','<span class="lg">Plano de gravação</span><span class="sm">Plano</span>','vídeos'],['jp','JP','posts'],['scale','Scale','posts']];
   T.push(['dias','Dias','dias']);perTab.dias=diasDaJanela().length;
-  if(ARQ){T.push(['videos','Vídeos','vídeos prontos']);perTab.videos=POSTS.filter(p=>inRange(p)&&arquivosDe(p).length).length;}
+  if(ARQ){T.push(['videos','Vídeos','vídeos prontos']);perTab.videos=POSTS.filter(p=>p.date>=segDestaSemana()&&p.date<=UI.b&&arquivosDe(p).length).length;}
   if(AGENDA){T.unshift(['agenda','Agenda','vídeos']);perTab.agenda=agendaVideos().length;}
   $('tabs').innerHTML=T.map(([k,n,u])=>`<button class="tab" type="button" role="tab" id="tab-${k}" aria-controls="out" aria-selected="${UI.tab===k}" data-tab="${k}">${n}<span class="n" aria-label="${perTab[k]} ${u}">${perTab[k]}</span></button>`).join('');
   const ativa=document.getElementById('tab-'+UI.tab);if(ativa){const w=$('tabs');w.scrollLeft=Math.max(0,ativa.offsetLeft-(w.clientWidth-ativa.offsetWidth)/2);}
@@ -913,13 +913,17 @@ function renderDias(){
   renderProgress(diasVideos(dias));renderDiverg(null);renderFoot();saveUI();
 }
 /* ---------- aba Vídeos: os vídeos editados de cada dia, na ordem em que vão ao ar ---------- */
+function segDestaSemana(){const t=today();return addDays(t,-((parse(t).getUTCDay()+6)%7));}
 function arquivosDe(p){return (ARQ&&ARQ.itens[p.perfil+':'+p.id])||[];}
 function renderVideos(){
-  const dias=diasDaJanela(),hoje=today(),base=ARQ.base||'/videos/';
+  /* começa na segunda-feira desta semana (a janela do planejamento já pula para a próxima): os vídeos de hoje e dos próximos dias precisam aparecer */
+  const hoje=today(),seg=segDestaSemana(),ini=seg<UI.a?seg:UI.a,base=ARQ.base||'/videos/';
+  const dias=[];for(let d=ini;d<=UI.b;d=addDays(d,1))dias.push(d);
+  const semanas=[];for(let i=0;i<dias.length;i+=7)semanas.push({a:dias[i],b:dias[Math.min(i+6,dias.length-1)]});
   $('intro').textContent='Os vídeos editados, dia por dia, na ordem em que vão ao ar (JP e Scale juntos). “Assistir” toca aqui mesmo; “Baixar” salva o arquivo no aparelho. Os Reels do dia que ainda não têm vídeo aparecem em cinza.';
   $('divg').hidden=true;
   let h='';
-  weeks().forEach(w=>{
+  semanas.forEach(w=>{
     const ds=dias.filter(d=>d>=w.a&&d<=w.b);if(!ds.length)return;let zh='',zn=0,zt=0;
     ds.forEach(d=>{
       const ps=POSTS.filter(p=>p.date===d).sort((a,b)=>(a.hora==='extra')-(b.hora==='extra')||(a.hora<b.hora?-1:a.hora>b.hora?1:0));
