@@ -22,15 +22,17 @@ Para Reels em que o JP fala direto para a câmera, sem perguntas: dicas, IA na p
 3. `python3 plano_fala.py marcas.json transcricao.json duração cortes.json eventos.json`
 4. `python3 base.py cortes.json video.mp4 base.mov`, `node quadros.js overlay_fala.html eventos.json quadros/`, `python3 montar.py nome saida.mp4`.
 
-## Finalização Scale (todos os vídeos, desde 15/11/2026)
+## Cortes suaves com J-Cut (todos os vídeos, desde 16/11/2026)
 
-Todo vídeo termina com 2,2 s da logo da Scale: SCALE em azul brilhante com a flecha subindo no A, desenhada em alta (a imagem original tem 150 px), sobre fundo azul-marinho com luz dourada e uma linha dourada embaixo. Entra com transição suave de 0,35 s e um som baixo.
+Sem finalização com a logo (retirada a pedido do Breno). Em toda troca de take (`ferramentas/jcut.py`):
+- tira o silêncio do fim do take anterior e do começo do próximo, medindo o volume do áudio;
+- a fala nova só entra depois que a anterior termina (nunca uma frase por cima da outra);
+- a imagem do take anterior segura ~0,2 s e troca com uma fusão curta (no mínimo 4 quadros);
+- o zoom de cada bloco desliza do nível anterior até o novo em 0,5 s (`base.py`).
 
-1. `node outro_quadros.js quadros_outro 2.2` desenha os quadros de `outro.html` (uma vez só).
-2. Junta com o som em `outro_scale.mov` (ver o comando no histórico da edição).
-3. `python3 aplicar_final.py video.mp4 saida.mp4 outro_scale.mov` em cada vídeo.
-
-Cartão `"compacto": true`: letras menores, para quando o JP está enquadrado mais alto e o cartão cobriria o rosto.
+Troca de take = pico de diferença de imagem num quadro só. Câmera mexendo (vários quadros seguidos) não conta como corte.
+Depois do J-Cut, `mapear.py` leva a transcrição original para os tempos novos, assim as marcas continuam valendo.
+Conferir sempre: a fala tem que ficar igual à original (transcrever as duas e comparar) e nenhum cartão pode cobrir o rosto (`rosto.py`).
 
 ## Cartão longe do rosto
 

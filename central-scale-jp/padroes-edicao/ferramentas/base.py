@@ -13,7 +13,10 @@ lista=[]
 for k,c in enumerate(cl):
     b=str(c['bloco']);base=1.0 if ordem.index(b)%2==0 else 1.08
     ini,dur=blocos[b];off=c['out']-ini
-    z=f"{base}*(1+0.04*({off:.3f}+in/30)/{dur:.3f})"
+    idx=ordem.index(b);prev=(1.0 if (idx-1)%2==0 else 1.08)*1.04 if idx>0 else base  # zoom com que o bloco anterior terminou
+    tb=f"({off:.3f}+in/30)";ken=f"{base}*(1+0.04*{tb}/{dur:.3f})"
+    e=f"(min(1,{tb}/0.5)*min(1,{tb}/0.5)*(3-2*min(1,{tb}/0.5)))"  # curva suave em 0,5 s
+    z=f"({prev}+({ken}-{prev})*{e})"
     vf=(f"fps=30,zoompan=z='{z}':x='(iw-iw/zoom)/2':y='(ih-ih/zoom)*0.38':d=1:s=1080x1920:fps=30,"
         "eq=contrast=1.05:brightness=0.005:saturation=1.03,colorbalance=rm=0.015:bm=-0.015,format=yuv420p")
     f=f"{tmp}/{k:03d}.mp4";lista.append(f)
