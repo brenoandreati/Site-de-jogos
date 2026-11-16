@@ -659,10 +659,37 @@ const closed=new Set(UI.closed),opened=new Set(UI.open);
 
 const isDone=v=>!!(FEITO[v.vid]||(!v.rel&&[...v.ids.scale.map(i=>'s:'+i),...v.ids.jp.map(i=>'j:'+i)].some(k=>FEITO[k])));
 function setDone(v,on){
-  if(on)FEITO[v.vid]=Date.now();
-  else{delete FEITO[v.vid];if(!v.rel){v.ids.scale.forEach(i=>delete FEITO['s:'+i]);v.ids.jp.forEach(i=>delete FEITO['j:'+i]);}}
-  lsSet(K.feito,FEITO);
+  const liga={},desliga=[];
+  if(on){FEITO[v.vid]=liga[v.vid]=Date.now();}
+  else{const ks=[v.vid,...(v.rel?[]:[...v.ids.scale.map(i=>'s:'+i),...v.ids.jp.map(i=>'j:'+i)])];ks.forEach(k=>{if(k in FEITO){delete FEITO[k];desliga.push(k);}});if(!desliga.includes(v.vid))desliga.push(v.vid);}
+  lsSet(K.feito,FEITO);enviarFeitos(liga,desliga);
 }
+/* "Gravado" fica no Cloudflare (/api/gravados): marcou num aparelho, aparece em todos. Este aparelho guarda uma cópia para abrir sem internet. */
+let FEITO_REMOTO=false;
+async function enviarFeitos(liga,desliga){
+  if(!FEITO_REMOTO){toast('Sem conexão com o servidor: a marcação ficou só neste aparelho por enquanto.');return;}
+  try{const r=await fetch('/api/gravados',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({liga,desliga})});if(!r.ok)throw 0;FEITO=await r.json();lsSet(K.feito,FEITO);}
+  catch(e){toast('Não deu pra salvar a marcação. Confira a internet e marque de novo.');}
+}
+async function carregarFeitos(){
+  try{
+    const r=await fetch('/api/gravados',{cache:'no-store'});if(!r.ok||!/json/.test(r.headers.get('content-type')||''))throw 0;
+    let rem=await r.json();FEITO_REMOTO=true;
+    /* primeira vez em cada aparelho: o que estava marcado só aqui sobe para todos */
+    if(!lsGet('pg:gravado-sync',false)){
+      const loc=lsGet(K.feito,{}),falta={};Object.keys(loc).forEach(k=>{if(!(k in rem)&&/^[A-Za-z0-9:_.-]{1,48}$/.test(k))falta[k]=loc[k];});
+      if(Object.keys(falta).length){const r2=await fetch('/api/gravados',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({liga:falta,desliga:[]})});if(!r2.ok)throw 0;rem=await r2.json();}
+      lsSet('pg:gravado-sync',true);
+    }
+    const mudou=JSON.stringify(rem)!==JSON.stringify(FEITO);FEITO=rem;lsSet(K.feito,FEITO);return mudou;
+  }catch(e){return false;}
+}
+async function atualizarFeitos(){
+  const a=document.activeElement;if(a&&(a.tagName==='TEXTAREA'||a.tagName==='INPUT'&&a.type==='text'))return;  /* não redesenha enquanto escreve */
+  if(await carregarFeitos())render();
+}
+setInterval(()=>{if(!document.hidden)atualizarFeitos();},20000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)atualizarFeitos();});
 
 function weeks(){
   const out=[];const n=diffDays(UI.b,UI.a)+1;
@@ -1097,7 +1124,7 @@ async function init(){
     C=d.calendario;SC=d.scale;JP=d.jp;
     IDX={scale:new Map(SC.map(x=>[x.id,x])),jp:new Map(JP.map(x=>[x.id,x]))};
     aplicarReleituras(d.releituras);AGENDA=d.agenda&&Array.isArray(d.agenda.paradas)?d.agenda:null;ARQ=d.videos&&d.videos.itens?d.videos:null;TROCAS=(d.trocas&&Array.isArray(d.trocas.itens))?d.trocas.itens:[];
-    guardarOriginais();await carregarEdicoes();aplicarEdicoes();
+    guardarOriginais();await Promise.all([carregarEdicoes(),carregarFeitos()]);aplicarEdicoes();
     buildPosts();buildVideos();render();
   }catch(err){
     console.error(err);

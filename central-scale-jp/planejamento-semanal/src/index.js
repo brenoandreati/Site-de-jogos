@@ -26,9 +26,10 @@ const json = (d, s = 200) => new Response(JSON.stringify(d), { status: s, header
 export class Roteiros {
   constructor(state) { this.storage = state.storage; }
   async fetch(request) {
+    if (new URL(request.url).pathname === '/api/gravados') return this.gravados(request);
     if (request.method === 'GET') {
       const out = {};
-      (await this.storage.list()).forEach((v, k) => { out[k] = v; });
+      (await this.storage.list()).forEach((v, k) => { if (!k.startsWith(GPRE)) out[k] = v; });
       return json(out);
     }
     if (request.method === 'PUT') {
@@ -44,7 +45,27 @@ export class Roteiros {
     }
     return json({ erro: 'Método não permitido.' }, 405);
   }
+  /* Marcações de "gravado": iguais em todos os aparelhos. GET devolve {chave: quando};
+     POST {liga: {chave: quando}, desliga: [chave]} grava e devolve a lista inteira. */
+  async gravados(request) {
+    const todos = async () => { const out = {}; (await this.storage.list({ prefix: GPRE })).forEach((v, k) => { out[k.slice(GPRE.length)] = v; }); return json(out); };
+    if (request.method === 'GET') return todos();
+    if (request.method === 'POST') {
+      let b;
+      try { b = await request.json(); } catch (e) { return json({ erro: 'Corpo inválido.' }, 400); }
+      const liga = (b && typeof b.liga === 'object' && b.liga) || {}, desliga = Array.isArray(b && b.desliga) ? b.desliga : [];
+      const ks = Object.keys(liga);
+      if (ks.length + desliga.length > 500) return json({ erro: 'Itens demais.' }, 413);
+      if (![...ks, ...desliga].every(k => GCHAVE.test(String(k)))) return json({ erro: 'Chave inválida.' }, 400);
+      const put = {}; ks.forEach(k => { put[GPRE + k] = Number(liga[k]) || Date.now(); });
+      for (let i = 0, e = Object.entries(put); i < e.length; i += 100) await this.storage.put(Object.fromEntries(e.slice(i, i + 100)));
+      for (let i = 0; i < desliga.length; i += 100) await this.storage.delete(desliga.slice(i, i + 100).map(k => GPRE + k));
+      return todos();
+    }
+    return json({ erro: 'Método não permitido.' }, 405);
+  }
 }
+const GPRE = 'gravado|', GCHAVE = /^[A-Za-z0-9:_.-]{1,48}$/;
 /* Vídeos editados guardados no R2 (bucket planejamento-videos). Toca no navegador (com Range)
    e, com ?baixar=1, baixa com o nome do arquivo. */
 const VIDEO = /^[a-z0-9][a-z0-9._-]{0,120}\.mp4$/;
@@ -76,7 +97,7 @@ const roteiros = (request, env) => env.ROTEIROS.get(env.ROTEIROS.idFromName('tod
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (url.pathname === '/api/roteiros') return roteiros(request, env);
+    if (url.pathname === '/api/roteiros' || url.pathname === '/api/gravados') return roteiros(request, env);
     if (url.pathname.startsWith('/videos/')) return video(request, env, decodeURIComponent(url.pathname.slice(8)));
     const caminho = FONTES[url.pathname];
     if (!caminho) return env.ASSETS.fetch(request);
