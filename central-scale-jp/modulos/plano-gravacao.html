@@ -928,7 +928,7 @@ function renderVideos(){
       const lis=ps.map(p=>{
         const fs=arquivosDe(p),hr=esc(p.hora==='extra'?'extra':p.hora),tag=`<span class="tag ${p.funil}"><i></i>${esc(PERFIS[p.perfil]+' · '+(FUNIL[p.funil]||''))}</span>`;
         if(!fs.length)return `<li class="vd falta"><span class="h">${hr}</span><div class="b"><div class="t2">${esc(p.titulo)}</div><div class="m2">${tag}<span class="tag dur">Ainda sem vídeo</span></div></div></li>`;
-        const bts=fs.map(a=>{const u=base+encodeURIComponent(a.arquivo);return `<div class="vbt">${a.rotulo?`<span class="vr">${esc(a.rotulo)}</span>`:''}<button type="button" data-assistir="${esc(u)}">▶ Assistir</button><a class="pri" href="${esc(u)}?baixar=1" download="${esc(a.arquivo)}">⬇ Baixar</a></div>`;}).join('');
+        const bts=fs.map(a=>{const u=base+encodeURIComponent(a.arquivo)+(ARQ.versao?'?v='+encodeURIComponent(ARQ.versao):'');/* ?v= muda a cada nova leva de vídeos: o celular não reaproveita o arquivo antigo */return `<div class="vbt">${a.rotulo?`<span class="vr">${esc(a.rotulo)}</span>`:''}<button type="button" data-assistir="${esc(u)}">▶ Assistir</button><a class="pri" href="${esc(u)+(u.includes('?')?'&':'?')}baixar=1" download="${esc(a.arquivo)}">⬇ Baixar</a></div>`;}).join('');
         return `<li class="vd"><span class="h">${hr}</span><div class="b"><div class="t2">${esc(p.titulo)}</div><div class="m2">${tag}</div>${bts}</div></li>`;
       }).join('');
       zh+=`<section class="setup dia${aberto?'':' closed'}${ps.length&&prontos===ps.length?' full':''}" style="--c:var(--gold)">
