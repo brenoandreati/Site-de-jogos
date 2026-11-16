@@ -200,6 +200,10 @@ main{padding-top:16px;padding-bottom:calc(56px + env(safe-area-inset-bottom,0px)
 .hr .res{font-size:11.5px;font-weight:700;padding:2px 7px;border-radius:99px;background:var(--soft);color:var(--muted)}
 .hr .urg{font-size:11.5px;font-weight:700;padding:2px 7px;border-radius:99px;background:var(--warn-bg);color:var(--warn-fg)}
 .obs{margin:6px 0 2px;font-size:13px;line-height:1.5;color:var(--ink)}
+.onde{display:flex;gap:8px;align-items:flex-start;margin:6px 0 4px;font-size:13px;line-height:1.45;color:var(--ink)}
+.onde b{flex:none;font-size:11.5px;font-weight:700;letter-spacing:.02em;padding:3px 8px;border-radius:7px;white-space:nowrap}
+.onde.externo b{background:var(--ext-soft);color:var(--ext)}.onde.interno b{background:var(--int-soft);color:var(--int)}
+.onde.flex b{background:var(--soft);color:var(--ink);border:1px dashed var(--line)}
 .parada .sh h3 .quando{display:block;font-size:12.5px;font-weight:700;color:var(--gold-ink);font-variant-numeric:tabular-nums;margin-bottom:2px}
 .dia .sh h3 .quando{display:block;font-size:12.5px;font-weight:700;color:var(--gold-ink);margin-bottom:2px}
 .pf{padding:8px 16px 4px;font-size:11.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);border-top:1px solid var(--line)}
@@ -904,6 +908,23 @@ const DOWL=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 function diasDaJanela(){
   const ds=[];for(let d=UI.a;d<=UI.b;d=addDays(d,1))if(inRange({date:d}))ds.push(d);return ds;
 }
+/* aba Dias: onde dá pra gravar cada Reel (fora ou dentro), pelo cenário do roteiro */
+function ondeGravar(v,titulo){
+  const k=setupOf(v),bf=/black/i.test(titulo||'');
+  const R={
+    shopping:['externo','Externo',bf?'Gaivotas, em Vila Velha: andando entre as lojas, sem logo de loja aparecendo.':'Corredor de shopping ou Gaivotas, em Vila Velha, sem logo de loja aparecendo.'],
+    cafe:['externo','Externo','Cafeteria, em fala direta. Se chover, dá pra gravar na varanda.'],
+    praia:['externo','Externo','Praia e orla, de manhã, caminhando ou na cadeira de praia.'],
+    tatame:['externo','Externo','Tatame da academia, de kimono. Grava junto com os outros de faixa.'],
+    notebook:['interno','Interno','Tem que ser no escritório: precisa da tela do notebook para mostrar a ferramenta.'],
+    serie:['interno','Interno','Cenário fixo da série: todos os episódios no mesmo canto e enquadramento.'],
+    quadro:['interno','Interno','Cenário fixo da série Gestão na prática: mesmo quadro em todos os episódios.'],
+    varanda:['interno','Interno','Cenário fixo da série Recado: sempre na varanda.'],
+    poltrona:['interno','Interno','Talking head no escritório ou na sala, com quem filma lendo as perguntas.'],
+    caderno:['flex','Interno ou externo','Melhor no escritório, escrevendo no caderno enquanto fala. Se precisar, dá numa mesa de cafeteria.']
+  }[k]||['flex','A definir','Sem cenário definido no roteiro.'];
+  return `<div class="onde ${R[0]}"><b>${R[1]}</b><span>${esc(R[2])}</span></div>`;
+}
 function renderDias(){
   const dias=diasDaJanela(),hoje=today();
   $('intro').textContent='Cada dia com os Reels que vão ser postados, no JP e no Scale, na ordem do horário, com o roteiro de cada um (dá pra editar). Marque cada um quando estiver gravado: vale para todas as abas.';
@@ -912,7 +933,7 @@ function renderDias(){
   const linha=p=>{
     const v=byVid.get(p.vid);if(!v)return '';
     const st=SETUP_BY[setupOf(v)];
-    const topo=`<div class="hr"><b>${esc(p.hora==='extra'?'extra':p.hora)}</b><span>${esc(st?st.nome:'')}</span></div>`;
+    const topo=`<div class="hr"><b>${esc(p.hora==='extra'?'extra':p.hora)}</b><span>${esc(st?st.nome:'')}</span></div>`+ondeGravar(v,p.titulo);
     return item(v,p.perfil,{topo,obs:''});
   };
   let h='';const W=weeks();
