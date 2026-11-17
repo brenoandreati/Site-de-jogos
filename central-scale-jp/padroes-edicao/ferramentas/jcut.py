@@ -18,7 +18,7 @@ def detectar():
         if v>lim and v>2.5*max(viz):c.append((i+1)/FPS)
     # descarta grupos de picos muito próximos (movimento, não troca de take)
     return [round(t,4) for k,t in enumerate(c) if (k==0 or t-c[k-1]>0.6) and (k==len(c)-1 or c[k+1]-t>0.6)]
-cortes=detectar() if len(sys.argv)<4 or sys.argv[3]=='auto' else [float(x) for x in sys.argv[3].split(',')]
+cortes=detectar() if len(sys.argv)<4 or sys.argv[3]=='auto' else [] if sys.argv[3]=='nenhum' else [float(x) for x in sys.argv[3].split(',')]
 # volume em janelas de 10 ms
 pcm=subprocess.run(['ffmpeg','-v','error','-i',ent,'-vn','-ac','1','-ar','16000','-f','s16le','-'],capture_output=True).stdout
 a=np.frombuffer(pcm,dtype=np.int16).astype(np.float32)/32768;J=160;n=len(a)//J

@@ -7,8 +7,11 @@ dentro=lambda t:any(a<=t<=b for a,b in PULAR)
 W=[w for s in T for w in s['palavras'] if not dentro(w[0])]
 norm=lambda s:s.lower().strip('.,?!:;')
 def w_at(txt,depois=0):
+    txt,_,n=txt.partition('#');n=int(n or 1)  # "Faixa#3": a 3ª ocorrência depois do ponto
     for w in W:
-        if w[0]>=depois-0.01 and norm(w[2])==norm(txt):return w
+        if w[0]>=depois-0.01 and norm(w[2])==norm(txt):
+            n-=1
+            if n==0:return w
     raise SystemExit(f'não achei "{txt}" depois de {depois}')
 F=lambda t:round(round(t*30)/30,4)
 marcas=[];t=0;perg=[]
