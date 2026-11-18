@@ -323,6 +323,18 @@ main{padding-top:16px;padding-bottom:calc(56px + env(safe-area-inset-bottom,0px)
 .ses-cen{font:700 12px/1.3 inherit;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-ink);margin:14px 0 6px}
 .ses-dica{font-size:13px;color:var(--muted);line-height:1.45;margin:0 0 8px}
 .ses-vazio{padding:18px;border:1px dashed var(--line);border-radius:14px;color:var(--muted);font-size:14px;line-height:1.5}
+.ses-prio{background:var(--surface);border:1px solid var(--gold);border-radius:16px;padding:12px 14px 6px;margin-top:6px}
+.ses-prio h3{margin:0 0 2px;font:800 16px/1.3 inherit}
+.ses-prio>p{margin:0 0 8px;font-size:13px;color:var(--muted)}
+.ses-prio ol{list-style:none;margin:0;padding:0}
+.ses-prio li{border-top:1px solid var(--line-2);padding:10px 0}
+.ses-prio li:first-child{border-top:0}
+.ses-prio .pd{font:700 12px/1.2 inherit;color:var(--gold-ink);text-transform:uppercase;letter-spacing:.04em}
+.ses-prio .pt{font-weight:700;font-size:15px;line-height:1.3;margin:2px 0}
+.ses-prio .pm{font-size:12.5px;color:var(--muted)}
+.ses-prio .ie{display:inline-block;font:700 11px/1 inherit;padding:3px 7px;border-radius:6px;margin-left:6px;vertical-align:1px}
+.ses-prio .ie.int{background:var(--int-soft);color:var(--int)}.ses-prio .ie.ext{background:var(--ext-soft);color:var(--ext)}.ses-prio .ie.amb{background:var(--soft);color:var(--ink)}
+.tag-prio{display:inline-block;font:800 11px/1 inherit;padding:3px 7px;border-radius:6px;background:var(--gold);color:#14192A;margin-right:6px;vertical-align:1px}
 .ses-mapa-bt{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:10px 14px;font:600 14px inherit}
 .ses-acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
 .ses-acoes button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:10px 14px;font:600 14px inherit}
@@ -1105,10 +1117,11 @@ function renderSessao(){
   const porLocal={};pend.forEach(x=>x.L.forEach(l=>{(porLocal[l]=porLocal[l]||[]).push(x);}));
   let h='<div class="ses-h">Sessão</div><div class="ses-dias" role="group" aria-label="Escolha a sessão">'+ses.map(x=>{
     const w=DOWL[parse(x.d).getUTCDay()];return `<button type="button" data-ses-dia="${x.d}" aria-pressed="${x.d===UI.sesDia}">${esc(w)} ${esc(dm(x.d))}<small>${x.h.replace(':','h')}${x.d===today()?' · hoje':''}</small></button>`;}).join('')+'</div>';
+  h+=blocoPrioridades(pend);
   h+='<div class="ses-h">Onde vocês vão gravar?</div><div class="ses-locais" role="group" aria-label="Lugares">'+LUGARES.map(lg=>{
-    const L=porLocal[lg.k]||[],on=S.locais.includes(lg.k),ideal=L.filter(x=>x.L[0]===lg.k).length;
+    const L=porLocal[lg.k]||[],on=S.locais.includes(lg.k),ideal=L.filter(x=>x.L[0]===lg.k).length,sem=L.filter(x=>x.p.date<=fimDaSemana()).length;
     const prox=L[0]?' · mais urgente '+dm(L[0].p.date):'';
-    return `<button type="button" data-ses-local="${lg.k}" aria-pressed="${on}"${L.length||on?'':' disabled'}>${esc(lg.nome)}<small><span class="${lg.ext?'ext':'int'}">${lg.ext?'Externo':'Interno'}</span> · ${L.length} conteúdo${L.length===1?'':'s'}${ideal?' ('+ideal+' ideal)':''}${prox}</small></button>`;}).join('')+'</div>';
+    return `<button type="button" data-ses-local="${lg.k}" aria-pressed="${on}"${L.length||on?'':' disabled'}>${esc(lg.nome)}<small><span class="${lg.ext?'ext':'int'}">${lg.ext?'Externo':'Interno'}</span> · ${sem?'<b style="color:var(--gold-ink)">'+sem+' desta semana</b> · ':''}${L.length} conteúdo${L.length===1?'':'s'}${ideal?' ('+ideal+' ideal)':''}${prox}</small></button>`;}).join('')+'</div>';
   h+='<div class="ses-qtd">Conteúdos nesta sessão:'+[4,5,6].map(q=>`<button type="button" data-ses-qtd="${q}" aria-pressed="${S.qtd===q}">${q}</button>`).join('')+'</div>';
   if(!S.locais.length){h+='<p class="ses-vazio" style="margin-top:14px">Toque em um ou mais lugares para montar a sessão. Os números mostram quantos conteúdos dá pra gravar em cada um.</p>'+mapaLugares(pend);$('out').innerHTML=h;return;}
   /* monta: os mais urgentes dos lugares escolhidos; depois agrupa por lugar, na ordem em que vocês escolheram */
@@ -1127,7 +1140,7 @@ function renderSessao(){
     h+=`<div class="ses-cen">${esc(lg?lg.nome:k)} · ${L.length}</div><ol class="ses-lista">`+L.map(x=>{
       n++;const v=x.v,p=x.p,ok=isDone(v),r=rotDe(v,p.perfil),fr=frasesDe(r.txt),feitas=(FRASES[r.rk]||[]).length;
       const falta=/\[resposta do JP\]/i.test(r.txt)?' · <b style="color:#C2410C">tem resposta em aberto</b>':'';
-      return `<li class="ses-it${ok?' ok':''}"><span class="num">${n}</span><span class="t2">${esc(p.titulo)}</span>
+      return `<li class="ses-it${ok?' ok':''}"><span class="num">${n}</span><span class="t2">${p.date<=fimDaSemana()?'<span class="tag-prio">Prioridade</span>':''}${esc(p.titulo)}</span>
         <span class="m2">${esc(SETUP_BY[setupLugar(v)].nome)}: ${esc(LUG_POR_QUE[setupLugar(v)]||'')}</span>
         <span class="m2">${esc(PERFIS[p.perfil])} · vai ao ar ${esc(DOWL[parse(p.date).getUTCDay()])} ${esc(dm(p.date))} ${esc(p.hora==='extra'?'':p.hora)}${v.dur?' · '+esc(v.dur):''} · ${fr.length} frases${feitas?' ('+feitas+' gravadas)':''}${falta}</span>
         <span class="bts"><button type="button" class="pri" data-ses-ler="${esc(v.vid)}" data-ses-perfil="${p.perfil}"${r.txt?'':' disabled'}>Ler roteiro</button><button type="button" data-ses-ok="${esc(v.vid)}">${ok?'Desmarcar gravado':'Marcar gravado'}</button>${ok?'':`<button type="button" data-ses-fora="${esc(v.vid)}">Trocar</button>`}</span></li>`;}).join('')+'</ol>';
@@ -1136,6 +1149,15 @@ function renderSessao(){
   h+=mapaLugares(pend);
   $('out').innerHTML=h;
   UI.sesLista=escolhidos.map(x=>[x.v.vid,x.p.perfil]);
+}
+function fimDaSemana(){const t=today();return addDays(t,(7-parse(t).getUTCDay())%7);}  /* domingo desta semana */
+function blocoPrioridades(pend){
+  const fim=fimDaSemana(),P=pend.filter(x=>x.p.date<=fim);
+  if(!P.length)return `<div class="ses-prio"><h3>Prioridades da semana</h3><p>Tudo o que vai ao ar até domingo ${esc(dm(fim))} já foi gravado.</p></div>`;
+  return `<div class="ses-prio"><h3>Prioridades da semana · ${P.length}</h3><p>Vão ao ar até domingo ${esc(dm(fim))} e ainda não foram gravados.</p><ol>`+P.map(x=>{
+    const L=x.L,ints=L.filter(l=>!LUG_BY[l].ext).length,exts=L.length-ints;
+    const ie=ints&&exts?'<span class="ie amb">Interno ou externo</span>':ints?'<span class="ie int">Interno</span>':'<span class="ie ext">Externo</span>';
+    return `<li><div class="pd">${esc(DOWL[parse(x.p.date).getUTCDay()])} ${esc(dm(x.p.date))} · ${esc(x.p.hora==='extra'?'extra':x.p.hora)} · ${esc(PERFIS[x.p.perfil])}${ie}</div><div class="pt">${esc(x.p.titulo)}</div>${chipsLugares(x.v)}<div class="bts" style="display:flex;gap:8px;margin:4px 0 2px"><button type="button" class="ses-mapa-bt" data-ses-ler="${esc(x.v.vid)}" data-ses-perfil="${x.p.perfil}">Ler roteiro</button><button type="button" class="ses-mapa-bt" data-ses-ok="${esc(x.v.vid)}">Marcar gravado</button></div></li>`;}).join('')+'</ol></div>';
 }
 function mapaLugares(pend){
   const aberto=!!UI.sesMapa;
