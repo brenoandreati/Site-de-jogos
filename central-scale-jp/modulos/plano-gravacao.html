@@ -1093,7 +1093,7 @@ function rotDe(v,perfil){
 }
 function frasesDe(txt){
   return txt.split(/\n+/).map(l=>l.trim()).filter(Boolean)
-    .flatMap(l=>l.split(/(?<=[.?!…])\s+(?=[A-ZÁÉÍÓÚÂÊÔÃÕÇ“"\[])/)).map(x=>x.trim()).filter(x=>x&&x!=='.');
+    .flatMap(l=>l.replace(/([.?!…])\s+(?=[A-ZÁÉÍÓÚÂÊÔÃÕÇ“"\[])/g,'$1\u0001').split('\u0001')).map(x=>x.trim()).filter(x=>x&&x!=='.');  /* sem lookbehind: iPhone antigo (iOS < 16.4) não entende e a página inteira não abria */
 }
 /* o que falta gravar: só vídeos com post de hoje em diante, do mais urgente para o menos */
 function pendentes(desde){
