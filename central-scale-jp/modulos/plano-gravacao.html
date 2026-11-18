@@ -287,6 +287,54 @@ main{padding-top:16px;padding-bottom:calc(56px + env(safe-area-inset-bottom,0px)
 #toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;font-weight:500;z-index:50;max-width:calc(100vw - 32px);box-shadow:var(--shadow)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 @media print{.tabs,.ctl,.acts,.note,#toast{display:none!important}.setup{break-inside:avoid;box-shadow:none}.setup.closed .list{display:block}}
+
+/* ---------- aba Sessão ---------- */
+.ses-dias{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.ses-dias button{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:8px 12px;font:600 14px/1.2 inherit;text-align:left}
+.ses-dias button small{display:block;font-weight:500;color:var(--muted);font-size:12px;margin-top:2px}
+.ses-dias button[aria-pressed="true"]{border-color:var(--gold);background:var(--soft);box-shadow:inset 0 0 0 1px var(--gold)}
+.ses-h{font:700 13px/1.3 inherit;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:18px 0 8px}
+.ses-locais{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.ses-locais button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:14px;padding:10px 12px;text-align:left;font:600 14px/1.25 inherit;min-height:64px}
+.ses-locais button small{display:block;font-weight:500;font-size:12px;color:var(--muted);margin-top:4px}
+.ses-locais button[aria-pressed="true"]{border-color:var(--gold);background:var(--soft);box-shadow:inset 0 0 0 1px var(--gold)}
+.ses-locais button:disabled{opacity:.45}
+.ses-locais .ext{color:var(--ext)}.ses-locais .int{color:var(--int)}
+.ses-qtd{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px;font-size:14px;color:var(--muted)}
+.ses-qtd button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:99px;padding:6px 14px;font:600 14px inherit}
+.ses-qtd button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.ses-lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.ses-it{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:start}
+.ses-it.ok{opacity:.6}.ses-it.ok .t2{text-decoration:line-through}
+.ses-it .num{grid-row:span 3;width:30px;height:30px;border-radius:50%;background:var(--soft);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.ses-it .t2{font-weight:700;font-size:15px;line-height:1.3}
+.ses-it .m2{font-size:13px;color:var(--muted);line-height:1.4}
+.ses-it .bts{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.ses-it .bts button{border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:10px;padding:8px 12px;font:600 14px inherit}
+.ses-it .bts button.pri{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.ses-cen{font:700 12px/1.3 inherit;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-ink);margin:14px 0 6px}
+.ses-dica{font-size:13px;color:var(--muted);line-height:1.45;margin:0 0 8px}
+.ses-vazio{padding:18px;border:1px dashed var(--line);border-radius:14px;color:var(--muted);font-size:14px;line-height:1.5}
+.ses-acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.ses-acoes button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:10px 14px;font:600 14px inherit}
+/* modo leitura: tela cheia, uma frase por vez */
+#leitor{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;flex-direction:column;padding:14px 16px calc(14px + env(safe-area-inset-bottom))}
+#leitor[hidden]{display:none}
+#leitor .lt-top{display:flex;align-items:center;gap:10px}
+#leitor .lt-top b{flex:1;font-size:14px;line-height:1.3}
+#leitor .lt-top button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:8px 12px;font:600 14px inherit}
+#leitor .lt-prog{height:4px;background:var(--soft);border-radius:4px;margin:10px 0 0;overflow:hidden}#leitor .lt-prog i{display:block;height:100%;background:var(--gold)}
+#leitor .lt-n{font-size:13px;color:var(--muted);margin-top:8px}
+#leitor .lt-ant{font-size:16px;color:var(--faint);line-height:1.4;margin-top:14px;min-height:22px}
+#leitor .lt-frase{flex:1;display:flex;align-items:center;font-weight:700;font-size:clamp(28px,7.5vw,48px);line-height:1.25;color:var(--ink);overflow:auto}
+#leitor .lt-frase.feita{color:var(--muted)}
+#leitor .lt-frase.falta{color:#C2410C}
+#leitor .lt-bts{display:grid;grid-template-columns:1fr 2fr;gap:10px}
+#leitor .lt-bts button{border-radius:16px;padding:18px 10px;font:800 18px inherit;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+#leitor .lt-bts .ok{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+#leitor .lt-fim{display:flex;flex-direction:column;gap:10px}
+#leitor .lt-fim button{border-radius:16px;padding:16px;font:800 17px inherit;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+#leitor .lt-fim .ok{background:var(--ink);color:var(--surface)}
 </style>
 </head>
 <body>
@@ -325,6 +373,7 @@ main{padding-top:16px;padding-bottom:calc(56px + env(safe-area-inset-bottom,0px)
   <div id="out"><div class="load" aria-label="Carregando"><div></div><div></div><div></div></div></div>
   <footer class="foot" id="foot"></footer>
 </main>
+<div id="leitor" hidden role="dialog" aria-modal="true" aria-label="Modo leitura"></div>
 <div id="toast" role="status" aria-live="polite" hidden></div>
 
 <script>
@@ -735,6 +784,7 @@ function renderTabs(){
     jp:POSTS.filter(p=>p.perfil==='jp'&&inRange(p)&&(UI.loc==='all'||SETUP_BY[setupOf(byVid.get(p.vid))].local===UI.loc)).length,
     scale:POSTS.filter(p=>p.perfil==='scale'&&inRange(p)&&(UI.loc==='all'||SETUP_BY[setupOf(byVid.get(p.vid))].local===UI.loc)).length};
   const T=[['gravacao','<span class="lg">Plano de gravação</span><span class="sm">Plano</span>','vídeos'],['jp','JP','posts'],['scale','Scale','posts']];
+  T.unshift(['sessao','Sessão','pendentes']);perTab.sessao=pendentes(today()).length;
   T.push(['dias','Dias','dias']);perTab.dias=diasDaJanela().length;
   if(ARQ){T.push(['videos','Vídeos','vídeos prontos']);perTab.videos=POSTS.filter(p=>p.date>=segDestaSemana()&&p.date<=UI.b&&arquivosDe(p).length).length;}
   if(AGENDA){T.unshift(['agenda','Agenda','vídeos']);perTab.agenda=agendaVideos().length;}
@@ -817,13 +867,14 @@ function render(){
   if(!weeks()[+UI.week-1])UI.week='all';
   if(UI.tab==='agenda'&&!AGENDA)UI.tab='gravacao';
   renderHead();renderTabs();
-  document.querySelector('.ctl').hidden=UI.tab==='agenda';
+  document.querySelector('.ctl').hidden=UI.tab==='agenda'||UI.tab==='sessao';
   if(UI.tab==='agenda'){renderAgenda();return;}
   renderChips();
-  $('fl').hidden=UI.tab==='dias'||UI.tab==='videos';
+  $('fl').hidden=UI.tab==='dias'||UI.tab==='videos'||UI.tab==='sessao';
   if(UI.tab==='videos'&&!ARQ)UI.tab='gravacao';
   if(UI.tab==='dias'){renderDias();return;}
   if(UI.tab==='videos'){renderVideos();return;}
+  if(UI.tab==='sessao'){renderSessao();return;}
   const perfil=tabPerfil(UI.tab);
   const vids=visible(perfil,UI.loc);
   const firstKey=v=>{const p=postsIn(v,perfil)[0];return p.date+' '+p.hora;};
@@ -960,6 +1011,127 @@ function renderDias(){
   document.querySelectorAll('.rtx').forEach(ajustarAltura);
   renderProgress(diasVideos(dias));renderDiverg(null);renderFoot();saveUI();
 }
+
+/* ---------- aba Sessão: o conteúdo se encaixa na rotina ---------- */
+/* dias e horários fixos de gravação (getUTCDay: 1 = segunda) */
+const SESSOES={1:'13:30',2:'08:30',3:'13:30',4:'08:30',5:'08:30'};
+let SES=lsGet('pg:sessao',{}),FRASES=lsGet('pg:frases',{});
+const sesSalvar=()=>{lsSet('pg:sessao',SES);};
+function proximasSessoes(n){
+  const out=[],agora=new Date(),hoje=today();
+  for(let k=0;out.length<n&&k<21;k++){
+    const d=addDays(hoje,k),wd=parse(d).getUTCDay(),h=SESSOES[wd];if(!h)continue;
+    if(k===0){const [hh,mm]=h.split(':').map(Number);if(agora.getHours()*60+agora.getMinutes()>hh*60+mm+240)continue;}  /* sessão de hoje some 4 h depois do início */
+    out.push({d,h});
+  }
+  return out;
+}
+/* roteiro que se lê na gravação: o do perfil do próximo post */
+function rotDe(v,perfil){
+  const rp=perfil||(v.src.jp?'jp':'scale'),rid=(v.ids[rp]&&v.ids[rp][0])||(rp==='scale'&&/^[sr]:/.test(v.vid)?v.vid.slice(2):null);
+  const rk=rid?rp+':'+rid:null;return {rk,txt:rid&&IDX[rp].get(rid)?IDX[rp].get(rid).roteiro||'':''};
+}
+function frasesDe(txt){
+  return txt.split(/\n+/).map(l=>l.trim()).filter(Boolean)
+    .flatMap(l=>l.split(/(?<=[.?!…])\s+(?=[A-ZÁÉÍÓÚÂÊÔÃÕÇ“"\[])/)).map(x=>x.trim()).filter(x=>x&&x!=='.');
+}
+/* o que falta gravar: só vídeos com post de hoje em diante, do mais urgente para o menos */
+function pendentes(desde){
+  const out=[];
+  VIDEOS.forEach(v=>{
+    if(isDone(v))return;
+    const ps=v.posts.filter(p=>p.date>=desde).sort((a,b)=>(a.date+a.hora)<(b.date+b.hora)?-1:1);
+    if(!ps.length)return;
+    out.push({v,p:ps[0],k:setupOf(v)});
+  });
+  return out.sort((a,b)=>(a.p.date+a.p.hora)<(b.p.date+b.p.hora)?-1:1);
+}
+function renderSessao(){
+  $('intro').textContent='Escolha a sessão e onde vocês estão. O sistema monta a lista do dia com o que vai ao ar primeiro e ainda não foi gravado, na ordem de gravação. Em cada conteúdo, “Ler” abre o roteiro frase a frase para quem lê ao JP.';
+  $('divg').hidden=true;
+  const ses=proximasSessoes(6);if(!ses.length){$('out').innerHTML='<div class="ses-vazio">Nenhuma sessão nas próximas semanas.</div>';return;}
+  if(!ses.find(x=>x.d===UI.sesDia))UI.sesDia=ses[0].d;
+  const S=SES[UI.sesDia]||(SES[UI.sesDia]={locais:[],qtd:5,fora:[]});
+  const pend=pendentes(today());
+  const porLocal={};pend.forEach(x=>{(porLocal[x.k]=porLocal[x.k]||[]).push(x);});
+  let h='<div class="ses-h">Sessão</div><div class="ses-dias" role="group" aria-label="Escolha a sessão">'+ses.map(x=>{
+    const w=DOWL[parse(x.d).getUTCDay()];return `<button type="button" data-ses-dia="${x.d}" aria-pressed="${x.d===UI.sesDia}">${esc(w)} ${esc(dm(x.d))}<small>${x.h.replace(':','h')}${x.d===today()?' · hoje':''}</small></button>`;}).join('')+'</div>';
+  h+='<div class="ses-h">Onde vocês vão gravar?</div><div class="ses-locais" role="group" aria-label="Lugares">'+SETUPS.map(st=>{
+    const L=porLocal[st.k]||[],on=S.locais.includes(st.k),ext=st.local==='externo';
+    const prox=L[0]?' · mais urgente '+dm(L[0].p.date):'';
+    return `<button type="button" data-ses-local="${st.k}" aria-pressed="${on}"${L.length||on?'':' disabled'}>${esc(st.nome)}<small><span class="${ext?'ext':'int'}">${ext?'Externo':'Interno'}</span> · ${L.length} pendente${L.length===1?'':'s'}${prox}</small></button>`;}).join('')+'</div>';
+  h+='<div class="ses-qtd">Conteúdos nesta sessão:'+[4,5,6].map(q=>`<button type="button" data-ses-qtd="${q}" aria-pressed="${S.qtd===q}">${q}</button>`).join('')+'</div>';
+  if(!S.locais.length){h+='<p class="ses-vazio" style="margin-top:14px">Toque em um ou mais lugares para montar a sessão. Os números mostram quantos conteúdos ainda faltam gravar em cada um.</p>';$('out').innerHTML=h;return;}
+  /* monta: os mais urgentes dos lugares escolhidos; depois agrupa por lugar, na ordem em que vocês escolheram */
+  const cand=pend.filter(x=>S.locais.includes(x.k)&&!S.fora.includes(x.v.vid));
+  const escolhidos=cand.slice(0,S.qtd);
+  /* os que já foram gravados nesta sessão continuam na lista, marcados */
+  (S.feitos||[]).forEach(vid=>{if(!escolhidos.find(x=>x.v.vid===vid)){const v=byVid.get(vid);if(v){const p=v.posts.slice().sort((a,b)=>a.date<b.date?-1:1)[0];escolhidos.push({v,p,k:setupOf(v)});}}});
+  const grupos=S.locais.map(k=>[k,escolhidos.filter(x=>x.k===k)]).filter(g=>g[1].length);
+  let n=0;
+  h+='<div class="ses-h">Ordem de gravação</div>';
+  if(!escolhidos.length)h+='<p class="ses-vazio">Nada pendente nesses lugares. Escolha outro lugar.</p>';
+  grupos.forEach(([k,L])=>{
+    const st=SETUP_BY[k];
+    h+=`<div class="ses-cen">${esc(st.nome)} · ${L.length}</div><p class="ses-dica">${esc(st.dica||'')}</p><ol class="ses-lista">`+L.map(x=>{
+      n++;const v=x.v,p=x.p,ok=isDone(v),r=rotDe(v,p.perfil),fr=frasesDe(r.txt),feitas=(FRASES[r.rk]||[]).length;
+      const falta=/\[resposta do JP\]/i.test(r.txt)?' · <b style="color:#C2410C">tem resposta em aberto</b>':'';
+      return `<li class="ses-it${ok?' ok':''}"><span class="num">${n}</span><span class="t2">${esc(p.titulo)}</span>
+        <span class="m2">${esc(PERFIS[p.perfil])} · vai ao ar ${esc(DOWL[parse(p.date).getUTCDay()])} ${esc(dm(p.date))} ${esc(p.hora==='extra'?'':p.hora)}${v.dur?' · '+esc(v.dur):''} · ${fr.length} frases${feitas?' ('+feitas+' gravadas)':''}${falta}</span>
+        <span class="bts"><button type="button" class="pri" data-ses-ler="${esc(v.vid)}" data-ses-perfil="${p.perfil}"${r.txt?'':' disabled'}>Ler roteiro</button><button type="button" data-ses-ok="${esc(v.vid)}">${ok?'Desmarcar gravado':'Marcar gravado'}</button>${ok?'':`<button type="button" data-ses-fora="${esc(v.vid)}">Trocar</button>`}</span></li>`;}).join('')+'</ol>';
+  });
+  h+=`<div class="ses-acoes"><button type="button" data-ses-copiar="1">Copiar lista pro WhatsApp</button>${S.fora.length?'<button type="button" data-ses-volta="1">Voltar os trocados</button>':''}</div>`;
+  $('out').innerHTML=h;
+  UI.sesLista=escolhidos.map(x=>[x.v.vid,x.p.perfil]);
+}
+/* modo leitura: quem lê ao JP vê uma frase por vez, marca “gravei” e avança */
+let LT=null;
+function abrirLeitor(vid,perfil){const v=byVid.get(vid);if(!v)return;const r=rotDe(v,perfil);LT={vid,perfil,rk:r.rk,fr:frasesDe(r.txt),i:0,tit:(v.posts.find(p=>p.perfil===perfil)||v.posts[0]).titulo};
+  const feitas=FRASES[LT.rk]||[];const prox=LT.fr.findIndex((_,k)=>!feitas.includes(k));LT.i=prox<0?LT.fr.length:prox;desenharLeitor();}
+function desenharLeitor(){
+  const el=$('leitor');if(!LT){el.hidden=true;document.body.style.overflow='';return;}
+  el.hidden=false;document.body.style.overflow='hidden';
+  const feitas=FRASES[LT.rk]||[],N=LT.fr.length,i=LT.i;
+  const top=`<div class="lt-top"><b>${esc(LT.tit)}</b><button type="button" data-lt="fechar">Fechar</button></div><div class="lt-prog"><i style="width:${N?Math.round(feitas.length/N*100):0}%"></i></div>`;
+  if(i>=N){
+    const v=byVid.get(LT.vid),faltam=LT.fr.map((f,k)=>k).filter(k=>!feitas.includes(k));
+    el.innerHTML=top+`<div class="lt-frase">${faltam.length?'Faltam '+faltam.length+' frase'+(faltam.length>1?'s':'')+' sem “gravei”.':'Todas as frases gravadas.'}</div><div class="lt-fim">`+
+      (faltam.length?`<button type="button" data-lt="ir" data-k="${faltam[0]}">Ir para a primeira que falta</button>`:'')+
+      `<button type="button" class="ok" data-lt="concluir">${v&&isDone(v)?'Já está marcado como gravado':'Marcar conteúdo como gravado'}</button><button type="button" data-lt="zerar">Começar de novo</button></div>`;
+    return;
+  }
+  const f=LT.fr[i],feita=feitas.includes(i),aberta=/\[resposta do JP\]/i.test(f);
+  el.innerHTML=top+`<div class="lt-n">Frase ${i+1} de ${N}${feita?' · já gravada':''}</div><div class="lt-ant">${i>0?esc(LT.fr[i-1]):''}</div>
+    <div class="lt-frase${feita?' feita':''}${aberta?' falta':''}">${esc(f)}</div>
+    <div class="lt-bts"><button type="button" data-lt="voltar"${i===0?' disabled':''}>Voltar</button><button type="button" class="ok" data-lt="gravei">Gravei ✓</button></div>`;
+}
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-ses-dia],[data-ses-local],[data-ses-qtd],[data-ses-ler],[data-ses-ok],[data-ses-fora],[data-ses-volta],[data-ses-copiar],[data-lt]');if(!t)return;
+  const S=SES[UI.sesDia];
+  if(t.dataset.sesDia){UI.sesDia=t.dataset.sesDia;saveUI();renderSessao();return;}
+  if(t.dataset.sesLocal){const k=t.dataset.sesLocal,i=S.locais.indexOf(k);if(i<0)S.locais.push(k);else S.locais.splice(i,1);sesSalvar();renderSessao();return;}
+  if(t.dataset.sesQtd){S.qtd=+t.dataset.sesQtd;sesSalvar();renderSessao();return;}
+  if(t.dataset.sesFora){S.fora.push(t.dataset.sesFora);sesSalvar();renderSessao();return;}
+  if(t.dataset.sesVolta){S.fora=[];sesSalvar();renderSessao();return;}
+  if(t.dataset.sesOk){const v=byVid.get(t.dataset.sesOk);if(!v)return;const on=!isDone(v);setDone(v,on);S.feitos=S.feitos||[];if(on&&!S.feitos.includes(v.vid))S.feitos.push(v.vid);sesSalvar();renderSessao();renderProgress&&renderProgress();return;}
+  if(t.dataset.sesLer){abrirLeitor(t.dataset.sesLer,t.dataset.sesPerfil);return;}
+  if(t.dataset.sesCopiar){
+    const ses=proximasSessoes(6).find(x=>x.d===UI.sesDia)||{h:''};
+    const linhas=(UI.sesLista||[]).map(([vid,pf],k)=>{const v=byVid.get(vid),p=v.posts.find(q=>q.perfil===pf)||v.posts[0];return `${k+1}. ${p.titulo} (${PERFIS[pf]}, ${SETUP_BY[setupOf(v)].nome})`;});
+    const txt=`Gravação ${DOWL[parse(UI.sesDia).getUTCDay()]} ${dm(UI.sesDia)}, ${ses.h.replace(':','h')}\nLugar: ${S.locais.map(k=>SETUP_BY[k].nome).join(' + ')}\n\n${linhas.join('\n')}`;
+    navigator.clipboard&&navigator.clipboard.writeText(txt).then(()=>toast('Lista copiada. É só colar no WhatsApp.'),()=>toast('Não deu pra copiar.'));return;
+  }
+  if(t.dataset.lt&&LT){
+    const a=t.dataset.lt,feitas=FRASES[LT.rk]=FRASES[LT.rk]||[];
+    if(a==='fechar'){LT=null;desenharLeitor();if(UI.tab==='sessao')renderSessao();return;}
+    if(a==='voltar'){LT.i=Math.max(0,LT.i-1);}
+    if(a==='gravei'){if(!feitas.includes(LT.i))feitas.push(LT.i);lsSet('pg:frases',FRASES);LT.i++;}
+    if(a==='ir'){LT.i=+t.dataset.k;}
+    if(a==='zerar'){FRASES[LT.rk]=[];lsSet('pg:frases',FRASES);LT.i=0;}
+    if(a==='concluir'){const v=byVid.get(LT.vid);if(v&&!isDone(v)){setDone(v,true);const S2=SES[UI.sesDia];if(S2){S2.feitos=S2.feitos||[];S2.feitos.push(v.vid);sesSalvar();}toast('Marcado como gravado.');}LT=null;desenharLeitor();if(UI.tab==='sessao')renderSessao();return;}
+    desenharLeitor();
+  }
+});
 /* ---------- aba Vídeos: os vídeos editados de cada dia, na ordem em que vão ao ar ---------- */
 function segDestaSemana(){const t=today();return addDays(t,-((parse(t).getUTCDay()+6)%7));}
 function arquivosDe(p){return (ARQ&&ARQ.itens[p.perfil+':'+p.id])||[];}
