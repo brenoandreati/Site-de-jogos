@@ -546,13 +546,20 @@ let REL=new Map(),SEPARA=new Set();
 /* Roteiros editados: no Cloudflare (/api/roteiros) quando existe; senão, neste aparelho. */
 let ORIG={},EDIT={},REMOTO=false;const salvarT={};
 function guardarOriginais(){ORIG={};['scale','jp'].forEach(p=>IDX[p].forEach((x,id)=>{ORIG[p+':'+id]=x.roteiro||'';}));}
-function aplicarEdicoes(){Object.keys(EDIT).forEach(k=>{const [p,id]=k.split(':');const x=IDX[p]&&IDX[p].get(id);if(x)x.roteiro=EDIT[k].texto;});}
+/* quando o roteiro original abre com o gancho, o gancho acompanha a primeira frase do roteiro editado */
+const primeiraLinha=t=>(String(t||'').split(/\n/).map(l=>l.trim()).filter(Boolean)[0]||'');
+function ganchoSegue(k,x){
+  if(x.hook0===undefined)x.hook0=x.hook||'';
+  const o=primeiraLinha(ORIG[k]);
+  if(x.hook0&&o&&o.replace(/\s+/g,' ')===String(x.hook0).trim().replace(/\s+/g,' '))x.hook=primeiraLinha(x.roteiro)||x.hook0;
+}
+function aplicarEdicoes(){Object.keys(EDIT).forEach(k=>{const [p,id]=k.split(':');const x=IDX[p]&&IDX[p].get(id);if(x){x.roteiro=EDIT[k].texto;ganchoSegue(k,x);}});}
 async function carregarEdicoes(){
   try{const r=await fetch('/api/roteiros',{cache:'no-store'});if(r.ok&&/json/.test(r.headers.get('content-type')||'')){EDIT=await r.json();REMOTO=true;return;}}catch(e){}
   EDIT=lsGet('pg:roteiros',{});REMOTO=false;
 }
 function mudarRoteiro(k,texto){
-  const [p,id]=k.split(':');const x=IDX[p]&&IDX[p].get(id);if(x)x.roteiro=texto;
+  const [p,id]=k.split(':');const x=IDX[p]&&IDX[p].get(id);if(x){x.roteiro=texto;ganchoSegue(k,x);}
   const original=texto===ORIG[k];if(original)delete EDIT[k];else EDIT[k]={texto,em:Date.now()};
   const st=document.querySelector('.rst[data-rs="'+CSS.escape(k)+'"]');if(st)st.textContent='Salvando…';
   clearTimeout(salvarT[k]);salvarT[k]=setTimeout(async()=>{
