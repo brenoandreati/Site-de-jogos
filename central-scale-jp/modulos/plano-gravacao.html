@@ -311,9 +311,10 @@ main{padding-top:16px;padding-bottom:calc(56px + env(safe-area-inset-bottom,0px)
 .ses-qtd button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:99px;padding:6px 14px;font:600 14px inherit}
 .ses-qtd button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 .ses-lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
-.ses-it{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:start}
+.ses-it{grid-template-rows:auto;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:start}
 .ses-it.ok{opacity:.6}.ses-it.ok .t2{text-decoration:line-through}
-.ses-it .num{grid-row:span 3;width:30px;height:30px;border-radius:50%;background:var(--soft);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
+.ses-it>*:not(.num){grid-column:2;min-width:0}
+.ses-it .num{grid-column:1;grid-row:1 / span 4;align-self:start;width:30px;height:30px;border-radius:50%;background:var(--soft);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px}
 .ses-it .t2{font-weight:700;font-size:15px;line-height:1.3}
 .ses-it .m2{font-size:13px;color:var(--muted);line-height:1.4}
 .ses-it .bts{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
@@ -1041,9 +1042,9 @@ const LUG_POR_QUE={
   notebook:'precisa da tela do notebook',caderno:'ele escreve enquanto fala',poltrona:'alguém lê as perguntas fora da câmera',
   cafe:'fala direta, sem objeto',praia:'fala direta, em movimento',shopping:'tema de compras e lojas',tatame:'precisa do tatame e do kimono',
   serie:'série com cenário fixo',quadro:'série com o quadro fixo',varanda:'série Recado, sempre na varanda'};
+const setupLugar=v=>v.posts.some(p=>/^(isso ou aquilo|bate-bola)/i.test(N(p.titulo)))?'poltrona':setupOf(v);  /* Isso ou aquilo: precisa de alguém lendo as perguntas */
 function lugaresDe(v){
-  let k=setupOf(v);
-  if(v.posts.some(p=>/^(isso ou aquilo|bate-bola)/i.test(N(p.titulo))))k='poltrona';  /* precisa de alguém lendo as perguntas */
+  let k=setupLugar(v);
   const base=(LUG_POR_SETUP[k]||['cafeteria','escritorio']).slice();
   if(['serie','quadro','varanda','tatame'].includes(k))return base;  /* cenário fixo não muda pelo tema */
   const r=rotDe(v).txt,t=N(v.posts.map(p=>p.titulo).join(' ')+' '+r);
@@ -1056,7 +1057,7 @@ function lugaresDe(v){
   return base;
 }
 function chipsLugares(v,max){
-  const L=lugaresDe(v);let k=setupOf(v);if(v.posts.some(p=>/^(isso ou aquilo|bate-bola)/i.test(N(p.titulo))))k='poltrona';
+  const L=lugaresDe(v),k=setupLugar(v);
   return `<div class="lugs"><span class="lugs-l">${L.length===1?'Só dá pra gravar':'Dá pra gravar'}</span>`+L.slice(0,max||9).map((l,i)=>`<span class="lug${i===0?' ideal':''}${LUG_BY[l].ext?' ext':''}">${esc(LUG_BY[l].nome)}${i===0&&L.length>1?' · ideal':''}</span>`).join('')+`<span class="lugs-p">${esc(LUG_POR_QUE[k]||'')}</span></div>`;
 }
 /* ---------- aba Sessão: o conteúdo se encaixa na rotina ---------- */
@@ -1127,7 +1128,7 @@ function renderSessao(){
       n++;const v=x.v,p=x.p,ok=isDone(v),r=rotDe(v,p.perfil),fr=frasesDe(r.txt),feitas=(FRASES[r.rk]||[]).length;
       const falta=/\[resposta do JP\]/i.test(r.txt)?' · <b style="color:#C2410C">tem resposta em aberto</b>':'';
       return `<li class="ses-it${ok?' ok':''}"><span class="num">${n}</span><span class="t2">${esc(p.titulo)}</span>
-        <span class="m2">${esc(SETUP_BY[setupOf(v)].nome)}: ${esc(LUG_POR_QUE[setupOf(v)]||'')}</span>
+        <span class="m2">${esc(SETUP_BY[setupLugar(v)].nome)}: ${esc(LUG_POR_QUE[setupLugar(v)]||'')}</span>
         <span class="m2">${esc(PERFIS[p.perfil])} · vai ao ar ${esc(DOWL[parse(p.date).getUTCDay()])} ${esc(dm(p.date))} ${esc(p.hora==='extra'?'':p.hora)}${v.dur?' · '+esc(v.dur):''} · ${fr.length} frases${feitas?' ('+feitas+' gravadas)':''}${falta}</span>
         <span class="bts"><button type="button" class="pri" data-ses-ler="${esc(v.vid)}" data-ses-perfil="${p.perfil}"${r.txt?'':' disabled'}>Ler roteiro</button><button type="button" data-ses-ok="${esc(v.vid)}">${ok?'Desmarcar gravado':'Marcar gravado'}</button>${ok?'':`<button type="button" data-ses-fora="${esc(v.vid)}">Trocar</button>`}</span></li>`;}).join('')+'</ol>';
   });
