@@ -288,6 +288,13 @@ main{padding-top:16px;padding-bottom:calc(56px + env(safe-area-inset-bottom,0px)
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 @media print{.tabs,.ctl,.acts,.note,#toast{display:none!important}.setup{break-inside:avoid;box-shadow:none}.setup.closed .list{display:block}}
 
+
+.lugs{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0 4px}
+.lugs-l{font:700 12px/1.2 inherit;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-right:2px}
+.lug{font:600 12.5px/1.2 inherit;padding:4px 9px;border-radius:99px;background:var(--int-soft);color:var(--int)}
+.lug.ext{background:var(--ext-soft);color:var(--ext)}
+.lug.ideal{box-shadow:inset 0 0 0 1.5px currentColor;font-weight:800}
+.lugs-p{flex-basis:100%;font-size:12.5px;color:var(--muted)}
 /* ---------- aba Sessão ---------- */
 .ses-dias{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
 .ses-dias button{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:8px 12px;font:600 14px/1.2 inherit;text-align:left}
@@ -315,6 +322,7 @@ main{padding-top:16px;padding-bottom:calc(56px + env(safe-area-inset-bottom,0px)
 .ses-cen{font:700 12px/1.3 inherit;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-ink);margin:14px 0 6px}
 .ses-dica{font-size:13px;color:var(--muted);line-height:1.45;margin:0 0 8px}
 .ses-vazio{padding:18px;border:1px dashed var(--line);border-radius:14px;color:var(--muted);font-size:14px;line-height:1.5}
+.ses-mapa-bt{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:10px 14px;font:600 14px inherit}
 .ses-acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
 .ses-acoes button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:10px 14px;font:600 14px inherit}
 /* modo leitura: tela cheia, uma frase por vez */
@@ -984,7 +992,7 @@ function renderDias(){
   const linha=p=>{
     const v=byVid.get(p.vid);if(!v)return '';
     const st=SETUP_BY[setupOf(v)];
-    const topo=`<div class="hr"><b>${esc(p.hora==='extra'?'extra':p.hora)}</b><span>${esc(st?st.nome:'')}</span></div>`+ondeGravar(v,p.titulo);
+    const topo=`<div class="hr"><b>${esc(p.hora==='extra'?'extra':p.hora)}</b><span>${esc(st?st.nome:'')}</span></div>`+chipsLugares(v);
     return item(v,p.perfil,{topo,obs:''});
   };
   let h='';const W=weeks();
@@ -1012,6 +1020,45 @@ function renderDias(){
   renderProgress(diasVideos(dias));renderDiverg(null);renderFoot();saveUI();
 }
 
+
+/* ---------- onde dá pra gravar: cada conteúdo tem uma lista de lugares (o primeiro é o ideal) ---------- */
+const LUGARES=[
+  {k:'escritorio',nome:'Escritório',ext:false},{k:'sala',nome:'Sala (sofá)',ext:false},{k:'carro',nome:'Carro',ext:true},
+  {k:'cafeteria',nome:'Cafeteria',ext:true},{k:'restaurante',nome:'Restaurante',ext:true},{k:'rua',nome:'Rua',ext:true},
+  {k:'academia',nome:'Academia',ext:true},{k:'shopping',nome:'Shopping',ext:true},{k:'varanda',nome:'Varanda',ext:false}];
+const LUG_BY=Object.fromEntries(LUGARES.map(l=>[l.k,l]));
+/* pelo que o conteúdo precisa (setup): ideal primeiro, depois os que também servem */
+const LUG_POR_SETUP={
+  notebook:['escritorio','cafeteria','sala'],
+  caderno:['escritorio','cafeteria','restaurante','sala'],
+  poltrona:['sala','carro','escritorio','cafeteria','restaurante'],
+  cafe:['cafeteria','rua','carro','restaurante','academia','escritorio'],
+  praia:['rua','carro','cafeteria'],
+  shopping:['shopping','rua'],
+  tatame:['academia'],
+  serie:['escritorio'],quadro:['escritorio'],varanda:['varanda']};
+const LUG_POR_QUE={
+  notebook:'precisa da tela do notebook',caderno:'ele escreve enquanto fala',poltrona:'alguém lê as perguntas fora da câmera',
+  cafe:'fala direta, sem objeto',praia:'fala direta, em movimento',shopping:'tema de compras e lojas',tatame:'precisa do tatame e do kimono',
+  serie:'série com cenário fixo',quadro:'série com o quadro fixo',varanda:'série Recado, sempre na varanda'};
+function lugaresDe(v){
+  let k=setupOf(v);
+  if(v.posts.some(p=>/^(isso ou aquilo|bate-bola)/i.test(N(p.titulo))))k='poltrona';  /* precisa de alguém lendo as perguntas */
+  const base=(LUG_POR_SETUP[k]||['cafeteria','escritorio']).slice();
+  if(['serie','quadro','varanda','tatame'].includes(k))return base;  /* cenário fixo não muda pelo tema */
+  const r=rotDe(v).txt,t=N(v.posts.map(p=>p.titulo).join(' ')+' '+r);
+  const puxa=(lug,pal)=>{if(pal.some(w=>t.indexOf(N(w))>=0)){const i=base.indexOf(lug);if(i>0)base.splice(i,1);if(i!==0)base.splice(1,0,lug);}};
+  if(k!=='notebook'&&k!=='caderno'){
+    puxa('academia',['academia','treino','acordar cedo','disciplina','rotina','jiu','tatame']);
+    puxa('restaurante',['restaurante','cardápio','cardapio','garçom','garcom','delivery','pizzaria']);
+    if(k!=='poltrona')puxa('rua',['loja','vitrine','comércio','comercio']);
+  }
+  return base;
+}
+function chipsLugares(v,max){
+  const L=lugaresDe(v);let k=setupOf(v);if(v.posts.some(p=>/^(isso ou aquilo|bate-bola)/i.test(N(p.titulo))))k='poltrona';
+  return `<div class="lugs"><span class="lugs-l">${L.length===1?'Só dá pra gravar':'Dá pra gravar'}</span>`+L.slice(0,max||9).map((l,i)=>`<span class="lug${i===0?' ideal':''}${LUG_BY[l].ext?' ext':''}">${esc(LUG_BY[l].nome)}${i===0&&L.length>1?' · ideal':''}</span>`).join('')+`<span class="lugs-p">${esc(LUG_POR_QUE[k]||'')}</span></div>`;
+}
 /* ---------- aba Sessão: o conteúdo se encaixa na rotina ---------- */
 /* dias e horários fixos de gravação (getUTCDay: 1 = segunda) */
 const SESSOES={1:'13:30',2:'08:30',3:'13:30',4:'08:30',5:'08:30'};
@@ -1053,36 +1100,48 @@ function renderSessao(){
   if(!ses.find(x=>x.d===UI.sesDia))UI.sesDia=ses[0].d;
   const S=SES[UI.sesDia]||(SES[UI.sesDia]={locais:[],qtd:5,fora:[]});
   const pend=pendentes(today());
-  const porLocal={};pend.forEach(x=>{(porLocal[x.k]=porLocal[x.k]||[]).push(x);});
+  pend.forEach(x=>{x.L=lugaresDe(x.v);});
+  const porLocal={};pend.forEach(x=>x.L.forEach(l=>{(porLocal[l]=porLocal[l]||[]).push(x);}));
   let h='<div class="ses-h">Sessão</div><div class="ses-dias" role="group" aria-label="Escolha a sessão">'+ses.map(x=>{
     const w=DOWL[parse(x.d).getUTCDay()];return `<button type="button" data-ses-dia="${x.d}" aria-pressed="${x.d===UI.sesDia}">${esc(w)} ${esc(dm(x.d))}<small>${x.h.replace(':','h')}${x.d===today()?' · hoje':''}</small></button>`;}).join('')+'</div>';
-  h+='<div class="ses-h">Onde vocês vão gravar?</div><div class="ses-locais" role="group" aria-label="Lugares">'+SETUPS.map(st=>{
-    const L=porLocal[st.k]||[],on=S.locais.includes(st.k),ext=st.local==='externo';
+  h+='<div class="ses-h">Onde vocês vão gravar?</div><div class="ses-locais" role="group" aria-label="Lugares">'+LUGARES.map(lg=>{
+    const L=porLocal[lg.k]||[],on=S.locais.includes(lg.k),ideal=L.filter(x=>x.L[0]===lg.k).length;
     const prox=L[0]?' · mais urgente '+dm(L[0].p.date):'';
-    return `<button type="button" data-ses-local="${st.k}" aria-pressed="${on}"${L.length||on?'':' disabled'}>${esc(st.nome)}<small><span class="${ext?'ext':'int'}">${ext?'Externo':'Interno'}</span> · ${L.length} pendente${L.length===1?'':'s'}${prox}</small></button>`;}).join('')+'</div>';
+    return `<button type="button" data-ses-local="${lg.k}" aria-pressed="${on}"${L.length||on?'':' disabled'}>${esc(lg.nome)}<small><span class="${lg.ext?'ext':'int'}">${lg.ext?'Externo':'Interno'}</span> · ${L.length} conteúdo${L.length===1?'':'s'}${ideal?' ('+ideal+' ideal)':''}${prox}</small></button>`;}).join('')+'</div>';
   h+='<div class="ses-qtd">Conteúdos nesta sessão:'+[4,5,6].map(q=>`<button type="button" data-ses-qtd="${q}" aria-pressed="${S.qtd===q}">${q}</button>`).join('')+'</div>';
-  if(!S.locais.length){h+='<p class="ses-vazio" style="margin-top:14px">Toque em um ou mais lugares para montar a sessão. Os números mostram quantos conteúdos ainda faltam gravar em cada um.</p>';$('out').innerHTML=h;return;}
+  if(!S.locais.length){h+='<p class="ses-vazio" style="margin-top:14px">Toque em um ou mais lugares para montar a sessão. Os números mostram quantos conteúdos dá pra gravar em cada um.</p>'+mapaLugares(pend);$('out').innerHTML=h;return;}
   /* monta: os mais urgentes dos lugares escolhidos; depois agrupa por lugar, na ordem em que vocês escolheram */
-  const cand=pend.filter(x=>S.locais.includes(x.k)&&!S.fora.includes(x.v.vid));
+  S.locais=S.locais.filter(k=>LUG_BY[k]);
+  const cand=pend.filter(x=>x.L.some(l=>S.locais.includes(l))&&!S.fora.includes(x.v.vid));
+  cand.forEach(x=>{x.k=x.L.find(l=>S.locais.includes(l));});
   const escolhidos=cand.slice(0,S.qtd);
   /* os que já foram gravados nesta sessão continuam na lista, marcados */
-  (S.feitos||[]).forEach(vid=>{if(!escolhidos.find(x=>x.v.vid===vid)){const v=byVid.get(vid);if(v){const p=v.posts.slice().sort((a,b)=>a.date<b.date?-1:1)[0];escolhidos.push({v,p,k:setupOf(v)});}}});
+  (S.feitos||[]).forEach(vid=>{if(!escolhidos.find(x=>x.v.vid===vid)){const v=byVid.get(vid);if(v){const p=v.posts.slice().sort((a,b)=>a.date<b.date?-1:1)[0];const L=lugaresDe(v);escolhidos.push({v,p,L,k:L.find(l=>S.locais.includes(l))||L[0]});}}});
   const grupos=S.locais.map(k=>[k,escolhidos.filter(x=>x.k===k)]).filter(g=>g[1].length);
   let n=0;
   h+='<div class="ses-h">Ordem de gravação</div>';
   if(!escolhidos.length)h+='<p class="ses-vazio">Nada pendente nesses lugares. Escolha outro lugar.</p>';
   grupos.forEach(([k,L])=>{
-    const st=SETUP_BY[k];
-    h+=`<div class="ses-cen">${esc(st.nome)} · ${L.length}</div><p class="ses-dica">${esc(st.dica||'')}</p><ol class="ses-lista">`+L.map(x=>{
+    const lg=LUG_BY[k];
+    h+=`<div class="ses-cen">${esc(lg?lg.nome:k)} · ${L.length}</div><ol class="ses-lista">`+L.map(x=>{
       n++;const v=x.v,p=x.p,ok=isDone(v),r=rotDe(v,p.perfil),fr=frasesDe(r.txt),feitas=(FRASES[r.rk]||[]).length;
       const falta=/\[resposta do JP\]/i.test(r.txt)?' · <b style="color:#C2410C">tem resposta em aberto</b>':'';
       return `<li class="ses-it${ok?' ok':''}"><span class="num">${n}</span><span class="t2">${esc(p.titulo)}</span>
+        <span class="m2">${esc(SETUP_BY[setupOf(v)].nome)}: ${esc(LUG_POR_QUE[setupOf(v)]||'')}</span>
         <span class="m2">${esc(PERFIS[p.perfil])} · vai ao ar ${esc(DOWL[parse(p.date).getUTCDay()])} ${esc(dm(p.date))} ${esc(p.hora==='extra'?'':p.hora)}${v.dur?' · '+esc(v.dur):''} · ${fr.length} frases${feitas?' ('+feitas+' gravadas)':''}${falta}</span>
         <span class="bts"><button type="button" class="pri" data-ses-ler="${esc(v.vid)}" data-ses-perfil="${p.perfil}"${r.txt?'':' disabled'}>Ler roteiro</button><button type="button" data-ses-ok="${esc(v.vid)}">${ok?'Desmarcar gravado':'Marcar gravado'}</button>${ok?'':`<button type="button" data-ses-fora="${esc(v.vid)}">Trocar</button>`}</span></li>`;}).join('')+'</ol>';
   });
   h+=`<div class="ses-acoes"><button type="button" data-ses-copiar="1">Copiar lista pro WhatsApp</button>${S.fora.length?'<button type="button" data-ses-volta="1">Voltar os trocados</button>':''}</div>`;
+  h+=mapaLugares(pend);
   $('out').innerHTML=h;
   UI.sesLista=escolhidos.map(x=>[x.v.vid,x.p.perfil]);
+}
+function mapaLugares(pend){
+  const aberto=!!UI.sesMapa;
+  let h=`<div class="ses-h" style="margin-top:28px">Todos os que faltam gravar · onde dá pra gravar cada um</div><button type="button" class="ses-mapa-bt" data-ses-mapa="1">${aberto?'Esconder lista':'Ver os '+pend.length+' conteúdos'}</button>`;
+  if(!aberto)return h;
+  h+='<ol class="ses-lista" style="margin-top:10px">'+pend.map(x=>`<li class="ses-it" style="grid-template-columns:1fr"><span class="t2">${esc(x.p.titulo)}</span><span class="m2">${esc(PERFIS[x.p.perfil])} · vai ao ar ${esc(DOWL[parse(x.p.date).getUTCDay()])} ${esc(dm(x.p.date))}</span>${chipsLugares(x.v)}</li>`).join('')+'</ol>';
+  return h;
 }
 /* modo leitura: quem lê ao JP vê uma frase por vez, marca “gravei” e avança */
 let LT=null;
@@ -1106,8 +1165,9 @@ function desenharLeitor(){
     <div class="lt-bts"><button type="button" data-lt="voltar"${i===0?' disabled':''}>Voltar</button><button type="button" class="ok" data-lt="gravei">Gravei ✓</button></div>`;
 }
 document.addEventListener('click',e=>{
-  const t=e.target.closest('[data-ses-dia],[data-ses-local],[data-ses-qtd],[data-ses-ler],[data-ses-ok],[data-ses-fora],[data-ses-volta],[data-ses-copiar],[data-lt]');if(!t)return;
+  const t=e.target.closest('[data-ses-mapa],[data-ses-dia],[data-ses-local],[data-ses-qtd],[data-ses-ler],[data-ses-ok],[data-ses-fora],[data-ses-volta],[data-ses-copiar],[data-lt]');if(!t)return;
   const S=SES[UI.sesDia];
+  if(t.dataset.sesMapa){UI.sesMapa=!UI.sesMapa;renderSessao();return;}
   if(t.dataset.sesDia){UI.sesDia=t.dataset.sesDia;saveUI();renderSessao();return;}
   if(t.dataset.sesLocal){const k=t.dataset.sesLocal,i=S.locais.indexOf(k);if(i<0)S.locais.push(k);else S.locais.splice(i,1);sesSalvar();renderSessao();return;}
   if(t.dataset.sesQtd){S.qtd=+t.dataset.sesQtd;sesSalvar();renderSessao();return;}
@@ -1118,7 +1178,7 @@ document.addEventListener('click',e=>{
   if(t.dataset.sesCopiar){
     const ses=proximasSessoes(6).find(x=>x.d===UI.sesDia)||{h:''};
     const linhas=(UI.sesLista||[]).map(([vid,pf],k)=>{const v=byVid.get(vid),p=v.posts.find(q=>q.perfil===pf)||v.posts[0];return `${k+1}. ${p.titulo} (${PERFIS[pf]}, ${SETUP_BY[setupOf(v)].nome})`;});
-    const txt=`Gravação ${DOWL[parse(UI.sesDia).getUTCDay()]} ${dm(UI.sesDia)}, ${ses.h.replace(':','h')}\nLugar: ${S.locais.map(k=>SETUP_BY[k].nome).join(' + ')}\n\n${linhas.join('\n')}`;
+    const txt=`Gravação ${DOWL[parse(UI.sesDia).getUTCDay()]} ${dm(UI.sesDia)}, ${ses.h.replace(':','h')}\nLugar: ${S.locais.map(k=>LUG_BY[k].nome).join(' + ')}\n\n${linhas.join('\n')}`;
     navigator.clipboard&&navigator.clipboard.writeText(txt).then(()=>toast('Lista copiada. É só colar no WhatsApp.'),()=>toast('Não deu pra copiar.'));return;
   }
   if(t.dataset.lt&&LT){
