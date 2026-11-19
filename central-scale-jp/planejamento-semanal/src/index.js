@@ -27,9 +27,10 @@ export class Roteiros {
   constructor(state) { this.storage = state.storage; }
   async fetch(request) {
     if (new URL(request.url).pathname === '/api/gravados') return this.gravados(request);
+    if (new URL(request.url).pathname === '/api/sessoes') return this.sessoes(request);
     if (request.method === 'GET') {
       const out = {};
-      (await this.storage.list()).forEach((v, k) => { if (!k.startsWith(GPRE)) out[k] = v; });
+      (await this.storage.list()).forEach((v, k) => { if (!k.startsWith(GPRE) && !k.startsWith(SPRE)) out[k] = v; });
       return json(out);
     }
     if (request.method === 'PUT') {
@@ -64,7 +65,24 @@ export class Roteiros {
     }
     return json({ erro: 'Método não permitido.' }, 405);
   }
+  /* Plano de um dia de gravação (ordem, lugares e conteúdos), igual em todos os aparelhos.
+     GET devolve {dia: plano}; PUT {dia: 'AAAA-MM-DD', plano: {...} ou null}. */
+  async sessoes(request) {
+    if (request.method === 'GET') { const out = {}; (await this.storage.list({ prefix: SPRE })).forEach((v, k) => { out[k.slice(SPRE.length)] = v; }); return json(out); }
+    if (request.method === 'PUT') {
+      let b;
+      try { b = await request.json(); } catch (e) { return json({ erro: 'Corpo inválido.' }, 400); }
+      const dia = String(b && b.dia || '');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dia)) return json({ erro: 'Dia inválido.' }, 400);
+      if (!b.plano) { await this.storage.delete(SPRE + dia); return json({ ok: true }); }
+      if (typeof b.plano !== 'object' || JSON.stringify(b.plano).length > 20000) return json({ erro: 'Plano inválido.' }, 400);
+      await this.storage.put(SPRE + dia, b.plano);
+      return json({ ok: true });
+    }
+    return json({ erro: 'Método não permitido.' }, 405);
+  }
 }
+const SPRE = 'sessao|';
 const GPRE = 'gravado|', GCHAVE = /^[A-Za-z0-9:_.-]{1,48}$/;
 /* Vídeos editados guardados no R2 (bucket planejamento-videos). Toca no navegador (com Range)
    e, com ?baixar=1, baixa com o nome do arquivo. */
@@ -97,7 +115,7 @@ const roteiros = (request, env) => env.ROTEIROS.get(env.ROTEIROS.idFromName('tod
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (url.pathname === '/api/roteiros' || url.pathname === '/api/gravados') return roteiros(request, env);
+    if (url.pathname === '/api/roteiros' || url.pathname === '/api/gravados' || url.pathname === '/api/sessoes') return roteiros(request, env);
     if (url.pathname.startsWith('/videos/')) return video(request, env, decodeURIComponent(url.pathname.slice(8)));
     const caminho = FONTES[url.pathname];
     if (!caminho) return env.ASSETS.fetch(request);

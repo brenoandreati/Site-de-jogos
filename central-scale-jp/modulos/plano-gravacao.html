@@ -320,6 +320,8 @@ main{padding-top:16px;padding-bottom:calc(56px + env(safe-area-inset-bottom,0px)
 .ses-it .bts{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
 .ses-it .bts button{border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:10px;padding:8px 12px;font:600 14px inherit}
 .ses-it .bts button.pri{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.ses-plano .ext{color:var(--ext)}.ses-plano .int{color:var(--int)}
+.ses-plano{background:var(--surface);border:2px solid var(--gold);border-radius:18px;padding:14px 14px 6px;margin:14px 0}.ses-plano h3{margin:0 0 4px;font-size:17px}.ses-plano>p,.ses-plano .pl-nota{margin:0 0 8px;font-size:13.5px;color:var(--muted);line-height:1.45}.ses-plano .ses-lista{margin-bottom:10px}
 .ses-cen{font:700 12px/1.3 inherit;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-ink);margin:14px 0 6px}
 .ses-dica{font-size:13px;color:var(--muted);line-height:1.45;margin:0 0 8px}
 .ses-vazio{padding:18px;border:1px dashed var(--line);border-radius:14px;color:var(--muted);font-size:14px;line-height:1.5}
@@ -1124,6 +1126,7 @@ function renderSessao(){
   const porLocal={};pend.forEach(x=>x.L.forEach(l=>{(porLocal[l]=porLocal[l]||[]).push(x);}));
   let h='<div class="ses-h">Sessão</div><div class="ses-dias" role="group" aria-label="Escolha a sessão">'+ses.map(x=>{
     const w=DOWL[parse(x.d).getUTCDay()];return `<button type="button" data-ses-dia="${x.d}" aria-pressed="${x.d===UI.sesDia}">${esc(w)} ${esc(dm(x.d))}<small>${x.h.replace(':','h')}${x.d===today()?' · hoje':''}</small></button>`;}).join('')+'</div>';
+  h+=blocoPlano(UI.sesDia);
   h+=blocoPrioridades(pend);
   h+='<div class="ses-h">Onde vocês vão gravar?</div><div class="ses-locais" role="group" aria-label="Lugares">'+LUGARES.map(lg=>{
     const L=porLocal[lg.k]||[],on=S.locais.includes(lg.k),ideal=L.filter(x=>x.L[0]===lg.k).length,sem=L.filter(x=>x.p.date<=fimDaSemana()).length;
@@ -1156,6 +1159,32 @@ function renderSessao(){
   h+=mapaLugares(pend);
   $('out').innerHTML=h;
   UI.sesLista=escolhidos.map(x=>[x.v.vid,x.p.perfil]);
+}
+/* plano fixo de um dia de gravação (salvo no Cloudflare, igual em todos os aparelhos) */
+let PLANOS={};
+async function carregarPlanos(){try{const r=await fetch('/api/sessoes',{cache:'no-store'});if(r.ok&&/json/.test(r.headers.get('content-type')||''))PLANOS=await r.json();}catch(e){}}
+function vidDaChave(k){const [p,id]=k.split(':');return VIDEOS.find(v=>v.ids[p]&&v.ids[p].indexOf(id)>=0)||byVid.get('r:'+id)||byVid.get((p==='scale'?'s:':'j:')+id)||null;}
+function blocoPlano(dia){
+  const P=PLANOS[dia];if(!P||!Array.isArray(P.etapas))return '';
+  let n=0;
+  let h=`<div class="ses-plano"><h3>${esc(P.titulo||'Plano do dia')}</h3>${P.nota?`<p>${esc(P.nota)}</p>`:''}`;
+  P.etapas.forEach(et=>{
+    h+=`<div class="ses-cen">${esc(et.lugar)}${et.ext===true?' · <span class="ext">Externo</span>':et.ext===false?' · <span class="int">Interno</span>':''}</div>${et.nota?`<p class="pl-nota">${esc(et.nota)}</p>`:''}<ol class="ses-lista">`;
+    (et.itens||[]).forEach(it=>{
+      const v=vidDaChave(it.k);n++;
+      if(!v){h+=`<li class="ses-it"><span class="num">${n}</span><span class="t2">${esc(it.titulo||it.k)}</span>${it.nota?`<span class="m2">${esc(it.nota)}</span>`:''}</li>`;return;}
+      const hoje=today(),ps=v.posts.slice().sort((a,b)=>(a.date+a.hora)<(b.date+b.hora)?-1:1),p=ps.find(x=>x.date>=hoje)||ps[ps.length-1];
+      const perfil=it.k.split(':')[0]==='scale'&&v.posts.some(x=>x.perfil==='scale')?'scale':p.perfil;
+      const ok=isDone(v)&&!it.completar,r=rotDe(v,perfil),fr=frasesDe(r.txt);
+      const tags=(it.completar?'<span class="tag-prio" style="background:#C2410C">Completar</span>':'')+(it.opcional?'<span class="tag-prio" style="background:var(--muted)">Se der tempo</span>':'')+(!it.completar&&!it.opcional&&p.date<=fimDaSemana()?'<span class="tag-prio">Prioridade</span>':'');
+      h+=`<li class="ses-it${ok?' ok':''}"><span class="num">${n}</span><span class="t2">${tags}${esc(it.titulo||p.titulo)}</span>
+        ${it.nota?`<span class="m2"><b>${esc(it.nota)}</b></span>`:''}
+        <span class="m2">${esc(PERFIS[p.perfil])} · vai ao ar ${esc(DOWL[parse(p.date).getUTCDay()])} ${esc(dm(p.date))}${v.dur?' · '+esc(v.dur):''} · ${fr.length} frases</span>
+        <span class="bts"><button type="button" class="pri" data-ses-ler="${esc(v.vid)}" data-ses-perfil="${perfil}"${r.txt?'':' disabled'}>Ler roteiro</button>${it.completar?'':`<button type="button" data-ses-ok="${esc(v.vid)}">${ok?'Desmarcar gravado':'Marcar gravado'}</button>`}</span></li>`;
+    });
+    h+='</ol>';
+  });
+  return h+'</div>';
 }
 function fimDaSemana(){const t=today();return addDays(t,(7-parse(t).getUTCDay())%7);}  /* domingo desta semana */
 function blocoPrioridades(pend){
@@ -1407,7 +1436,7 @@ async function init(){
     C=d.calendario;SC=d.scale;JP=d.jp;
     IDX={scale:new Map(SC.map(x=>[x.id,x])),jp:new Map(JP.map(x=>[x.id,x]))};
     aplicarReleituras(d.releituras);AGENDA=d.agenda&&Array.isArray(d.agenda.paradas)?d.agenda:null;ARQ=d.videos&&d.videos.itens?d.videos:null;TROCAS=(d.trocas&&Array.isArray(d.trocas.itens))?d.trocas.itens:[];
-    guardarOriginais();await Promise.all([carregarEdicoes(),carregarFeitos()]);aplicarEdicoes();
+    guardarOriginais();await Promise.all([carregarEdicoes(),carregarFeitos(),carregarPlanos()]);aplicarEdicoes();
     buildPosts();buildVideos();render();
   }catch(err){
     console.error(err);
