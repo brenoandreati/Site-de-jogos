@@ -45,7 +45,7 @@ Antes de entregar, `python3 rosto.py nome [nome...]` (precisa de `opencv-python-
 
 Quando o material chega em takes soltos (vários arquivos por conteúdo):
 1. Transcrever cada bruto com o tempo de cada palavra.
-2. Escolher, frase por frase, o melhor take. Ficam de fora tropeços, repetições e conversa de bastidor ("pode ir", "foi mal").
+2. Escolher, frase por frase, o melhor take. **Olhar as imagens, não só o áudio:** entre dois takes com a mesma fala, vale o que ele fala olhando para a câmera. Take em que ele está lendo (olhos no notebook ou no celular) só entra se não houver outro. Tirar um quadro do rosto a cada 0,5 s de cada take candidato e conferir o olhar. Ficam de fora tropeços, repetições e conversa de bastidor ("pode ir", "foi mal").
 3. Listar os pedaços em `spec.json` (`[arquivo, início, fim]`) e rodar `ferramentas/montar_brutos.py`: ele acha pelo volume o começo e o fim reais de cada fala (60 ms antes e 90 ms depois) e grava os pontos de corte em `.cortes`, que o `jcut.py` usa.
 4. Conferir antes de editar: transcrever cada pedaço separado e comparar com o roteiro. Não pode faltar palavra no fim de nenhum pedaço.
 5. Nas marcas, palavra repetida usa `#n` (ex.: `"Faixa#3"` é a 3ª ocorrência), para o cartão e o zoom caírem na frase certa.
