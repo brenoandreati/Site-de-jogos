@@ -625,6 +625,8 @@ function buildPosts(){
       if(eff[d].x)add(eff[d].x,'extra',99);
     });
   });
+  /* posts movidos (dados/trocas.js, itens com "mover"): o post vai para outro dia e horário, mesmo sem par */
+  TROCAS.filter(t=>t.mover&&t.para).forEach(t=>{const p=posts.find(x=>x.perfil===t.perfil&&x.key===t.mover);if(p){p.date=t.para;if(t.hora)p.hora=t.hora;}});
   posts.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:(a.hora<b.hora?-1:a.hora>b.hora?1:0));
   POSTS=posts;OUTROS=outros;
 }
