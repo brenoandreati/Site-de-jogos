@@ -627,6 +627,8 @@ function buildPosts(){
   });
   /* posts movidos (dados/trocas.js, itens com "mover"): o post vai para outro dia e horário, mesmo sem par */
   TROCAS.filter(t=>t.mover&&t.para).forEach(t=>{const p=posts.find(x=>x.perfil===t.perfil&&x.key===t.mover);if(p){p.date=t.para;if(t.hora)p.hora=t.hora;}});
+  /* posts extras (dados/trocas.js, itens com "novo"): vídeo que não está no Calendário de Posts, como os cortes */
+  TROCAS.filter(t=>t.novo&&t.para&&(t.perfil==='jp'||t.perfil==='scale')).forEach(t=>{const key=(t.perfil==='scale'?'s:':'j:')+t.novo;if(posts.some(x=>x.key===key))return;posts.push({perfil:t.perfil,date:t.para,hora:t.hora||'extra',i:90,key,id:t.novo,titulo:t.titulo||t.novo,funil:t.funil||'m'});});
   posts.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:(a.hora<b.hora?-1:a.hora>b.hora?1:0));
   POSTS=posts;OUTROS=outros;
 }
