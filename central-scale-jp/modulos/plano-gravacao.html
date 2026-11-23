@@ -89,12 +89,13 @@ button{cursor:pointer}
 @media (max-width:520px){.prog{text-align:left;width:100%}}
 
 .tabs{position:sticky;top:0;z-index:20;background:var(--head);border-top:1px solid var(--head-line);box-shadow:0 6px 18px rgba(10,14,25,.12)}
-.tabs .wrap{display:flex;gap:2px}
+.tabs .wrap{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}.tabs .wrap::-webkit-scrollbar{display:none}
 .tab{flex:1 1 auto;min-width:0;border:0;background:transparent;color:var(--head-muted);font-weight:600;font-size:14px;padding:13px 6px 12px;border-bottom:3px solid transparent;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
 .tab .n{font-size:11.5px;font-weight:700;background:rgba(255,255,255,.12);color:var(--head-ink);padding:2px 7px;border-radius:99px;font-variant-numeric:tabular-nums}
 .tab[aria-selected="true"]{color:var(--head-ink);border-bottom-color:var(--gold)}
 .tab[aria-selected="true"] .n{background:var(--gold);color:#1B1505}
 .tab .sm{display:none}
+.tab{flex-shrink:0}.tab .lg{display:none}.tab .sm{display:inline}
 @media (max-width:440px){.tab .lg{display:none}.tab .sm{display:inline}.tab{gap:5px;font-size:13.5px}}
 @media (max-width:560px){.tabs .wrap{overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain}.tabs .wrap::-webkit-scrollbar{display:none}.tab{flex:0 0 auto;padding-inline:12px}}
 .tabs .tbar{height:3px;background:rgba(255,255,255,.06)}
@@ -358,10 +359,9 @@ main{padding-top:16px;padding-bottom:calc(56px + env(safe-area-inset-bottom,0px)
 #leitor .lt-fim{display:flex;flex-direction:column;gap:10px}
 #leitor .lt-fim button{border-radius:16px;padding:16px;font:800 17px inherit;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
 #leitor .lt-fim .ok{background:var(--ink);color:var(--surface)}
-.setup.closed .estb{display:none}
+.setup.closed .estb{display:none}.setup.conteudo .estb{border-top:0;padding-top:14px}
 .setup.est{scroll-margin-top:72px}
 .est-n{display:inline-grid;place-items:center;min-width:24px;height:24px;margin-right:10px;border-radius:50%;background:var(--accent);color:var(--on-accent);font:700 12.5px/1 var(--f-ui);vertical-align:3px}
-}
 .estb{border-top:1px solid var(--line);padding:6px 18px 18px;font-size:14.5px;line-height:1.55;color:var(--ink)}
 .est-p{margin:12px 0 0}.est-h{margin:18px 0 6px;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
 .est-l{margin:8px 0 0;padding-left:20px}.est-l li{margin:5px 0}
@@ -867,7 +867,7 @@ function renderTabs(){
   T.push(['dias','Dias','dias']);perTab.dias=diasDaJanela().length;
   if(ARQ){T.push(['videos','Vídeos','vídeos prontos']);perTab.videos=POSTS.filter(p=>p.date>=segDestaSemana()&&p.date<=UI.b&&arquivosDe(p).length).length;}
   if(AGENDA){T.unshift(['agenda','Agenda','vídeos']);perTab.agenda=agendaVideos().length;}
-  if(EST){T.push(['estrategia','Estratégia','seções']);perTab.estrategia=EST.secoes.length;}
+  if(EST){T.push(['estrategia','Estratégia','seções']);perTab.estrategia=EST.secoes.length;const mi=mesItens();if(mi.length){T.push(['conteudo','<span class="lg">Mês de conteúdo</span><span class="sm">Mês</span>','peças']);perTab.conteudo=mi.length;}}
   $('tabs').innerHTML=T.map(([k,n,u])=>`<button class="tab" type="button" role="tab" id="tab-${k}" aria-controls="out" aria-selected="${UI.tab===k}" data-tab="${k}">${n}<span class="n" aria-label="${perTab[k]} ${u}">${perTab[k]}</span></button>`).join('');
   const ativa=document.getElementById('tab-'+UI.tab);if(ativa){const w=$('tabs');w.scrollLeft=Math.max(0,ativa.offsetLeft-(w.clientWidth-ativa.offsetWidth)/2);}
 }
@@ -947,10 +947,12 @@ function render(){
   if(!weeks()[+UI.week-1])UI.week='all';
   if(UI.tab==='agenda'&&!AGENDA)UI.tab='gravacao';
   if(UI.tab==='estrategia'&&!EST)UI.tab='gravacao';
+  if(UI.tab==='conteudo'&&!mesItens().length)UI.tab='gravacao';
   renderHead();renderTabs();
-  document.querySelector('.ctl').hidden=UI.tab==='agenda'||UI.tab==='sessao'||UI.tab==='estrategia';
+  document.querySelector('.ctl').hidden=UI.tab==='agenda'||UI.tab==='sessao'||UI.tab==='estrategia'||UI.tab==='conteudo';
   if(UI.tab==='agenda'){renderAgenda();return;}
   if(UI.tab==='estrategia'){renderEstrategia();return;}
+  if(UI.tab==='conteudo'){renderConteudo();return;}
   renderChips();
   $('fl').hidden=UI.tab==='dias'||UI.tab==='videos'||UI.tab==='sessao';
   if(UI.tab==='videos'&&!ARQ)UI.tab='gravacao';
@@ -1361,6 +1363,16 @@ function estBloco(b){
     return `<div class="est-mes" data-f="todos">${fil}${sem.map((w,i)=>{const dias=[...new Set(w.map(q=>q.d))];return `<details class="est-sem"${i===0?' open':''}><summary><b>Semana ${i+1}</b> · ${esc(dm(dias[0]))} a ${esc(dm(dias.at(-1)))} <span>${w.length} peças</span></summary>${dias.map(d=>`<div class="dia ${[...new Set(w.filter(q=>q.d===d).map(q=>'has-'+q.e))].join(' ')}"><h5>${esc(DOWL[parse(d).getUTCDay()])} · ${esc(dm(d))}</h5><ul>${w.filter(q=>q.d===d).map(card).join('')}</ul></div>`).join('')}</details>`;}).join('')}</div>`;
   }
   return '';
+}
+function mesItens(){const s=EST&&EST.secoes.find(x=>x.id==='mes');const b=s&&(s.blocos||[]).find(x=>x.t==='mes');return b?b.itens||[]:[];}
+function renderConteudo(){
+  const it=mesItens(),s=EST.secoes.find(x=>x.id==='mes');
+  $('intro').textContent='Cada peça tem gancho, roteiro completo e um CTA diferente. Use os botões para ver só topo, meio ou fundo de funil.';
+  $('divg').hidden=true;
+  $('out').innerHTML=`<div class="zone"><h2><span class="d" style="background:var(--accent)"></span>Mês de conteúdo<small>${esc(dm(it[0].d))} a ${esc(dm(it.at(-1).d))}</small></h2><section class="setup est conteudo" style="--c:var(--accent)"><div class="estb">${(s.blocos||[]).filter(x=>x.t==='mes').map(estBloco).join('')}</div></section></div>`;
+  $('pg').textContent=it.length;$('pt').textContent=it.length;$('pb').style.width='100%';$('tb').style.width='100%';
+  $('pl').textContent='peças no mês';
+  renderFoot();saveUI();
 }
 function renderEstrategia(){
   $('intro').textContent=EST.resumo||'';
