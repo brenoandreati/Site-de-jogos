@@ -358,6 +358,40 @@ main{padding-top:16px;padding-bottom:calc(56px + env(safe-area-inset-bottom,0px)
 #leitor .lt-fim{display:flex;flex-direction:column;gap:10px}
 #leitor .lt-fim button{border-radius:16px;padding:16px;font:800 17px inherit;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
 #leitor .lt-fim .ok{background:var(--ink);color:var(--surface)}
+.setup.closed .estb{display:none}
+.setup.est{scroll-margin-top:72px}
+.est-n{display:inline-grid;place-items:center;min-width:24px;height:24px;margin-right:10px;border-radius:50%;background:var(--accent);color:var(--on-accent);font:700 12.5px/1 var(--f-ui);vertical-align:3px}
+}
+.estb{border-top:1px solid var(--line);padding:6px 18px 18px;font-size:14.5px;line-height:1.55;color:var(--ink)}
+.est-p{margin:12px 0 0}.est-h{margin:18px 0 6px;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.est-l{margin:8px 0 0;padding-left:20px}.est-l li{margin:5px 0}
+.est-ck{list-style:none;padding-left:0}.est-ck li{display:flex;gap:10px;align-items:flex-start}.est-ck .bx{flex:none;width:16px;height:16px;margin-top:3px;border:1.5px solid var(--faint);border-radius:5px}
+.est-q{margin:10px 0 0;padding:12px 14px;border-left:3px solid var(--gold);background:var(--surface-2);border-radius:0 10px 10px 0;display:grid;gap:2px;font-weight:600}
+.est-tw{margin-top:12px;overflow-x:auto;border:1px solid var(--line);border-radius:12px;-webkit-overflow-scrolling:touch}
+.est-t{width:100%;border-collapse:collapse;font-size:13.5px;line-height:1.45;min-width:520px}
+.est-t th,.est-t td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line-2)}
+.est-t thead th{background:var(--surface-2);font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.est-t tbody th{font-weight:600}.est-t tbody tr:last-child>*{border-bottom:0}
+.est-idx{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}.est-idx .chip{font-size:12.5px}
+.est-jor{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:10px}
+.est-jor li{position:relative;display:flex;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.est-jor li:not(:last-child)::after{content:"";position:absolute;left:27px;bottom:-11px;width:2px;height:10px;background:var(--line)}
+.est-jor li.fim{border:2px solid var(--accent);background:var(--fundo-soft)}
+.est-jor .nm{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--on-accent);font-weight:700;font-size:13px}
+.est-jor .tt{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline}.est-jor .et{font-size:12px;color:var(--muted);font-weight:600}
+.est-jor p{margin:4px 0 0}.est-jor .ob{color:var(--muted);font-size:13.5px}
+.est-ser{margin-top:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.est-ser .sc{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--surface-2)}
+.est-ser .tp{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.est-ser .pf{margin:6px 0 0;font-size:13px;color:var(--muted)}.est-ser .gc{margin:8px 0 0;font-style:italic}
+@media (max-width:640px){
+ .est-tw{border:0;overflow:visible}
+ .est-t{min-width:0}.est-t thead{display:none}
+ .est-t,.est-t tbody,.est-t tr,.est-t th,.est-t td{display:block;width:auto}
+ .est-t tr{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:var(--surface)}
+ .est-t th,.est-t td{border:0;padding:3px 0}
+ .est-t tbody th{font-size:14.5px;padding-bottom:6px}
+ .est-t td::before{content:attr(data-l);display:block;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--faint)}
+ .est-t td.vz{display:none}
 </style>
 </head>
 <body>
@@ -523,7 +557,7 @@ async function fromModule(f){
   return JSON.parse(data);
 }
 async function loadAll(){
-  await Promise.all([...FONTES.map(f=>loadScript(f.js)),loadScript('../dados/releituras.js'),loadScript('../dados/agenda.js'),loadScript('../dados/videos.js'),loadScript('../dados/trocas.js')]);
+  await Promise.all([...FONTES.map(f=>loadScript(f.js)),loadScript('../dados/releituras.js'),loadScript('../dados/agenda.js'),loadScript('../dados/videos.js'),loadScript('../dados/trocas.js'),loadScript('../dados/estrategia.js')]);
   const D=window.CENTRAL_DADOS||{};const out={};
   for(const f of FONTES){
     if(D[f.chave]){out[f.chave]=D[f.chave];continue;}
@@ -534,6 +568,7 @@ async function loadAll(){
   out.agenda=D.agenda||null;
   out.videos=D.videos||null;
   out.trocas=D.trocas||null;
+  out.estrategia=D.estrategia||null;
   return out;
 }
 
@@ -585,7 +620,7 @@ function aplicarReleituras(R){
     if(r.original&&r.original.id)SEPARA.add(r.original.id);
   });
 }
-let VIDEOS=[],POSTS=[],OUTROS=[],LAUNCH='',AGENDA=null,ARQ=null,TROCAS=[];
+let VIDEOS=[],POSTS=[],OUTROS=[],LAUNCH='',AGENDA=null,ARQ=null,TROCAS=[],EST=null;
 
 function calState(){
   let cfg={},docs={};
@@ -822,6 +857,7 @@ function renderTabs(){
   T.push(['dias','Dias','dias']);perTab.dias=diasDaJanela().length;
   if(ARQ){T.push(['videos','Vídeos','vídeos prontos']);perTab.videos=POSTS.filter(p=>p.date>=segDestaSemana()&&p.date<=UI.b&&arquivosDe(p).length).length;}
   if(AGENDA){T.unshift(['agenda','Agenda','vídeos']);perTab.agenda=agendaVideos().length;}
+  if(EST){T.push(['estrategia','Estratégia','seções']);perTab.estrategia=EST.secoes.length;}
   $('tabs').innerHTML=T.map(([k,n,u])=>`<button class="tab" type="button" role="tab" id="tab-${k}" aria-controls="out" aria-selected="${UI.tab===k}" data-tab="${k}">${n}<span class="n" aria-label="${perTab[k]} ${u}">${perTab[k]}</span></button>`).join('');
   const ativa=document.getElementById('tab-'+UI.tab);if(ativa){const w=$('tabs');w.scrollLeft=Math.max(0,ativa.offsetLeft-(w.clientWidth-ativa.offsetWidth)/2);}
 }
@@ -900,9 +936,11 @@ function render(){
   byVid=new Map(VIDEOS.map(v=>[v.vid,v]));
   if(!weeks()[+UI.week-1])UI.week='all';
   if(UI.tab==='agenda'&&!AGENDA)UI.tab='gravacao';
+  if(UI.tab==='estrategia'&&!EST)UI.tab='gravacao';
   renderHead();renderTabs();
-  document.querySelector('.ctl').hidden=UI.tab==='agenda'||UI.tab==='sessao';
+  document.querySelector('.ctl').hidden=UI.tab==='agenda'||UI.tab==='sessao'||UI.tab==='estrategia';
   if(UI.tab==='agenda'){renderAgenda();return;}
+  if(UI.tab==='estrategia'){renderEstrategia();return;}
   renderChips();
   $('fl').hidden=UI.tab==='dias'||UI.tab==='videos'||UI.tab==='sessao';
   if(UI.tab==='videos'&&!ARQ)UI.tab='gravacao';
@@ -1293,6 +1331,34 @@ function renderVideos(){
   renderFoot();saveUI();
 }
 function diasVideos(dias){return [...new Set(POSTS.filter(p=>dias.indexOf(p.date)>=0).map(p=>byVid.get(p.vid)).filter(Boolean))];}
+/* ---------- aba Estratégia: a estratégia de conteúdo da nova fase (dados/estrategia.js) ---------- */
+const estTxt=x=>esc(x||'').replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+const EST_ETAPA={topo:'t',meio:'m',fundo:'f'};
+function estBloco(b){
+  if(b.t==='p')return `<p class="est-p">${estTxt(b.x)}</p>`;
+  if(b.t==='h')return `<h4 class="est-h">${estTxt(b.x)}</h4>`;
+  if(b.t==='ul'||b.t==='ol')return `<${b.t} class="est-l">${(b.items||[]).map(i=>`<li>${estTxt(i)}</li>`).join('')}</${b.t}>`;
+  if(b.t==='check')return `<ul class="est-l est-ck">${(b.items||[]).map(i=>`<li><span class="bx" aria-hidden="true"></span>${estTxt(i)}</li>`).join('')}</ul>`;
+  if(b.t==='quote')return `<blockquote class="est-q">${(b.lines||[]).map(l=>`<span>${estTxt(l)}</span>`).join('')}</blockquote>`;
+  if(b.t==='table')return `<div class="est-tw"><table class="est-t"><thead><tr>${b.cols.map(c=>`<th scope="col">${estTxt(c)}</th>`).join('')}</tr></thead><tbody>${b.rows.map(r=>`<tr>${r.map((c,i)=>i?(c?`<td data-l="${esc(b.cols[i])}">${estTxt(c)}</td>`:'<td class="vz"></td>'):`<th scope="row">${estTxt(c)}</th>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  if(b.t==='jornada')return `<ol class="est-jor">${(b.passos||[]).map((s,i,a)=>`<li class="${i===a.length-1?'fim':''}"><span class="nm">${i+1}</span><div><div class="tt"><b>${esc(s.n)}</b><span class="et">${esc(s.e)}</span></div><p>${estTxt(s.x)}</p><p class="ob">${estTxt(s.obj)}</p></div></li>`).join('')}</ol>`;
+  if(b.t==='series')return `<div class="est-ser">${(b.items||[]).map(s=>`<div class="sc"><div class="tp"><b>${esc(s.n)}</b><span class="tag ${EST_ETAPA[s.e]||''}"><i></i>${esc(s.e)}</span></div><p class="pf">${esc(s.p)} · ${esc(s.f)}</p><p class="gc">${estTxt(s.g)}</p></div>`).join('')}</div>`;
+  return '';
+}
+function renderEstrategia(){
+  $('intro').textContent=EST.resumo||'';
+  $('divg').hidden=true;
+  const idx=`<nav class="est-idx" aria-label="Seções da estratégia">${EST.secoes.map((s,i)=>`<button type="button" class="chip" data-estgo="${esc(s.id)}">${i+1}. ${esc(s.titulo)}</button>`).join('')}</nav>`;
+  const secs=EST.secoes.map((s,i)=>{const k='est-'+s.id,aberto=opened.has(k);
+    return `<section class="setup est${aberto?'':' closed'}" id="${k}" style="--c:var(--accent)">
+      <button class="sh" type="button" data-est="${k}" aria-expanded="${aberto}">
+        <span class="t"><h3><span class="est-n">${i+1}</span>${esc(s.titulo)}</h3><p>${estTxt(s.resumo)}</p></span>${ICON.chev}
+      </button><div class="estb">${(s.blocos||[]).map(estBloco).join('')}</div></section>`;}).join('');
+  $('out').innerHTML=`<div class="zone"><h2><span class="d" style="background:var(--accent)"></span>${esc(EST.titulo||'Estratégia')}<small>atualizada em ${esc(dm(EST.versao||''))}</small></h2>${idx}${secs}</div>`;
+  $('pg').textContent=EST.secoes.length;$('pt').textContent=EST.secoes.length;$('pb').style.width='100%';$('tb').style.width='100%';
+  $('pl').textContent='seções da estratégia';
+  renderFoot();saveUI();
+}
 function renderProgress(vids){
   vids=vids||(UI.tab==='agenda'&&AGENDA?agendaVideos():UI.tab==='dias'?diasVideos(diasDaJanela()):visible(tabPerfil(UI.tab),UI.loc));
   $('pl').textContent='vídeos gravados';
@@ -1352,9 +1418,11 @@ async function copyText(t){
   }
 }
 document.addEventListener('click',async e=>{
-  const t=e.target.closest('[data-tab],[data-vdia],[data-assistir],[data-dia],[data-week],[data-loc],[data-shift],[data-sh],[data-tog],[data-copy],#reset');
+  const t=e.target.closest('[data-tab],[data-est],[data-estgo],[data-vdia],[data-assistir],[data-dia],[data-week],[data-loc],[data-shift],[data-sh],[data-tog],[data-copy],#reset');
   if(!t)return;
   if(t.dataset.tab){UI.tab=t.dataset.tab;render();return;}
+  if(t.dataset.est){const k=t.dataset.est,sec=t.closest('.setup');const c=!sec.classList.contains('closed');sec.classList.toggle('closed',c);t.setAttribute('aria-expanded',String(!c));if(c)opened.delete(k);else opened.add(k);UI.open=[...opened];saveUI();return;}
+  if(t.dataset.estgo){const k='est-'+t.dataset.estgo,sec=$(k);if(sec){if(sec.classList.contains('closed')){sec.classList.remove('closed');sec.querySelector('.sh').setAttribute('aria-expanded','true');opened.add(k);UI.open=[...opened];saveUI();}sec.scrollIntoView({behavior:'smooth',block:'start'});}return;}
   if(t.dataset.vdia){const k=t.dataset.vdia,sec=t.closest('.setup');const c=!sec.classList.contains('closed');sec.classList.toggle('closed',c);t.setAttribute('aria-expanded',String(!c));if(c)opened.delete(k);else opened.add(k);UI.open=[...opened];UI.vidMexeu=true;saveUI();return;}
   if(t.dataset.assistir){const b=t.closest('.b');let v=b.querySelector('video');if(v){v.pause();v.remove();t.textContent='▶ Assistir';return;}
     v=document.createElement('video');v.className='vplay';v.src=t.dataset.assistir;v.controls=true;v.playsInline=true;v.preload='metadata';b.appendChild(v);v.play().catch(()=>{});t.textContent='✕ Fechar';return;}
@@ -1439,7 +1507,7 @@ async function init(){
     const d=await loadAll();
     C=d.calendario;SC=d.scale;JP=d.jp;
     IDX={scale:new Map(SC.map(x=>[x.id,x])),jp:new Map(JP.map(x=>[x.id,x]))};
-    aplicarReleituras(d.releituras);AGENDA=d.agenda&&Array.isArray(d.agenda.paradas)?d.agenda:null;ARQ=d.videos&&d.videos.itens?d.videos:null;TROCAS=(d.trocas&&Array.isArray(d.trocas.itens))?d.trocas.itens:[];
+    aplicarReleituras(d.releituras);AGENDA=d.agenda&&Array.isArray(d.agenda.paradas)?d.agenda:null;ARQ=d.videos&&d.videos.itens?d.videos:null;TROCAS=(d.trocas&&Array.isArray(d.trocas.itens))?d.trocas.itens:[];EST=d.estrategia&&Array.isArray(d.estrategia.secoes)?d.estrategia:null;
     guardarOriginais();await Promise.all([carregarEdicoes(),carregarFeitos(),carregarPlanos()]);aplicarEdicoes();
     buildPosts();buildVideos();render();
   }catch(err){
