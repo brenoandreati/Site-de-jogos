@@ -382,7 +382,17 @@ main{padding-top:16px;padding-bottom:calc(56px + env(safe-area-inset-bottom,0px)
 .est-jor p{margin:4px 0 0}.est-jor .ob{color:var(--muted);font-size:13.5px}
 .est-ser{margin-top:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
 .est-ser .sc{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--surface-2)}
-.est-ser .tp{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.est-ser .pf{margin:6px 0 0;font-size:13px;color:var(--muted)}.est-ser .gc{margin:8px 0 0;font-style:italic}
+.est-ser .tp{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.est-ser .ps{margin:6px 0 0;font-size:13px;color:var(--muted)}.est-ser .gc{margin:8px 0 0;font-style:italic}
+.est-fil{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 4px}.est-fil .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.est-mes[data-f="topo"] .pc:not(.topo),.est-mes[data-f="meio"] .pc:not(.meio),.est-mes[data-f="fundo"] .pc:not(.fundo){display:none}
+.est-sem{margin-top:10px;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+.est-sem>summary{cursor:pointer;padding:12px 14px;font-size:14px;list-style-position:inside}.est-sem>summary span{color:var(--muted);font-size:12.5px;margin-left:6px}
+.est-sem .dia{padding:0 14px 6px}.est-sem h5{margin:10px 0 6px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.est-sem ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.est-sem .pc{border:1px solid var(--line-2);border-left:4px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface-2);font-size:13.5px;line-height:1.45}
+.est-sem .pc.topo{border-left-color:var(--topo)}.est-sem .pc.meio{border-left-color:var(--meio)}.est-sem .pc.fundo{border-left-color:var(--fundo)}
+.est-sem .mt{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.est-sem .hr{font-weight:700;font-variant-numeric:tabular-nums}.est-sem .ps{font-size:12.5px;color:var(--muted)}.est-sem .rt{white-space:pre-line;margin-top:6px!important;padding:8px 10px;border-radius:8px;background:var(--surface-2)}.est-sem .rt .lb{display:block;margin-bottom:2px}.est-mes[data-f="topo"] .dia:not(.has-topo),.est-mes[data-f="meio"] .dia:not(.has-meio),.est-mes[data-f="fundo"] .dia:not(.has-fundo){display:none}
+.est-sem .tt{display:block;margin-top:6px;font-size:14.5px}.est-sem .pc p{margin:4px 0 0}.est-sem .lb{display:inline-block;min-width:54px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--faint)}
 @media (max-width:640px){
  .est-tw{border:0;overflow:visible}
  .est-t{min-width:0}.est-t thead{display:none}
@@ -1342,7 +1352,14 @@ function estBloco(b){
   if(b.t==='quote')return `<blockquote class="est-q">${(b.lines||[]).map(l=>`<span>${estTxt(l)}</span>`).join('')}</blockquote>`;
   if(b.t==='table')return `<div class="est-tw"><table class="est-t"><thead><tr>${b.cols.map(c=>`<th scope="col">${estTxt(c)}</th>`).join('')}</tr></thead><tbody>${b.rows.map(r=>`<tr>${r.map((c,i)=>i?(c?`<td data-l="${esc(b.cols[i])}">${estTxt(c)}</td>`:'<td class="vz"></td>'):`<th scope="row">${estTxt(c)}</th>`).join('')}</tr>`).join('')}</tbody></table></div>`;
   if(b.t==='jornada')return `<ol class="est-jor">${(b.passos||[]).map((s,i,a)=>`<li class="${i===a.length-1?'fim':''}"><span class="nm">${i+1}</span><div><div class="tt"><b>${esc(s.n)}</b><span class="et">${esc(s.e)}</span></div><p>${estTxt(s.x)}</p><p class="ob">${estTxt(s.obj)}</p></div></li>`).join('')}</ol>`;
-  if(b.t==='series')return `<div class="est-ser">${(b.items||[]).map(s=>`<div class="sc"><div class="tp"><b>${esc(s.n)}</b><span class="tag ${EST_ETAPA[s.e]||''}"><i></i>${esc(s.e)}</span></div><p class="pf">${esc(s.p)} · ${esc(s.f)}</p><p class="gc">${estTxt(s.g)}</p></div>`).join('')}</div>`;
+  if(b.t==='series')return `<div class="est-ser">${(b.items||[]).map(s=>`<div class="sc"><div class="tp"><b>${esc(s.n)}</b><span class="tag ${EST_ETAPA[s.e]||''}"><i></i>${esc(s.e)}</span></div><p class="ps">${esc(s.p)} · ${esc(s.f)}</p><p class="gc">${estTxt(s.g)}</p></div>`).join('')}</div>`;
+  if(b.t==='mes'){
+    const it=b.itens||[],sem=[];it.forEach(q=>{const w=Math.floor((parse(q.d)-parse(it[0].d))/6048e5);(sem[w]=sem[w]||[]).push(q);});
+    const cnt=e=>it.filter(q=>q.e===e).length;
+    const fil=`<div class="est-fil" role="group" aria-label="Filtrar por etapa"><button type="button" class="chip" data-estf="todos" aria-pressed="true">Todas <span class="c">${it.length}</span></button>${['topo','meio','fundo'].map(e=>`<button type="button" class="chip" data-estf="${e}" aria-pressed="false">${e[0].toUpperCase()+e.slice(1)} <span class="c">${cnt(e)}</span></button>`).join('')}</div>`;
+    const card=q=>`<li class="pc ${q.e}"><div class="mt"><span class="hr">${esc(q.h)}</span><span class="tag ${EST_ETAPA[q.e]}"><i></i>${esc(q.e)}</span><span class="tag dur">${esc(q.f)}</span><span class="ps">${esc(q.p)} · ${esc(q.s)}</span></div><b class="tt">${esc(q.t)}</b><p><span class="lb">Gancho</span>${estTxt(q.g)}</p><p class="rt"><span class="lb">Roteiro</span>${estTxt(q.r||q.x||'')}</p><p><span class="lb">CTA</span>${estTxt(q.c)}</p></li>`;
+    return `<div class="est-mes" data-f="todos">${fil}${sem.map((w,i)=>{const dias=[...new Set(w.map(q=>q.d))];return `<details class="est-sem"${i===0?' open':''}><summary><b>Semana ${i+1}</b> · ${esc(dm(dias[0]))} a ${esc(dm(dias.at(-1)))} <span>${w.length} peças</span></summary>${dias.map(d=>`<div class="dia ${[...new Set(w.filter(q=>q.d===d).map(q=>'has-'+q.e))].join(' ')}"><h5>${esc(DOWL[parse(d).getUTCDay()])} · ${esc(dm(d))}</h5><ul>${w.filter(q=>q.d===d).map(card).join('')}</ul></div>`).join('')}</details>`;}).join('')}</div>`;
+  }
   return '';
 }
 function renderEstrategia(){
@@ -1418,9 +1435,10 @@ async function copyText(t){
   }
 }
 document.addEventListener('click',async e=>{
-  const t=e.target.closest('[data-tab],[data-est],[data-estgo],[data-vdia],[data-assistir],[data-dia],[data-week],[data-loc],[data-shift],[data-sh],[data-tog],[data-copy],#reset');
+  const t=e.target.closest('[data-tab],[data-estf],[data-est],[data-estgo],[data-vdia],[data-assistir],[data-dia],[data-week],[data-loc],[data-shift],[data-sh],[data-tog],[data-copy],#reset');
   if(!t)return;
   if(t.dataset.tab){UI.tab=t.dataset.tab;render();return;}
+  if(t.dataset.estf){const box=t.closest('.est-mes');box.dataset.f=t.dataset.estf;box.querySelectorAll('[data-estf]').forEach(x=>x.setAttribute('aria-pressed',String(x===t)));if(t.dataset.estf!=='todos')box.querySelectorAll('details').forEach(x=>{x.open=true;});return;}
   if(t.dataset.est){const k=t.dataset.est,sec=t.closest('.setup');const c=!sec.classList.contains('closed');sec.classList.toggle('closed',c);t.setAttribute('aria-expanded',String(!c));if(c)opened.delete(k);else opened.add(k);UI.open=[...opened];saveUI();return;}
   if(t.dataset.estgo){const k='est-'+t.dataset.estgo,sec=$(k);if(sec){if(sec.classList.contains('closed')){sec.classList.remove('closed');sec.querySelector('.sh').setAttribute('aria-expanded','true');opened.add(k);UI.open=[...opened];saveUI();}sec.scrollIntoView({behavior:'smooth',block:'start'});}return;}
   if(t.dataset.vdia){const k=t.dataset.vdia,sec=t.closest('.setup');const c=!sec.classList.contains('closed');sec.classList.toggle('closed',c);t.setAttribute('aria-expanded',String(!c));if(c)opened.delete(k);else opened.add(k);UI.open=[...opened];UI.vidMexeu=true;saveUI();return;}
