@@ -1312,7 +1312,7 @@ function renderVideos(){
   /* começa na segunda-feira desta semana (a janela do planejamento já pula para a próxima): os vídeos de hoje e dos próximos dias precisam aparecer */
   const hoje=today(),seg=segDestaSemana(),ini=seg<UI.a?seg:UI.a,base=ARQ.base||'/videos/';
   const dias=[];for(let d=ini;d<=UI.b;d=addDays(d,1))dias.push(d);
-  const semanas=[];for(let i=0;i<dias.length;i+=7)semanas.push({a:dias[i],b:dias[Math.min(i+6,dias.length-1)]});
+  const semanas=[];for(let i=0;i<dias.length;i+=7)semanas.push({k:semanas.length+1,a:dias[i],b:dias[Math.min(i+6,dias.length-1)]});
   $('intro').textContent='Os vídeos editados, dia por dia, na ordem em que vão ao ar (JP e Scale juntos). “Assistir” toca aqui mesmo; “Baixar” salva o arquivo no aparelho. Os Reels do dia que ainda não têm vídeo aparecem em cinza.';
   $('divg').hidden=true;
   let h='';
