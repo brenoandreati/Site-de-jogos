@@ -567,7 +567,7 @@ async function fromModule(f){
   return JSON.parse(data);
 }
 async function loadAll(){
-  await Promise.all([...FONTES.map(f=>loadScript(f.js)),loadScript('../dados/releituras.js'),loadScript('../dados/agenda.js'),loadScript('../dados/videos.js'),loadScript('../dados/trocas.js'),loadScript('../dados/estrategia.js')]);
+  await Promise.all([...FONTES.map(f=>loadScript(f.js)),loadScript('../dados/releituras.js'),loadScript('../dados/agenda.js'),loadScript('../dados/videos.js'),loadScript('../dados/trocas.js'),loadScript('../dados/estrategia.js'),loadScript('../dados/roteiros-extras.js')]);
   const D=window.CENTRAL_DADOS||{};const out={};
   for(const f of FONTES){
     if(D[f.chave]){out[f.chave]=D[f.chave];continue;}
@@ -579,6 +579,7 @@ async function loadAll(){
   out.videos=D.videos||null;
   out.trocas=D.trocas||null;
   out.estrategia=D.estrategia||null;
+  out.extras=D['roteiros-extras']||null;
   return out;
 }
 
@@ -619,6 +620,12 @@ function mudarRoteiro(k,texto){
   },900);
 }
 function ajustarAltura(t){t.style.height='auto';t.style.height=(t.scrollHeight+2)+'px';}
+/* roteiros próprios do Planejamento (dados/roteiros-extras.js) para posts extras que ainda não existem
+   na Central: entram no índice como se fossem da Central e ganham roteiro, cópia e edição */
+function aplicarExtras(X){
+  if(!X||!Array.isArray(X.itens))return;
+  X.itens.forEach(r=>{if(r&&r.perfil&&r.id&&IDX[r.perfil]&&!IDX[r.perfil].has(r.id))IDX[r.perfil].set(r.id,{id:r.id,titulo:r.titulo||r.id,hook:r.hook||'',roteiro:r.roteiro||'',direcao:r.direcao||'',legenda:r.legenda||''});});
+}
 function aplicarReleituras(R){
   REL=new Map();SEPARA=new Set();
   if(!R||!Array.isArray(R.itens))return;
@@ -1537,7 +1544,7 @@ async function init(){
     const d=await loadAll();
     C=d.calendario;SC=d.scale;JP=d.jp;
     IDX={scale:new Map(SC.map(x=>[x.id,x])),jp:new Map(JP.map(x=>[x.id,x]))};
-    aplicarReleituras(d.releituras);AGENDA=d.agenda&&Array.isArray(d.agenda.paradas)?d.agenda:null;ARQ=d.videos&&d.videos.itens?d.videos:null;TROCAS=(d.trocas&&Array.isArray(d.trocas.itens))?d.trocas.itens:[];EST=d.estrategia&&Array.isArray(d.estrategia.secoes)?d.estrategia:null;
+    aplicarExtras(d.extras);aplicarReleituras(d.releituras);AGENDA=d.agenda&&Array.isArray(d.agenda.paradas)?d.agenda:null;ARQ=d.videos&&d.videos.itens?d.videos:null;TROCAS=(d.trocas&&Array.isArray(d.trocas.itens))?d.trocas.itens:[];EST=d.estrategia&&Array.isArray(d.estrategia.secoes)?d.estrategia:null;
     guardarOriginais();await Promise.all([carregarEdicoes(),carregarFeitos(),carregarPlanos()]);aplicarEdicoes();
     buildPosts();buildVideos();render();
   }catch(err){

@@ -11,6 +11,7 @@
      public/dados/videos.js       os vídeos editados de cada post (--videos <arquivo>, aba Vídeos)
      public/dados/trocas.js       trocas de data combinadas por cima do Calendário (--trocas <arquivo>)
      public/dados/estrategia.js   a estratégia de conteúdo (--estrategia <arquivo>, aba Estratégia)
+     public/dados/roteiros-extras.js  roteiros próprios de posts extras (--extras <arquivo>)
    Uso: node build.mjs --mapa m.html --pagina-releituras r.html --releituras releituras.js
    ===================================================================== */
 import fs from 'node:fs';
@@ -21,7 +22,7 @@ const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(AQUI, 'public');
 const args = process.argv.slice(2);
 const opt = nome => (args.includes(nome) ? args[args.indexOf(nome) + 1] : null);
-const mapaArg = opt('--mapa'), relPagArg = opt('--pagina-releituras'), relDadosArg = opt('--releituras'), agendaArg = opt('--agenda'), videosArg = opt('--videos'), trocasArg = opt('--trocas'), estArg = opt('--estrategia');
+const mapaArg = opt('--mapa'), relPagArg = opt('--pagina-releituras'), relDadosArg = opt('--releituras'), agendaArg = opt('--agenda'), videosArg = opt('--videos'), trocasArg = opt('--trocas'), estArg = opt('--estrategia'), extrasArg = opt('--extras');
 
 function troca(src, de, para, nome) {
   if (!src.includes(de)) throw new Error(`não achei ${nome}: o arquivo mudou? Ajuste build.mjs.`);
@@ -67,4 +68,5 @@ if (agendaArg) fs.copyFileSync(agendaArg, path.join(OUT, 'dados', 'agenda.js'));
 if (videosArg) fs.copyFileSync(videosArg, path.join(OUT, 'dados', 'videos.js'));
 if (trocasArg) fs.copyFileSync(trocasArg, path.join(OUT, 'dados', 'trocas.js'));
 if (estArg) fs.copyFileSync(estArg, path.join(OUT, 'dados', 'estrategia.js'));
+if (extrasArg) fs.copyFileSync(extrasArg, path.join(OUT, 'dados', 'roteiros-extras.js'));
 console.log('public/ pronto:', [...fs.readdirSync(OUT).filter(f => f !== 'dados'), ...fs.readdirSync(path.join(OUT, 'dados')).map(f => 'dados/' + f)].join(', '));
